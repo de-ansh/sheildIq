@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Affordability Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f0f12",
+                        "card-dark": "#161121",
+                        "border-dark": "#2d2839",
+                        "neon-green": "#22c55e",
+                        "neon-amber": "#f59e0b",
+                        "neon-red": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono-data {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(22, 17, 33, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 36, 235, 0.2);
+        }
+        .gradient-mesh {
+            background-color: #0f0f12;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 36, 235, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-white min-h-screen gradient-mesh">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Header Section -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark px-6 md:px-10 py-3 bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl">shield_with_heart</span>
+</div>
+<h2 class="text-white text-xl font-black leading-tight tracking-tight">Shield<span class="text-primary">IQ</span></h2>
+</div>
+<nav class="hidden lg:flex items-center gap-8">
+<a class="text-white/70 hover:text-white text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-white text-sm font-bold border-b-2 border-primary pb-1" href="#">Affordability</a>
+<a class="text-white/70 hover:text-white text-sm font-medium transition-colors" href="#">Risk Profile</a>
+<a class="text-white/70 hover:text-white text-sm font-medium transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-4 items-center">
+<label class="hidden md:flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-white/40 flex border-none bg-card-dark items-center justify-center pl-4 rounded-l-lg">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-card-dark text-white focus:ring-0 placeholder:text-white/30 px-4 rounded-r-lg text-sm" placeholder="Search analysis..."/>
+</div>
+</label>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-card-dark hover:bg-border-dark text-white transition-colors">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-card-dark hover:bg-border-dark text-white transition-colors">
+<span class="material-symbols-outlined text-xl">settings</span>
+</button>
+</div>
+<div class="bg-primary/20 p-0.5 rounded-full border border-primary/40">
+<img alt="Profile" class="aspect-square rounded-full size-8 object-cover" data-alt="User profile avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB6Awime-YTaJfPHG11jDNWfdeLJ84TR_COAl52ZKwhR5aYlc3qzRTgM7eikGuWy6-ZZ8PVIwqiCZtMRIyPdvlwhXrrKjuNhnfRQrew2qlb5jq6edYv1HgcyD8ltHHbxuo42JJpr7HyqF7jkSLnqG6blyzz1c5mFg1ETH5yHQqXDACNIzZ8EfHMcQsEQJVErlWFTjnQPLEsqj4JGpdVRCH-TPQT_81xc2E_0AM1-N9h6qk3lHw87WppnuydeeraO-9S2MT29g7-a4"/>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-[1400px] mx-auto w-full p-6 md:p-10 space-y-8">
+<!-- Page Title & Actions -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Premium Analysis</span>
+<span class="text-white/40 text-xs font-mono-data uppercase">REF: SIQ-2023-AF04</span>
+</div>
+<h1 class="text-white text-4xl font-black tracking-tight">Affordability Analysis</h1>
+<p class="text-white/50 text-base mt-1">Real-time financial sustainability modeling for <span class="text-white font-medium">October 2023</span></p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 rounded-lg h-11 px-5 bg-card-dark border border-border-dark text-white text-sm font-bold hover:bg-border-dark transition-all">
+<span class="material-symbols-outlined text-lg">file_download</span>
+<span>Export PDF</span>
+</button>
+<button class="flex items-center gap-2 rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg">bolt</span>
+<span>Simulate Change</span>
+</button>
+</div>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-card-dark border border-border-dark p-6 rounded-xl hover:border-primary/50 transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<p class="text-white/60 text-sm font-medium">Premium-to-Income</p>
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">analytics</span>
+</div>
+<div class="flex items-baseline gap-2">
+<p class="text-white font-mono-data text-3xl font-bold tracking-tighter">4.52%</p>
+<p class="text-neon-red text-xs font-mono-data font-medium">-0.21%</p>
+</div>
+<div class="mt-4 h-1 w-full bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[45%]"></div>
+</div>
+</div>
+<div class="bg-card-dark border border-border-dark p-6 rounded-xl hover:border-primary/50 transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<p class="text-white/60 text-sm font-medium">Debt-to-Premium</p>
+<span class="material-symbols-outlined text-neon-green group-hover:scale-110 transition-transform">account_balance_wallet</span>
+</div>
+<div class="flex items-baseline gap-2">
+<p class="text-white font-mono-data text-3xl font-bold tracking-tighter">12.8%</p>
+<p class="text-neon-green text-xs font-mono-data font-medium">+1.5%</p>
+</div>
+<div class="mt-4 h-1 w-full bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-neon-green w-[12%]"></div>
+</div>
+</div>
+<div class="bg-card-dark border border-border-dark p-6 rounded-xl hover:border-primary/50 transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<p class="text-white/60 text-sm font-medium">Monthly Premium</p>
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">payments</span>
+</div>
+<div class="flex items-baseline gap-2">
+<p class="text-white font-mono-data text-3xl font-bold tracking-tighter">$450.00</p>
+<p class="text-neon-red text-xs font-mono-data font-medium">-2.0%</p>
+</div>
+<div class="mt-4 flex gap-1">
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary/20 rounded-full"></div>
+<div class="h-1 flex-1 bg-primary/20 rounded-full"></div>
+</div>
+</div>
+<div class="bg-card-dark border border-border-dark p-6 rounded-xl hover:border-primary/50 transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<p class="text-white/60 text-sm font-medium">Risk Score</p>
+<span class="material-symbols-outlined text-neon-amber group-hover:scale-110 transition-transform">monitoring</span>
+</div>
+<div class="flex items-baseline gap-2">
+<p class="text-white font-mono-data text-3xl font-bold tracking-tighter">Moderate</p>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-neon-amber animate-pulse"></span>
+<span class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Active Monitoring</span>
+</div>
+</div>
+</div>
+<!-- Main Grid Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Charts -->
+<div class="lg:col-span-2 space-y-8">
+<!-- Sustainability Zones -->
+<div class="bg-card-dark border border-border-dark rounded-xl p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-bold">Sustainability Zones</h3>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-neon-green"></div>
+<span class="text-xs text-white/60 uppercase font-mono-data">Safe</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-neon-amber"></div>
+<span class="text-xs text-white/60 uppercase font-mono-data">Alert</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-neon-red"></div>
+<span class="text-xs text-white/60 uppercase font-mono-data">Critical</span>
+</div>
+</div>
+</div>
+<div class="relative h-64 w-full flex items-end justify-between gap-2 border-b border-border-dark/50 pb-2">
+<!-- Chart Bars (Simulated) -->
+<div class="w-full flex items-end gap-1 h-full">
+<div class="flex-1 bg-neon-green/30 rounded-t h-[40%] border-t-2 border-neon-green"></div>
+<div class="flex-1 bg-neon-green/30 rounded-t h-[42%] border-t-2 border-neon-green"></div>
+<div class="flex-1 bg-neon-green/30 rounded-t h-[38%] border-t-2 border-neon-green"></div>
+<div class="flex-1 bg-neon-green/50 rounded-t h-[45%] border-t-2 border-neon-green relative">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-background-dark text-[10px] font-bold px-2 py-1 rounded">Current</div>
+</div>
+<div class="flex-1 bg-neon-amber/30 rounded-t h-[58%] border-t-2 border-neon-amber"></div>
+<div class="flex-1 bg-neon-amber/30 rounded-t h-[62%] border-t-2 border-neon-amber"></div>
+<div class="flex-1 bg-neon-amber/30 rounded-t h-[65%] border-t-2 border-neon-amber"></div>
+<div class="flex-1 bg-neon-red/30 rounded-t h-[82%] border-t-2 border-neon-red"></div>
+<div class="flex-1 bg-neon-red/30 rounded-t h-[88%] border-t-2 border-neon-red"></div>
+<div class="flex-1 bg-neon-red/30 rounded-t h-[95%] border-t-2 border-neon-red"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-mono-data text-white/30 uppercase tracking-widest">
+<span>Q1 2023</span>
+<span>Q2 2023</span>
+<span>Q3 2023</span>
+<span>Current</span>
+<span>Projected (FY24)</span>
+</div>
+</div>
+<!-- Projected Escalation -->
+<div class="bg-card-dark border border-border-dark rounded-xl p-8">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+<div>
+<h3 class="text-xl font-bold">Projected Escalation</h3>
+<p class="text-white/40 text-sm">Long-term health inflation impact on premium structure</p>
+</div>
+<div class="bg-border-dark/30 rounded-lg p-1 flex gap-1">
+<button class="px-3 py-1 bg-primary rounded text-xs font-bold">5Y Forecast</button>
+<button class="px-3 py-1 hover:bg-white/5 rounded text-xs font-bold transition-colors">10Y Forecast</button>
+</div>
+</div>
+<div class="relative h-48 w-full">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 800 200">
+<defs>
+<lineargradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#6324eb" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#6324eb" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,180 Q100,170 200,160 T400,120 T600,70 T800,20 L800,200 L0,200 Z" fill="url(#areaGradient)"></path>
+<path d="M0,180 Q100,170 200,160 T400,120 T600,70 T800,20" fill="none" stroke="#6324eb" stroke-width="3"></path>
+<circle cx="400" cy="120" fill="#6324eb" r="4" stroke="white" stroke-width="2"></circle>
+</svg>
+<!-- Tooltip Overlay -->
+<div class="absolute top-[80px] left-[410px] bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded text-[10px] font-mono-data">
+<span class="block text-primary font-bold">YEAR 3 IMPACT</span>
+<span class="block text-white">EST. $582.40 (+29.4%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: AI Optimizer & Insights -->
+<div class="space-y-8">
+<!-- AI Optimizer Panel -->
+<div class="glass-panel rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl text-primary">psychology</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-6">
+<div class="size-6 bg-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+</div>
+<h3 class="font-bold text-lg tracking-tight">AI Optimizer</h3>
+</div>
+<p class="text-white/70 text-sm mb-6 leading-relaxed italic">
+                                    "Analysis of your spending patterns suggests three non-critical overhead reductions to stabilize your long-term ratio."
+                                </p>
+<div class="space-y-4">
+<div class="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-primary/40 transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-neon-green text-xl mt-0.5">check_circle</span>
+<div>
+<p class="text-xs font-bold text-white uppercase tracking-wider mb-1">Deductible Shift</p>
+<p class="text-sm text-white/60">Increase base deductible by $200 to save <span class="text-white font-mono-data">12.4%</span> monthly.</p>
+</div>
+</div>
+</div>
+<div class="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-primary/40 transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-neon-amber text-xl mt-0.5">trending_up</span>
+<div>
+<p class="text-xs font-bold text-white uppercase tracking-wider mb-1">Health Savings</p>
+<p class="text-sm text-white/60">Redirect <span class="text-white font-mono-data">$45/mo</span> to HSA to offset tax impact.</p>
+</div>
+</div>
+</div>
+<div class="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-primary/40 transition-colors cursor-pointer">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">package_2</span>
+<div>
+<p class="text-xs font-bold text-white uppercase tracking-wider mb-1">Bundle Advantage</p>
+<p class="text-sm text-white/60">Consolidate life &amp; dental for an immediate <span class="text-white font-mono-data">$18.50</span> reduction.</p>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                                    Apply All Recommendations
+                                </button>
+</div>
+</div>
+<!-- Summary Breakdown -->
+<div class="bg-card-dark border border-border-dark rounded-xl p-8">
+<h3 class="font-bold text-lg mb-6">Premium Breakdown</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center pb-4 border-b border-border-dark/50">
+<span class="text-sm text-white/50">Base Premium</span>
+<span class="font-mono-data font-bold">$382.00</span>
+</div>
+<div class="flex justify-between items-center pb-4 border-b border-border-dark/50">
+<span class="text-sm text-white/50">Policy Add-ons</span>
+<span class="font-mono-data font-bold">$42.50</span>
+</div>
+<div class="flex justify-between items-center pb-4 border-b border-border-dark/50">
+<span class="text-sm text-white/50">Admin &amp; Fees</span>
+<span class="font-mono-data font-bold">$12.00</span>
+</div>
+<div class="flex justify-between items-center pb-4 border-b border-border-dark/50">
+<span class="text-sm text-white/50">Local Tax (4.2%)</span>
+<span class="font-mono-data font-bold">$13.50</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="text-lg font-bold">Total</span>
+<span class="text-lg font-mono-data font-bold text-primary">$450.00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Data Table -->
+<div class="bg-card-dark border border-border-dark rounded-xl overflow-hidden">
+<div class="px-8 py-6 border-b border-border-dark">
+<h3 class="font-bold text-lg">Historical Variance</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-white/5 text-[10px] font-mono-data text-white/40 uppercase tracking-widest">
+<th class="px-8 py-4">Period</th>
+<th class="px-8 py-4">Gross Income</th>
+<th class="px-8 py-4">Premium Cost</th>
+<th class="px-8 py-4">Net Ratio</th>
+<th class="px-8 py-4">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark/50">
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 text-sm">September 2023</td>
+<td class="px-8 py-4 font-mono-data text-sm">$10,200.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">$450.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">4.41%</td>
+<td class="px-8 py-4">
+<span class="px-2 py-1 rounded-full bg-neon-green/10 text-neon-green text-[10px] font-bold uppercase">Optimal</span>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 text-sm">August 2023</td>
+<td class="px-8 py-4 font-mono-data text-sm">$9,850.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">$450.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">4.57%</td>
+<td class="px-8 py-4">
+<span class="px-2 py-1 rounded-full bg-neon-amber/10 text-neon-amber text-[10px] font-bold uppercase">Stable</span>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-4 text-sm">July 2023</td>
+<td class="px-8 py-4 font-mono-data text-sm">$9,500.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">$420.00</td>
+<td class="px-8 py-4 font-mono-data text-sm">4.42%</td>
+<td class="px-8 py-4">
+<span class="px-2 py-1 rounded-full bg-neon-green/10 text-neon-green text-[10px] font-bold uppercase">Optimal</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-12 border-t border-border-dark p-8 text-center">
+<p class="text-white/30 text-xs font-mono-data uppercase tracking-widest">ShieldIQ Intelligence Platform v4.2.0 • Data Secured via AES-256</p>
+</footer>
+</div>
+</div>
+</body></html>

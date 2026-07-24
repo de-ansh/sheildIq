@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Life Calculator - Dark Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f172a",
+                        "charcoal": "#1e293b",
+                        "border-subtle": "#334155"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-gradient-blue { background: linear-gradient(180deg, rgba(36, 99, 235, 0.2) 0%, rgba(36, 99, 235, 0) 100%); }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen font-display">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between border-b border-border-subtle bg-background-dark/80 backdrop-blur-md px-6 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2 text-white">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white">shield_with_heart</span>
+</div>
+<h2 class="text-white text-xl font-extrabold tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Calculator</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Quotes</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Insights</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Support</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-charcoal border border-border-subtle text-white hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">dark_mode</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-charcoal border border-border-subtle text-white hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-border-subtle mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-white">Alex Sterling</p>
+<p class="text-[10px] text-slate-400">Advisor Pro</p>
+</div>
+<div class="bg-slate-700 rounded-full size-10 border-2 border-primary/50 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional advisor profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz0RcrkUazw5eN7_W3LL8rCYfr9cjBqjnCTULZFZtsksUdrAnQGCoU0ks4UMgs-KR18em_np6grDeYbmM8iokro5t6Pph1u0QwBlJbpWbKglksF_MXlZf4dgpckdBpBBWJ5hOuhRq-ppR-F7p292eB61BhDk_LqVSY4_TOndIWS9nWAiTU9S_8dBXBr8ZfHuxzK-FPXVyQq9ZEt5yU3IravSNfvheQWBbNA8oBSCV7N0Is8hEOOkYAPawz8iSdiLf7-MkxPuO1kS8"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
+<!-- Breadcrumbs and Title -->
+<div class="mb-8">
+<div class="flex items-center gap-2 text-slate-400 text-sm mb-2">
+<a class="hover:text-primary" href="#">Financial Planning</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-100 font-medium">Life Insurance Calculator</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl font-black text-white tracking-tight">Professional Coverage Analysis</h1>
+<p class="text-slate-400 mt-1">Real-time actuarial calculations based on current market volatility and inflation data.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-charcoal text-white rounded-lg border border-border-subtle font-bold text-sm flex items-center gap-2 hover:bg-slate-700">
+<span class="material-symbols-outlined text-sm">download</span> Export PDF
+                        </button>
+<button class="px-4 py-2 bg-primary text-white rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-blue-600 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">save</span> Save Scenario
+                        </button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Inputs -->
+<aside class="lg:col-span-4 space-y-6">
+<div class="bg-charcoal border border-border-subtle rounded-xl p-6 shadow-xl">
+<div class="flex items-center gap-2 mb-6 border-b border-border-subtle pb-4">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h3 class="font-bold text-lg text-white">Financial Profile</h3>
+</div>
+<div class="space-y-6">
+<!-- Input Group -->
+<div class="space-y-3">
+<label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Income Continuity</label>
+<div>
+<div class="flex justify-between mb-2">
+<span class="text-sm text-slate-200">Annual Gross Income</span>
+<span class="text-sm font-bold text-primary">$185,000</span>
+</div>
+<input class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" max="1000000" min="50000" step="5000" type="range"/>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<span class="text-sm text-slate-200">Years to Protect</span>
+<span class="text-sm font-bold text-primary">25 Years</span>
+</div>
+<input class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" max="50" min="1" step="1" type="range"/>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-3">
+<label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Current Liabilities</label>
+<div class="grid grid-cols-1 gap-3">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+<input class="w-full bg-background-dark border border-border-subtle rounded-lg py-2 pl-7 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-white" placeholder="Mortgage Balance" type="text" value="450,000"/>
+<label class="absolute -top-2 left-2 px-1 bg-charcoal text-[10px] text-slate-400">Mortgage Balance</label>
+</div>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+<input class="w-full bg-background-dark border border-border-subtle rounded-lg py-2 pl-7 pr-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary text-white" placeholder="Other Debts" type="text" value="25,000"/>
+<label class="absolute -top-2 left-2 px-1 bg-charcoal text-[10px] text-slate-400">Other Debts / Personal Loans</label>
+</div>
+</div>
+</div>
+<!-- Input Group -->
+<div class="space-y-3 pt-2">
+<label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Education &amp; Future</label>
+<div class="flex items-center justify-between p-3 bg-background-dark rounded-lg border border-border-subtle">
+<span class="text-sm text-slate-300">College Fund (2 Kids)</span>
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold text-white">$240,000</span>
+<span class="material-symbols-outlined text-primary text-sm cursor-pointer">edit</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Market Context Card -->
+<div class="bg-primary/10 border border-primary/20 rounded-xl p-4">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<div>
+<h4 class="text-sm font-bold text-white">Inflation Adjustment</h4>
+<p class="text-xs text-slate-400 mt-1 leading-relaxed">Calculating based on a <span class="text-primary font-bold">3.2%</span> long-term inflation rate. Your future purchasing power is protected in this scenario.</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center/Right Column: Analysis -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Hero Result Card -->
+<div class="bg-charcoal border-l-4 border-primary rounded-xl p-8 shadow-2xl relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="text-[120px] font-black text-white/5 absolute -top-10 -right-4 select-none">NEED</span>
+</div>
+<div class="relative z-10">
+<p class="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Recommended Total Coverage</p>
+<h2 class="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">$1,845,000</h2>
+<div class="flex flex-wrap gap-4">
+<div class="bg-background-dark/50 px-4 py-2 rounded-lg border border-border-subtle">
+<p class="text-[10px] text-slate-500 uppercase font-bold">Monthly Estimate</p>
+<p class="text-lg font-bold text-emerald-400">$64.20<span class="text-xs font-normal text-slate-500 ml-1">/mo</span></p>
+</div>
+<div class="bg-background-dark/50 px-4 py-2 rounded-lg border border-border-subtle">
+<p class="text-[10px] text-slate-500 uppercase font-bold">Coverage Gap</p>
+<p class="text-lg font-bold text-amber-400">$1,345,000</p>
+</div>
+<div class="bg-background-dark/50 px-4 py-2 rounded-lg border border-border-subtle">
+<p class="text-[10px] text-slate-500 uppercase font-bold">Analysis Confidence</p>
+<p class="text-lg font-bold text-primary">98.4%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Visualizations Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Chart 1: Income Continuity -->
+<div class="bg-charcoal border border-border-subtle rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">stacked_line_chart</span>
+                                    Income Continuity
+                                </h3>
+<span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded uppercase font-bold tracking-tighter">Projections</span>
+</div>
+<div class="h-48 w-full relative">
+<!-- Mockup Chart Visualization -->
+<div class="absolute inset-0 flex items-end justify-between gap-1">
+<div class="w-full bg-primary/20 h-[40%] rounded-t-sm"></div>
+<div class="w-full bg-primary/30 h-[55%] rounded-t-sm"></div>
+<div class="w-full bg-primary/40 h-[70%] rounded-t-sm border-t-2 border-primary shadow-[0_-4px_12px_rgba(36,99,235,0.3)]"></div>
+<div class="w-full bg-primary/30 h-[65%] rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-[50%] rounded-t-sm"></div>
+<div class="w-full bg-primary/10 h-[35%] rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-[45%] rounded-t-sm"></div>
+<div class="w-full bg-primary/30 h-[60%] rounded-t-sm"></div>
+</div>
+<div class="absolute bottom-0 w-full h-[1px] bg-slate-600"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+<span>Year 0</span>
+<span>Year 10</span>
+<span>Year 20</span>
+<span>Retirement</span>
+</div>
+</div>
+<!-- Chart 2: Needs Breakdown -->
+<div class="bg-charcoal border border-border-subtle rounded-xl p-6">
+<h3 class="font-bold text-white mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">donut_large</span>
+                                Coverage Allocation
+                            </h3>
+<div class="flex items-center gap-6">
+<div class="relative size-32 shrink-0">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-slate-700" cx="18" cy="18" fill="none" r="16" stroke-width="4"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="65, 100" stroke-width="4"></circle>
+<circle class="stroke-emerald-400" cx="18" cy="18" fill="none" r="16" stroke-dasharray="25, 100" stroke-dashoffset="-65" stroke-width="4"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-xs font-bold text-slate-400">Full Analysis</span>
+</div>
+</div>
+<div class="space-y-3 flex-1">
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary"></div>
+<span class="text-slate-300">Income Protection</span>
+</div>
+<span class="font-bold text-white">65%</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-emerald-400"></div>
+<span class="text-slate-300">Debt Liquidation</span>
+</div>
+<span class="font-bold text-white">25%</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-slate-500"></div>
+<span class="text-slate-300">Final Expenses</span>
+</div>
+<span class="font-bold text-white">10%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Analysis Panel -->
+<div class="bg-slate-900/50 border border-border-subtle rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="size-8 rounded-full bg-gradient-to-tr from-primary to-cyan-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">bolt</span>
+</div>
+<h3 class="font-bold text-white text-lg">AI Shield Analysis</h3>
+</div>
+<div class="space-y-4 text-slate-400 text-sm leading-relaxed">
+<p>Based on your current profile, our AI suggests a <span class="text-white font-medium">high-continuity model</span>. This calculation accounts for your $185k income protected for 25 years with a 4% yield assumption on the death benefit payout invested by beneficiaries.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+<div class="bg-charcoal/40 p-3 rounded-lg border border-border-subtle/50">
+<p class="text-xs font-bold text-primary mb-1 tracking-wider uppercase">Strategic Insight</p>
+<p class="text-xs">Increasing your coverage by 15% now could hedge against the projected 2026 inflation peak, saving approximately $120/year in premium step-ups.</p>
+</div>
+<div class="bg-charcoal/40 p-3 rounded-lg border border-border-subtle/50">
+<p class="text-xs font-bold text-emerald-400 mb-1 tracking-wider uppercase">Tax Efficiency</p>
+<p class="text-xs">This payout is structured to be 100% tax-free under current IRS guidelines, ensuring the full $1.84M reaches your family.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Actions -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border-subtle">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm">history</span>
+<p class="text-xs">Last updated: Today at 2:45 PM</p>
+</div>
+<div class="flex items-center gap-4 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-8 py-3 bg-charcoal text-white rounded-lg font-bold border border-border-subtle hover:bg-slate-700 transition-all">
+                                Adjust Assumptions
+                            </button>
+<button class="flex-1 sm:flex-none px-8 py-3 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all">
+                                Apply for this Coverage
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Footer -->
+<footer class="mt-auto border-t border-border-subtle bg-background-dark py-8 px-6">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2 grayscale opacity-50">
+<span class="material-symbols-outlined text-white">verified_user</span>
+<span class="text-white font-bold text-sm tracking-widest uppercase italic">ShieldIQ PRO</span>
+</div>
+<div class="flex gap-8 text-xs font-medium text-slate-500">
+<a class="hover:text-white" href="#">Privacy Policy</a>
+<a class="hover:text-white" href="#">Calculation Methodology</a>
+<a class="hover:text-white" href="#">Licensing</a>
+<a class="hover:text-white" href="#">Contact Support</a>
+</div>
+<div class="text-[10px] text-slate-600 text-center md:text-right">
+                    © 2024 ShieldIQ Financial Technologies Inc. <br/>
+                    Illustrations only. Not a guarantee of coverage or final premium.
+                </div>
+</div>
+</footer>
+</div>
+</body></html>

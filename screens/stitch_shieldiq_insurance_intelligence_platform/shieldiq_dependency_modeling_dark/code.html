@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ | Dependency Modeling v2.4.1</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "accent-blue": "#2563eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f172a",
+                        "surface-dark": "#1e293b",
+                        "border-dark": "#334155",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono-data {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .heatmap-grid {
+            background: linear-gradient(90deg, rgba(99, 36, 235, 0.05) 0%, rgba(37, 99, 235, 0.1) 50%, rgba(99, 36, 235, 0.05) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="border-b border-border-dark bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+<div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white">shield</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-white text-sm font-medium border-b-2 border-primary pb-5 mt-5" href="#">Modeling</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Reports</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Assumptions</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="bg-surface-dark border-none rounded-lg pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-2 focus:ring-primary text-white" placeholder="Search models..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+                    Run Scenario
+                </button>
+<div class="h-8 w-8 rounded-full bg-accent-blue flex items-center justify-center text-xs font-bold" data-alt="User profile avatar placeholder">
+                    JD
+                </div>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto p-6 flex flex-col gap-6">
+<!-- Header & KPIs -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-primary font-bold text-sm tracking-widest uppercase">
+<span class="material-symbols-outlined text-sm">analytics</span>
+                    Dependency Modeling
+                </div>
+<h1 class="text-3xl font-black tracking-tight text-white">Long-term Liability Projection</h1>
+<p class="text-slate-400 max-w-2xl text-sm">Visualizing financial pressure points for dependents and debt obligations across a 30-year horizon (2024–2054).</p>
+</div>
+<div class="flex flex-wrap gap-4">
+<div class="bg-surface-dark border border-border-dark p-4 rounded-xl min-w-[200px]">
+<p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total Lifetime Liability</p>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold mono-data text-white">$4,250,000</span>
+<span class="text-emerald-400 text-xs font-bold">+2.1%</span>
+</div>
+</div>
+<div class="bg-surface-dark border border-border-dark p-4 rounded-xl min-w-[200px]">
+<p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Peak Pressure Year</p>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold mono-data text-white">2036</span>
+<span class="text-orange-400 text-xs font-bold">CRITICAL</span>
+</div>
+</div>
+<div class="bg-surface-dark border border-border-dark p-4 rounded-xl min-w-[200px]">
+<p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Projected Inflation</p>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold mono-data text-white">3.2%</span>
+<span class="text-slate-500 text-xs font-bold">AVG</span>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6">
+<!-- Left Panel: Main Heatmap -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<div class="bg-surface-dark border border-border-dark rounded-xl p-6 overflow-hidden relative">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="text-lg font-bold text-white">Dependency Heatmap</h3>
+<p class="text-slate-400 text-xs">Intensity of financial pressure over time</p>
+</div>
+<div class="flex items-center gap-2 bg-background-dark p-1 rounded-lg border border-border-dark">
+<button class="px-3 py-1 text-xs font-bold rounded bg-primary text-white">30Y Horizon</button>
+<button class="px-3 py-1 text-xs font-bold rounded text-slate-400 hover:text-white">10Y Detailed</button>
+</div>
+</div>
+<!-- Mock Heatmap Visualization -->
+<div class="relative h-80 w-full flex flex-col">
+<div class="flex-1 w-full grid grid-cols-15 gap-1 heatmap-grid rounded-lg p-2">
+<!-- Heatmap Cells Simulated -->
+<div class="grid grid-cols-10 grid-rows-6 gap-2 w-full h-full opacity-80">
+<!-- Randomly colored pressure blocks -->
+<div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/30 rounded-sm"></div><div class="bg-primary/40 rounded-sm"></div><div class="bg-primary/60 rounded-sm"></div><div class="bg-primary/80 rounded-sm border border-primary/50"></div><div class="bg-primary/60 rounded-sm"></div><div class="bg-accent-blue/40 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div>
+<div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/40 rounded-sm"></div><div class="bg-primary/50 rounded-sm"></div><div class="bg-primary/70 rounded-sm"></div><div class="bg-primary/90 rounded-sm border border-primary/50"></div><div class="bg-primary/100 rounded-sm border border-white/20 shadow-[0_0_15px_rgba(99,36,235,0.4)]"></div><div class="bg-primary/80 rounded-sm"></div><div class="bg-primary/60 rounded-sm"></div><div class="bg-accent-blue/40 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div>
+<div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/40 rounded-sm"></div><div class="bg-primary/60 rounded-sm"></div><div class="bg-primary/80 rounded-sm"></div><div class="bg-primary/70 rounded-sm"></div><div class="bg-primary/50 rounded-sm"></div><div class="bg-accent-blue/30 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div>
+<div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/30 rounded-sm"></div><div class="bg-accent-blue/40 rounded-sm"></div><div class="bg-accent-blue/30 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div>
+<div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/15 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/25 rounded-sm"></div><div class="bg-accent-blue/20 rounded-sm"></div><div class="bg-accent-blue/15 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div>
+<div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/15 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/10 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div><div class="bg-accent-blue/5 rounded-sm"></div>
+</div>
+</div>
+<!-- Labels -->
+<div class="flex justify-between mt-4 text-[10px] mono-data text-slate-500 uppercase tracking-widest font-bold">
+<span>2024</span>
+<span>2029</span>
+<span>2034</span>
+<span class="text-primary">2039</span>
+<span>2044</span>
+<span>2049</span>
+<span>2054</span>
+</div>
+</div>
+<div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-border-dark pt-6">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_rgba(99,36,235,0.6)]"></div>
+<span class="text-xs text-slate-300 font-medium">Critical Liability</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-accent-blue"></div>
+<span class="text-xs text-slate-300 font-medium">Standard Coverage</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-slate-700"></div>
+<span class="text-xs text-slate-300 font-medium">Minimal Impact</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+<span class="text-xs text-slate-300 font-medium">Surplus Zone</span>
+</div>
+</div>
+</div>
+<!-- Goal-Based Coverage Card -->
+<div class="bg-surface-dark border border-border-dark rounded-xl p-6">
+<h3 class="text-lg font-bold text-white mb-6">Goal-Based Coverage Requirements</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-background-dark/50 rounded-lg border border-border-dark hover:border-accent-blue transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<p class="font-bold text-white">Higher Education Fund</p>
+<p class="text-xs text-slate-400">Dependent: Maya &amp; Leo (2032-2040)</p>
+</div>
+</div>
+<div class="text-right">
+<p class="mono-data font-bold text-white text-lg">$850,000</p>
+<p class="text-xs text-emerald-400">Fully Funded</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-background-dark/50 rounded-lg border border-border-dark hover:border-primary transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">family_restroom</span>
+</div>
+<div>
+<p class="font-bold text-white">Spouse Income Replacement</p>
+<p class="text-xs text-slate-400">Horizon: 2024–2054 (30 Years)</p>
+</div>
+</div>
+<div class="text-right">
+<p class="mono-data font-bold text-white text-lg">$2,400,000</p>
+<p class="text-xs text-primary">Active Protection</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-background-dark/50 rounded-lg border border-border-dark hover:border-slate-500 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-slate-500/10 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">home</span>
+</div>
+<div>
+<p class="font-bold text-white">Debt &amp; Mortgage Clearance</p>
+<p class="text-xs text-slate-400">Primary Residence - Fixed Rate</p>
+</div>
+</div>
+<div class="text-right">
+<p class="mono-data font-bold text-white text-lg">$1,000,000</p>
+<p class="text-xs text-slate-500">Decreasing Term</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Interactive Modeling Controls -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-surface-dark border border-border-dark rounded-xl p-6 sticky top-24">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">tune</span>
+<h3 class="text-lg font-bold text-white">Scenario Assumptions</h3>
+</div>
+<div class="space-y-8">
+<!-- Slider 1 -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<label class="text-sm font-semibold text-slate-300">Inflation Rate</label>
+<span class="mono-data text-primary font-bold text-sm bg-primary/10 px-2 py-0.5 rounded">3.2%</span>
+</div>
+<input class="w-full h-1.5 bg-background-dark rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="0" step="0.1" type="range" value="3.2"/>
+<div class="flex justify-between text-[10px] text-slate-500 mono-data">
+<span>0%</span>
+<span>5%</span>
+<span>10%</span>
+</div>
+</div>
+<!-- Slider 2 -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<label class="text-sm font-semibold text-slate-300">Liability Interest Rate</label>
+<span class="mono-data text-accent-blue font-bold text-sm bg-accent-blue/10 px-2 py-0.5 rounded">5.5%</span>
+</div>
+<input class="w-full h-1.5 bg-background-dark rounded-lg appearance-none cursor-pointer accent-accent-blue" max="15" min="0" step="0.1" type="range" value="5.5"/>
+<div class="flex justify-between text-[10px] text-slate-500 mono-data">
+<span>0%</span>
+<span>7.5%</span>
+<span>15%</span>
+</div>
+</div>
+<!-- Toggle Controls -->
+<div class="space-y-3 pt-4 border-t border-border-dark">
+<p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Model Complexity</p>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-sm text-slate-300 group-hover:text-white transition-colors">Tax Drag Simulation</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-background-dark peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="text-sm text-slate-300 group-hover:text-white transition-colors">Monte Carlo Iterations (1k)</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-background-dark peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</div>
+<div class="mt-8 space-y-3">
+<button class="w-full py-3 bg-white text-background-dark font-bold rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm font-bold">save</span>
+                            Save Assumption Set
+                        </button>
+<button class="w-full py-3 border border-border-dark text-white font-bold rounded-lg hover:bg-surface-dark/50 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm font-bold">restart_alt</span>
+                            Reset to Default
+                        </button>
+</div>
+</div>
+<div class="bg-primary/10 border border-primary/20 rounded-xl p-4 flex gap-4">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-xs text-slate-300 leading-relaxed">
+<strong class="text-white">Analysis Hint:</strong> Your peak pressure year (2036) coincides with Maya's university entry and the final phase of your primary mortgage. Consider a tiered insurance strategy.
+                    </p>
+</div>
+</div>
+</div>
+</main>
+<footer class="mt-12 border-t border-border-dark py-8 px-6">
+<div class="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-xs font-medium">
+<div class="flex items-center gap-4">
+<span>© 2024 ShieldIQ Systems Inc.</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Version 2.4.1-Dark</span>
+</div>
+<div class="flex items-center gap-8">
+<a class="hover:text-white transition-colors" href="#">Regulatory Compliance</a>
+<a class="hover:text-white transition-colors" href="#">Security Disclosure</a>
+<a class="hover:text-white transition-colors" href="#">Support Portal</a>
+</div>
+</div>
+</footer>
+</body></html>

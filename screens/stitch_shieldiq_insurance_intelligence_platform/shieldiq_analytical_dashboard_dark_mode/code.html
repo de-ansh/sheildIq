@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Analytical Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b8cee",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "slate-card": "#1c2632",
+                        "warning-amber": "#f59e0b",
+                        "success-green": "#10b981",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-gradient-blue {
+            background: linear-gradient(180deg, rgba(43, 140, 238, 0.8) 0%, rgba(43, 140, 238, 0.2) 100%);
+        }
+        .chart-gradient-amber {
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.8) 0%, rgba(245, 158, 11, 0.2) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-white/5 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2 group cursor-pointer">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined text-2xl leading-none">security</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Shield<span class="text-primary">IQ</span></h1>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-semibold text-primary" href="#">Dashboard</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Calculators</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Policies</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-slate-200 dark:bg-slate-800 rounded-full p-1">
+<button class="p-1.5 rounded-full text-slate-500"><span class="material-symbols-outlined text-sm">light_mode</span></button>
+<button class="p-1.5 rounded-full bg-primary text-white shadow-lg"><span class="material-symbols-outlined text-sm">dark_mode</span></button>
+</div>
+<button class="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background-dark"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+<div class="flex items-center gap-3 pl-1">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-900 dark:text-white">Alex Sterling</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Premium Member</p>
+</div>
+<div class="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close up portrait of a professional male user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxeZMIfK_ElIiF5jRKR53DSluLgH92OluJtjQdklC6ODNegPrYN5hiyKgdmSXtC1RqI--dWynP0uAZklvwCn1zUq9S7nY7WeDxshu1tnQ-8b1RRdlVreV7TyBfcUmYuOGn3qXuhrau0BX2kxshzcZ-baoN1oF_egHvYgi8TLCNT5McYwF1_oojwrPpSGCLCqxiocAZbIs2W-Crbg8QxbiAk87FF8BZkBjeC3kdH1RAycHri0rlXjtAXrDakUMDxsR_cYczQSxwLiA"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto px-6 py-8">
+<!-- KPI Metric Cards Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- Recommended Life -->
+<div class="bg-white dark:bg-slate-card p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="text-[10px] font-bold text-success-green bg-success-green/10 px-2 py-1 rounded-full">+2.4% vs last qtr</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Recommended Life Coverage</p>
+<h3 class="text-2xl font-bold mt-1 text-slate-900 dark:text-white">₹1.2 Cr</h3>
+</div>
+<!-- Recommended Health -->
+<div class="bg-white dark:bg-slate-card p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">health_and_safety</span>
+</div>
+<span class="text-[10px] font-bold text-slate-500 bg-slate-500/10 px-2 py-1 rounded-full">Stable</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Recommended Health Coverage</p>
+<h3 class="text-2xl font-bold mt-1 text-slate-900 dark:text-white">₹25 Lakhs</h3>
+</div>
+<!-- Coverage Gap -->
+<div class="bg-white dark:bg-slate-card p-5 rounded-xl border border-warning-amber/30 dark:border-warning-amber/20 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-warning-amber/5 rounded-bl-full"></div>
+<div class="flex justify-between items-start mb-4 relative">
+<div class="p-2 bg-warning-amber/10 rounded-lg text-warning-amber">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<span class="text-[10px] font-bold text-warning-amber bg-warning-amber/10 px-2 py-1 rounded-full">High Exposure</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Current Coverage Gap</p>
+<h3 class="text-2xl font-bold mt-1 text-warning-amber">₹85 Lakhs</h3>
+</div>
+<!-- Sustainability Score -->
+<div class="bg-white dark:bg-slate-card p-5 rounded-xl border border-success-green/30 dark:border-success-green/20 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-success-green/10 rounded-lg text-success-green">
+<span class="material-symbols-outlined">speed</span>
+</div>
+<span class="text-[10px] font-bold text-success-green bg-success-green/10 px-2 py-1 rounded-full">Optimal Range</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Premium Sustainability Score</p>
+<h3 class="text-2xl font-bold mt-1 text-success-green">78<span class="text-sm font-medium text-slate-500">/100</span></h3>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Analytics (60%) -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Protection Summary Bar Chart -->
+<div class="bg-white dark:bg-slate-card p-6 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Protection Summary</h2>
+<p class="text-xs text-slate-500 font-medium">Coverage adequacy across life stages</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-primary"></span>
+<span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Required</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-warning-amber"></span>
+<span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Actual</span>
+</div>
+</div>
+</div>
+<div class="h-[280px] flex items-end justify-between gap-4 px-2">
+<!-- Bar Groups -->
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+<div class="w-full flex justify-center items-end gap-1 h-full">
+<div class="w-4 chart-gradient-blue rounded-t-sm" style="height: 85%"></div>
+<div class="w-4 chart-gradient-amber rounded-t-sm" style="height: 40%"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Q1 2023</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+<div class="w-full flex justify-center items-end gap-1 h-full">
+<div class="w-4 chart-gradient-blue rounded-t-sm" style="height: 90%"></div>
+<div class="w-4 chart-gradient-amber rounded-t-sm" style="height: 42%"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Q2 2023</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+<div class="w-full flex justify-center items-end gap-1 h-full">
+<div class="w-4 chart-gradient-blue rounded-t-sm" style="height: 88%"></div>
+<div class="w-4 chart-gradient-amber rounded-t-sm" style="height: 38%"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Q3 2023</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+<div class="w-full flex justify-center items-end gap-1 h-full">
+<div class="w-4 chart-gradient-blue rounded-t-sm" style="height: 95%"></div>
+<div class="w-4 chart-gradient-amber rounded-t-sm" style="height: 45%"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Q4 2023</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+<div class="w-full flex justify-center items-end gap-1 h-full">
+<div class="w-4 chart-gradient-blue rounded-t-sm" style="height: 100%"></div>
+<div class="w-4 chart-gradient-amber rounded-t-sm" style="height: 50%"></div>
+</div>
+<span class="text-[10px] font-bold text-primary uppercase">Current</span>
+</div>
+</div>
+</div>
+<!-- Risk Profile / Exposure Donut Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white dark:bg-slate-card p-6 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Risk Exposure</h2>
+<div class="flex items-center gap-8">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-slate-100 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="65, 100" stroke-width="3"></circle>
+<circle class="stroke-warning-amber" cx="18" cy="18" fill="none" r="16" stroke-dasharray="25, 100" stroke-dashoffset="-65" stroke-width="3"></circle>
+<circle class="stroke-success-green" cx="18" cy="18" fill="none" r="16" stroke-dasharray="10, 100" stroke-dashoffset="-90" stroke-width="3"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center">
+<span class="text-xl font-bold dark:text-white">65%</span>
+<span class="text-[8px] uppercase tracking-widest text-slate-500 font-bold">In-Cover</span>
+</div>
+</div>
+<div class="space-y-2 flex-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-xs text-slate-500">Life Risk</span>
+</div>
+<span class="text-xs font-bold dark:text-slate-300">65%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-warning-amber"></div>
+<span class="text-xs text-slate-500">Critical Illness</span>
+</div>
+<span class="text-xs font-bold dark:text-slate-300">25%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-success-green"></div>
+<span class="text-xs text-slate-500">Liability</span>
+</div>
+<span class="text-xs font-bold dark:text-slate-300">10%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-primary p-6 rounded-xl shadow-lg shadow-primary/20 relative overflow-hidden group cursor-pointer">
+<div class="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-7xl">verified_user</span>
+</div>
+<h2 class="text-lg font-bold text-white mb-2">Policy Intelligence</h2>
+<p class="text-white/80 text-sm leading-relaxed mb-6">Our AI detected a <span class="font-bold text-white underline underline-offset-4">15% premium saving</span> opportunity on your current term policy with better accidental benefits.</p>
+<button class="bg-white text-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-slate-50 transition-all active:scale-95">
+                            View Comparison <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Recommendations & Adjustments (40%) -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Recommended Policy Types -->
+<div class="bg-white dark:bg-slate-card rounded-xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
+<div class="p-6 border-b border-slate-200 dark:border-white/5">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Top Recommendations</h2>
+<p class="text-xs text-slate-500 font-medium">Prioritized for your profile</p>
+</div>
+<div class="divide-y divide-slate-200 dark:divide-white/5">
+<!-- Rec Item -->
+<div class="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">umbrella</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white">Term Life Plus</h4>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Max Coverage</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<!-- Rec Item -->
+<div class="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-warning-amber/10 text-warning-amber flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">medical_services</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white">Critical Illness</h4>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Gap Filler</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<!-- Rec Item -->
+<div class="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-success-green/10 text-success-green flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">account_balance_wallet</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white">Wealth Shield</h4>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Tax Saver</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<div class="p-4 bg-slate-50 dark:bg-white/5 flex justify-center">
+<a class="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline underline-offset-4" href="#">Explore Marketplace</a>
+</div>
+</div>
+<!-- Scenario Adjustments -->
+<div class="bg-white dark:bg-slate-card p-6 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Scenario Modeling</h2>
+<p class="text-xs text-slate-500 mb-6 leading-relaxed">Adjust variables to see real-time impact on your coverage requirements.</p>
+<div class="space-y-6">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-slate-700 dark:text-slate-300">Annual Income</label>
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">₹18,00,000</span>
+</div>
+<input class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary" max="5000000" min="500000" step="100000" type="range" value="1800000"/>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-slate-700 dark:text-slate-300">Dependents</label>
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">03</span>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold border border-transparent hover:border-primary/30 transition-all">0</button>
+<button class="flex-1 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold border border-transparent hover:border-primary/30 transition-all">1</button>
+<button class="flex-1 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold border border-transparent hover:border-primary/30 transition-all">2</button>
+<button class="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-bold shadow-md shadow-primary/20">3+</button>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-slate-700 dark:text-slate-300">Retirement Age</label>
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">60 Years</span>
+</div>
+<input class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary" max="75" min="45" step="1" type="range" value="60"/>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-white/5">
+<div class="bg-primary/5 p-4 rounded-xl flex items-center gap-4 border border-primary/10">
+<div class="text-primary"><span class="material-symbols-outlined text-3xl">analytics</span></div>
+<div>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Calculated Need</p>
+<p class="text-xl font-bold text-slate-900 dark:text-white">₹2.45 Cr <span class="text-[10px] text-success-green">+₹0.8Cr delta</span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<footer class="mt-12 pt-8 border-t border-slate-200 dark:border-white/5 text-center">
+<p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">ShieldIQ Professional Insurance Intelligence Platform © 2024</p>
+<div class="flex justify-center gap-6 mt-4">
+<a class="text-xs text-slate-400 hover:text-primary" href="#">Data Security</a>
+<a class="text-xs text-slate-400 hover:text-primary" href="#">Compliance</a>
+<a class="text-xs text-slate-400 hover:text-primary" href="#">Support</a>
+</div>
+</footer>
+</main>
+</body></html>

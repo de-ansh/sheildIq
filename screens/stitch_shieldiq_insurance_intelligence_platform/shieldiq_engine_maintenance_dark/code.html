@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Engine Maintenance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .blueprint-grid {
+            background-image: radial-gradient(circle, rgba(19, 91, 236, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .blueprint-glow {
+            box-shadow: 0 0 40px -10px rgba(19, 91, 236, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
+<!-- Header / Nav -->
+<header class="w-full px-6 py-5 flex items-center justify-between border-b border-slate-200 dark:border-primary/10">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl">shield_with_heart</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">ShieldIQ</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-primary/10 transition-colors text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-primary/10 transition-colors text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow flex items-center justify-center px-6 blueprint-grid">
+<div class="max-w-2xl w-full flex flex-col items-center text-center py-12">
+<!-- Technical Blueprint Visual -->
+<div class="relative mb-12 group">
+<!-- Decorative background elements -->
+<div class="absolute inset-0 bg-primary/5 rounded-full blur-3xl scale-150 animate-pulse"></div>
+<div class="relative size-48 md:size-64 flex items-center justify-center border-2 border-primary/20 rounded-full blueprint-glow">
+<!-- Rotating inner gear -->
+<div class="absolute inset-4 border border-dashed border-primary/30 rounded-full animate-[spin_20s_linear_infinite]"></div>
+<!-- Central Icon -->
+<div class="z-10 bg-background-dark p-6 rounded-full border border-primary/40">
+<span class="material-symbols-outlined text-primary text-7xl md:text-8xl !font-light opacity-90">
+                            settings_suggest
+                        </span>
+</div>
+<!-- Small floating orbital icons -->
+<div class="absolute -top-4 right-8 bg-background-dark p-2 border border-primary/20 rounded-lg shadow-xl">
+<span class="material-symbols-outlined text-primary text-xl">analytics</span>
+</div>
+<div class="absolute -bottom-2 -left-4 bg-background-dark p-2 border border-primary/20 rounded-lg shadow-xl">
+<span class="material-symbols-outlined text-primary text-xl">database</span>
+</div>
+</div>
+</div>
+<!-- Maintenance Text -->
+<div class="space-y-6 max-w-lg">
+<div class="space-y-2">
+<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tracking-wider uppercase border border-primary/20">
+<span class="size-1.5 rounded-full bg-primary"></span>
+                        System Calibration In Progress
+                    </span>
+<h2 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                        Analytical Engine Maintenance
+                    </h2>
+</div>
+<p class="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                    We are currently calibrating the risk models to ensure maximum precision. Our systems are undergoing a scheduled architectural update.
+                </p>
+<!-- Status Card -->
+<div class="bg-white/50 dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-xl p-6 backdrop-blur-sm">
+<div class="flex items-center justify-center gap-3 text-slate-800 dark:text-slate-200">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<span class="font-semibold text-lg">Expected return: 10:00 AM UTC</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+<button class="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-lg shadow-primary/20">
+                        Check System Status
+                    </button>
+<a class="w-full sm:w-auto px-8 py-3 border border-slate-300 dark:border-primary/30 text-slate-700 dark:text-primary font-bold rounded-lg hover:bg-primary/5 transition-all text-center" href="#">
+                        View Incident Logs
+                    </a>
+</div>
+<div class="pt-8">
+<a class="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors text-sm font-medium underline underline-offset-4 flex items-center justify-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm">support_agent</span>
+                        Contact Support
+                    </a>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full px-10 py-8 border-t border-slate-200 dark:border-primary/10">
+<div class="max-w-[960px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex flex-wrap justify-center gap-8">
+<a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm transition-colors" href="#">API Documentation</a>
+</div>
+<p class="text-slate-500 dark:text-slate-500 text-sm">
+                © 2024 ShieldIQ Security Systems. All rights reserved.
+            </p>
+</div>
+</footer>
+</body></html>

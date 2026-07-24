@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Loading Dashboard Skeleton</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2424eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111121",
+                        "skeleton-bg": "#1e1e30",
+                        "skeleton-pulse": "#2d2d4a"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        @keyframes shimmer {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        .animate-skeleton {
+            animation: shimmer 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden">
+<div class="flex h-screen w-full">
+<!-- Sidebar Navigation -->
+<aside class="w-64 border-r border-white/10 flex flex-col p-6 gap-8 bg-background-light dark:bg-background-dark z-20">
+<!-- Brand Logo Skeleton -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center animate-skeleton">
+<span class="material-symbols-outlined text-primary text-2xl">shield</span>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-16 bg-skeleton-pulse/50 rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Nav Items Skeletons -->
+<nav class="flex flex-col gap-2">
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/20">
+<div class="w-5 h-5 bg-primary/40 rounded animate-skeleton"></div>
+<div class="h-4 w-20 bg-primary/40 rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+<div class="w-5 h-5 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+<div class="w-5 h-5 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-16 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+<div class="w-5 h-5 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-28 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+<div class="w-5 h-5 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-20 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+</nav>
+<div class="mt-auto flex flex-col gap-4">
+<div class="h-px w-full bg-white/5"></div>
+<div class="flex items-center gap-3 px-3 py-2.5">
+<div class="w-5 h-5 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-y-auto relative">
+<!-- Global Loading Progress Bar -->
+<div class="absolute top-0 left-0 right-0 h-1 bg-white/5 z-50">
+<div class="h-full bg-primary animate-skeleton shadow-[0_0_8px_rgba(36,36,235,0.6)]" style="width: 45%;"></div>
+</div>
+<!-- Top Header -->
+<header class="flex items-center justify-between px-8 py-4 border-b border-white/10 bg-background-light dark:bg-background-dark/50 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<div class="h-5 w-32 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-6">
+<!-- Search Bar Placeholder -->
+<div class="w-64 h-10 bg-skeleton-bg border border-white/5 rounded-lg flex items-center px-3 gap-2">
+<div class="w-4 h-4 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<!-- User Profile Placeholder -->
+<div class="flex items-center gap-3">
+<div class="h-8 w-8 rounded-full bg-skeleton-pulse animate-skeleton"></div>
+<div class="h-4 w-16 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+</div>
+</header>
+<div class="p-8 flex flex-col gap-8">
+<!-- Status/Engine Info -->
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-1.5">
+<div class="h-6 w-56 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-72 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+</div>
+<div class="h-4 w-12 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="w-full h-1.5 bg-skeleton-bg rounded-full overflow-hidden">
+<div class="h-full bg-primary/40 animate-skeleton" style="width: 45%;"></div>
+</div>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Metric Card 1 -->
+<div class="bg-skeleton-bg/50 border border-white/5 p-6 rounded-xl flex flex-col gap-4">
+<div class="h-4 w-20 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-8 w-32 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-12 bg-green-500/20 rounded animate-skeleton"></div>
+</div>
+<!-- Metric Card 2 (Critical Focus Pulse) -->
+<div class="bg-skeleton-bg/50 border border-primary/20 p-6 rounded-xl flex flex-col gap-4 relative overflow-hidden">
+<div class="h-4 w-16 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-8 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-16 bg-primary/20 rounded animate-skeleton"></div>
+</div>
+<!-- Metric Card 3 -->
+<div class="bg-skeleton-bg/50 border border-white/5 p-6 rounded-xl flex flex-col gap-4">
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-8 w-16 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-10 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<!-- Metric Card 4 -->
+<div class="bg-skeleton-bg/50 border border-white/5 p-6 rounded-xl flex flex-col gap-4">
+<div class="h-4 w-28 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-8 w-36 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-14 bg-green-500/20 rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Charts Area -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Main Time-Series Chart Area -->
+<div class="lg:col-span-2 bg-skeleton-bg/50 border border-white/5 rounded-xl p-6 flex flex-col gap-6">
+<div class="flex justify-between items-center">
+<div class="h-5 w-40 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-8 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="h-64 w-full relative">
+<!-- Simulated Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between py-2">
+<div class="h-px w-full bg-white/5"></div>
+<div class="h-px w-full bg-white/5"></div>
+<div class="h-px w-full bg-white/5"></div>
+<div class="h-px w-full bg-white/5"></div>
+<div class="h-px w-full bg-white/5"></div>
+</div>
+<!-- SVG Skeleton Path for Chart -->
+<svg class="absolute inset-0 w-full h-full opacity-20" preserveaspectratio="none">
+<path class="text-skeleton-pulse animate-skeleton" d="M0 180 Q 50 150 100 170 T 200 120 T 300 140 T 400 60 T 500 100 T 600 40 T 700 80 T 800 20" fill="none" stroke="currentColor" stroke-width="4"></path>
+</svg>
+</div>
+<div class="flex justify-between">
+<div class="h-3 w-8 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+<div class="h-3 w-8 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+<div class="h-3 w-8 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+<div class="h-3 w-8 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+<div class="h-3 w-8 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Distribution Chart Area -->
+<div class="bg-skeleton-bg/50 border border-white/5 rounded-xl p-6 flex flex-col gap-6">
+<div class="h-5 w-32 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="flex-1 flex items-end justify-center gap-6 pb-4">
+<div class="w-8 bg-skeleton-pulse rounded-t animate-skeleton" style="height: 40%;"></div>
+<div class="w-8 bg-primary/30 rounded-t animate-skeleton" style="height: 75%;"></div>
+<div class="w-8 bg-skeleton-pulse rounded-t animate-skeleton" style="height: 25%;"></div>
+<div class="w-8 bg-skeleton-pulse rounded-t animate-skeleton" style="height: 60%;"></div>
+<div class="w-8 bg-skeleton-pulse rounded-t animate-skeleton" style="height: 45%;"></div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary/40 animate-skeleton"></div>
+<div class="h-3 w-20 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-skeleton-pulse/40 animate-skeleton"></div>
+<div class="h-3 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity / Data Table Area -->
+<div class="bg-skeleton-bg/50 border border-white/5 rounded-xl p-6 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div class="h-5 w-40 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-4 w-20 bg-primary/20 rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Table Row Skeletons -->
+<div class="flex items-center justify-between py-3 border-b border-white/5">
+<div class="flex items-center gap-4">
+<div class="h-8 w-8 rounded bg-skeleton-pulse animate-skeleton"></div>
+<div class="flex flex-col gap-1.5">
+<div class="h-4 w-32 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-20 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+</div>
+</div>
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-6 w-16 bg-skeleton-pulse/40 rounded-full animate-skeleton"></div>
+</div>
+<div class="flex items-center justify-between py-3 border-b border-white/5">
+<div class="flex items-center gap-4">
+<div class="h-8 w-8 rounded bg-skeleton-pulse animate-skeleton"></div>
+<div class="flex flex-col gap-1.5">
+<div class="h-4 w-48 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-24 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+</div>
+</div>
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-6 w-16 bg-skeleton-pulse/40 rounded-full animate-skeleton"></div>
+</div>
+<div class="flex items-center justify-between py-3">
+<div class="flex items-center gap-4">
+<div class="h-8 w-8 rounded bg-skeleton-pulse animate-skeleton"></div>
+<div class="flex flex-col gap-1.5">
+<div class="h-4 w-40 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-3 w-16 bg-skeleton-pulse/40 rounded animate-skeleton"></div>
+</div>
+</div>
+<div class="h-4 w-24 bg-skeleton-pulse rounded animate-skeleton"></div>
+<div class="h-6 w-16 bg-skeleton-pulse/40 rounded-full animate-skeleton"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Hidden visual assets for context -->
+<div class="hidden">
+<img data-alt="ShieldIQ dashboard main layout structure visualization" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6zXRpOhLNLh484gp2PZdG6JsXBGU30gDJENIrfwyO_X7FEcAHEfeVEn18XjMNn3ABJwFeaglNLrG7cqADNSmsKwGR98UlQkckOJegOoggv2JBvXBX3u5rk7h1OJvO-srd4tRC18TE7Adi36Jx3t1PQsARdC0r1mgfz8SgwsB1zC_hWtIgmNXvNG9gXzS4a2UEODIV_3eXeQiwBkqdUO5rDyp2uxznlY3xiXfm4th1L-n8qXthqtSPgGBH9E7N085WZmkfrJdwFiA"/>
+<img data-alt="Company brand icon placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJOhsGqnIPjR9UkU3bo_w7hITZ7ptutb1bdZX7dkn3xe4I6CrVVmWgGW_vSkRGExXZkpdFBLvkgRGbemQe9lwwKwOIgiOmhH80rWqO9llL-nSaaff2kWTLTXPyB3I5kNx4_zJ6vcT6o48LQiXmuYYZDxfBt4d0iT7ZB-kViE9t-YMM1vbyn2JVOARxBfJ0yZPww2uehfbJxD0Tj5XpDm6BTugTdrNHhi3JZ-hmj6JnDejsbfzZlnfmJ60y6uQ1cnASs_LwCpIkJlg"/>
+</div>
+</body></html>

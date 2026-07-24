@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Life Calculator - Professional Financial Planning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "slate-custom": "#616e89",
+                        "dark-custom": "#111318"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #2463eb;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-dark-custom antialiased">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e5e7eb] bg-white px-6 md:px-20 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="size-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-dark-custom text-xl font-bold leading-tight tracking-tight">ShieldIQ</h2>
+</div>
+<div class="hidden md:flex flex-1 justify-center gap-8">
+<nav class="flex items-center gap-8">
+<a class="text-dark-custom text-sm font-semibold hover:text-primary transition-colors" href="#">Calculators</a>
+<a class="text-dark-custom text-sm font-semibold hover:text-primary transition-colors" href="#">Products</a>
+<a class="text-dark-custom text-sm font-semibold hover:text-primary transition-colors" href="#">Resources</a>
+<a class="text-dark-custom text-sm font-semibold hover:text-primary transition-colors" href="#">Support</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-blue-700 transition-all">
+                    Get a Quote
+                </button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200" data-alt="User profile avatar of a professional man" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDIWmu4BVLh2QoekE6TwQ56l_scb_O6V5Czh15_eVmfl9QPrCAhuyF8Mswb2TMI5ZjRRA6r0aCnmZq1MjgR_koeHB8aBiBfVQ15MZ55_nglLblZAouB03LKYh2uftF1m8TF1RqGQv4GHYiI5qDWOktMwhRcv6eErep3YERxEyNlZ-ieHplp_d6xgpZ6XQRnfaoFArZoE1h1ehr54SCA7gjYJEE-swGPEDMpp6N_WVAOYKpgdWnBiPM1-JGkWxEy4geA6srx57B6RRE");'></div>
+</div>
+</header>
+<main class="mx-auto max-w-[1280px] w-full px-6 md:px-20 py-8">
+<!-- Header Section -->
+<div class="mb-8">
+<h1 class="text-dark-custom text-4xl font-black leading-tight tracking-tight mb-2">Life Insurance Calculator</h1>
+<p class="text-slate-custom text-lg max-w-2xl">Precision financial planning using ShieldIQ's proprietary continuity algorithm for your family's future security.</p>
+</div>
+<!-- Two-Column Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Column: Financial Inputs -->
+<div class="lg:col-span-5 space-y-6">
+<div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h2 class="text-xl font-bold text-dark-custom">Financial Inputs</h2>
+</div>
+<!-- Input Groups -->
+<div class="space-y-8">
+<!-- Annual Income -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-bold text-dark-custom">Annual Income (Gross)</label>
+<span class="text-primary font-mono font-bold">$125,000</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb" max="500000" min="20000" step="5000" type="range" value="125000"/>
+<div class="flex justify-between text-[10px] text-slate-custom uppercase tracking-wider font-bold">
+<span>$20k</span>
+<span>$500k</span>
+</div>
+</div>
+<!-- Years to Retirement -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-bold text-dark-custom">Years to Retirement</label>
+<span class="text-primary font-mono font-bold">25 Years</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb" max="50" min="1" step="1" type="range" value="25"/>
+</div>
+<!-- Inflation Rate -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-bold text-dark-custom">Inflation Rate</label>
+<span class="text-primary font-mono font-bold">6.0%</span>
+</div>
+<input class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb" max="15" min="0" step="0.5" type="range" value="6.0"/>
+<p class="text-[11px] text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 italic">Adjusted for current market volatility.</p>
+</div>
+<!-- Liabilities Grid -->
+<div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+<div class="space-y-2">
+<label class="text-xs font-bold text-slate-custom uppercase">Total Liabilities</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-slate-custom text-sm">$</span>
+<input class="w-full pl-6 pr-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:ring-primary focus:border-primary" type="text" value="450,000"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-slate-custom uppercase">Education Fund</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-slate-custom text-sm">$</span>
+<input class="w-full pl-6 pr-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:ring-primary focus:border-primary" type="text" value="180,000"/>
+</div>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<label class="text-xs font-bold text-slate-custom uppercase">Current Savings &amp; Assets</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-slate-custom text-sm">$</span>
+<input class="w-full pl-6 pr-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:ring-primary focus:border-primary" type="text" value="95,000"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Results Dashboard -->
+<div class="lg:col-span-7 space-y-6">
+<!-- Hero Result Card -->
+<div class="bg-white rounded-xl border border-gray-200 p-8 shadow-md border-t-4 border-t-primary">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h3 class="text-slate-custom text-sm font-bold uppercase tracking-widest mb-1">Required Coverage</h3>
+<div class="text-primary font-mono text-5xl md:text-6xl font-bold tracking-tight">$2,845,000</div>
+</div>
+<div class="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-full text-sm font-bold">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                Real-time Estimate
+                            </div>
+</div>
+<p class="mt-4 text-slate-custom text-sm leading-relaxed">Based on your 25-year income trajectory adjusted for 6% annual inflation and immediate liability payoff.</p>
+</div>
+<!-- Visualizations Card -->
+<div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+<h4 class="text-dark-custom text-lg font-bold mb-6">Income Continuity Graph</h4>
+<!-- Pseudo-Chart Area -->
+<div class="relative h-48 w-full mb-8">
+<!-- Background Grid -->
+<div class="absolute inset-0 flex flex-col justify-between">
+<div class="border-b border-gray-100 w-full h-0"></div>
+<div class="border-b border-gray-100 w-full h-0"></div>
+<div class="border-b border-gray-100 w-full h-0"></div>
+<div class="border-b border-gray-200 w-full h-0"></div>
+</div>
+<!-- Line Graph SVG Overlay -->
+<svg class="absolute inset-0 w-full h-full overflow-visible" viewbox="0 0 500 150">
+<path d="M0,140 Q100,120 200,80 T500,20" fill="none" stroke="#2463eb" stroke-linecap="round" stroke-width="4"></path>
+<circle cx="500" cy="20" fill="#2463eb" r="5"></circle>
+<path d="M0,140 Q100,135 200,120 T500,110" fill="none" stroke="#94a3b8" stroke-dasharray="4" stroke-width="2"></path>
+</svg>
+<div class="absolute bottom-0 left-0 text-[10px] font-bold text-slate-custom">Current</div>
+<div class="absolute bottom-0 right-0 text-[10px] font-bold text-slate-custom">Retirement (25y)</div>
+</div>
+<!-- Coverage Gap Analysis -->
+<div class="space-y-4">
+<h4 class="text-dark-custom text-sm font-bold uppercase tracking-wider">Coverage Gap Analysis</h4>
+<div class="space-y-4">
+<!-- Target Bar -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold">
+<span>Total Target Coverage</span>
+<span class="font-mono">$2.84M</span>
+</div>
+<div class="h-3 w-full bg-primary/20 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-full"></div>
+</div>
+</div>
+<!-- Existing Assets Bar -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold">
+<span>Current Savings &amp; Assets</span>
+<span class="font-mono text-slate-custom">$95K</span>
+</div>
+<div class="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-slate-400 w-[8%]"></div>
+</div>
+</div>
+</div>
+<div class="bg-red-50 border border-red-100 p-3 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-red-500">warning</span>
+<span class="text-xs font-bold text-red-700">96.7% Coverage Gap Identified</span>
+</div>
+</div>
+</div>
+<!-- AI Analysis Card -->
+<div class="bg-slate-50 rounded-xl border border-gray-200 p-6">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h4 class="text-dark-custom font-bold">ShieldIQ AI Analysis</h4>
+</div>
+<ul class="space-y-3 text-sm text-slate-custom">
+<li class="flex gap-3">
+<span class="text-primary font-bold">•</span>
+<span><strong class="text-dark-custom">Inflation Impact:</strong> The selected 6% rate significantly erodes purchasing power over 25 years. We recommend a policy that includes an annual benefit adjustment rider.</span>
+</li>
+<li class="flex gap-3">
+<span class="text-primary font-bold">•</span>
+<span><strong class="text-dark-custom">Liability Buffer:</strong> Your $450k mortgage represents the immediate primary risk. Term coverage of at least 20 years is advised to bridge this gap.</span>
+</li>
+<li class="flex gap-3">
+<span class="text-primary font-bold">•</span>
+<span><strong class="text-dark-custom">Education Reserve:</strong> The $180k allocation accounts for 4 years of tuition at today's rates. ShieldIQ suggest indexing this value to higher education inflation (approx 8%).</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Footer Call to Action -->
+<div class="mt-12 flex flex-col md:flex-row items-center justify-between p-8 bg-dark-custom rounded-2xl text-white">
+<div class="mb-6 md:mb-0">
+<h3 class="text-2xl font-bold mb-2">Ready to secure this coverage?</h3>
+<p class="text-slate-400">Lock in your personalized rate based on these calculations.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-white text-dark-custom font-bold rounded-lg hover:bg-gray-100 transition-colors">Download PDF</button>
+<button class="px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">Connect with Advisor</button>
+</div>
+</div>
+</main>
+<footer class="bg-white border-t border-gray-200 py-12 px-6 md:px-20 mt-auto">
+<div class="max-w-[1280px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+<div class="col-span-2">
+<div class="flex items-center gap-3 mb-6">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-dark-custom text-lg font-bold">ShieldIQ</h2>
+</div>
+<p class="text-slate-custom text-sm max-w-xs leading-relaxed">Professional financial instruments designed for modern families. Regulated insurance advisory services across 50 states.</p>
+</div>
+<div>
+<h4 class="text-dark-custom font-bold mb-4">Product</h4>
+<ul class="space-y-2 text-sm text-slate-custom">
+<li><a class="hover:text-primary" href="#">Term Life</a></li>
+<li><a class="hover:text-primary" href="#">Whole Life</a></li>
+<li><a class="hover:text-primary" href="#">Disability</a></li>
+<li><a class="hover:text-primary" href="#">Risk Assessment</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-dark-custom font-bold mb-4">Legal</h4>
+<ul class="space-y-2 text-sm text-slate-custom">
+<li><a class="hover:text-primary" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary" href="#">Disclosures</a></li>
+<li><a class="hover:text-primary" href="#">Security</a></li>
+</ul>
+</div>
+</div>
+<div class="max-w-[1280px] mx-auto mt-12 pt-8 border-t border-gray-100 text-center text-xs text-slate-custom font-medium">
+                © 2024 ShieldIQ Financial Systems Inc. All rights reserved. Calculations are estimates and not a contract of insurance.
+            </div>
+</footer>
+</div>
+</body></html>

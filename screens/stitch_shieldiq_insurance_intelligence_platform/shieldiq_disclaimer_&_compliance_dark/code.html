@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Disclaimer &amp; Compliance Dark</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f172a",
+                        "slate-card": "#1e293b",
+                        "slate-border": "#334155",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; color: black; }
+            .print-invert { filter: invert(1); }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-hidden h-screen flex flex-col">
+<!-- Reading Progress Bar -->
+<div class="fixed top-0 left-0 w-full h-1 z-50 bg-slate-800">
+<div class="h-full bg-primary" style="width: 35%;"></div>
+</div>
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-border bg-white dark:bg-background-dark px-6 py-3 z-40">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">shield</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight">ShieldIQ</h1>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">Reports</a>
+<a class="text-sm font-medium text-primary dark:text-white" href="#">Compliance</a>
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="bg-slate-100 dark:bg-slate-card border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search legal clauses..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white text-sm font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Print PDF</span>
+</button>
+<div class="size-9 rounded-full bg-gradient-to-tr from-primary to-blue-400 p-0.5">
+<div class="w-full h-full rounded-full bg-background-dark flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px] text-white">person</span>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sticky Sidebar / Table of Contents -->
+<aside class="w-80 border-r border-slate-200 dark:border-slate-border bg-slate-50 dark:bg-background-dark p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+<div>
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Table of Contents</h3>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-card transition-all" href="#intro">
+<span class="material-symbols-outlined text-[20px]">info</span>
+<span class="text-sm font-medium">Introduction</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 transition-all" href="#data-sourcing">
+<span class="material-symbols-outlined text-[20px] fill-current">database</span>
+<span class="text-sm font-semibold">Data Sourcing</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-card transition-all" href="#accuracy">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+<span class="text-sm font-medium">Accuracy Limits</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-card transition-all" href="#regulatory">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+<span class="text-sm font-medium">Regulatory Standards</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-card transition-all" href="#liability">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="text-sm font-medium">Limitation of Liability</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-card transition-all" href="#governing">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+<span class="text-sm font-medium">Governing Law</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto border-t border-slate-200 dark:border-slate-border pt-6">
+<div class="bg-primary/5 rounded-xl p-4 border border-primary/10">
+<div class="flex justify-between items-center mb-2">
+<p class="text-xs font-semibold text-primary uppercase">Reading Progress</p>
+<p class="text-xs font-bold text-primary">35%</p>
+</div>
+<div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 35%;"></div>
+</div>
+<p class="mt-3 text-[11px] text-slate-400 leading-tight">Last accessed from 192.168.1.45</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-background-dark">
+<div class="max-w-4xl mx-auto px-10 py-16">
+<header class="mb-12">
+<div class="flex items-center gap-2 text-primary font-bold text-sm mb-4">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                        OFFICIAL COMPLIANCE DOCUMENT
+                    </div>
+<h2 class="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Disclaimer &amp; Compliance Disclosure</h2>
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-slate-500 dark:text-slate-400 text-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span>Last updated: Oct 24, 2023</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Version 2.4.0-Dark</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span>Secure ID: #SX-9921-A</span>
+</div>
+</div>
+</header>
+<section class="mb-16" id="intro">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-card flex items-center justify-center text-primary text-base">01</span>
+                        Introduction
+                    </h3>
+<div class="prose prose-slate dark:prose-invert max-w-none space-y-4 text-slate-600 dark:text-slate-300 leading-relaxed">
+<p>ShieldIQ operates as a high-integrity data aggregation and analytical platform. This document outlines the legal framework, compliance protocols, and data handling limitations governing your use of our services. By accessing or utilizing ShieldIQ, you acknowledge and agree to the following clauses without reservation.</p>
+<p>This disclosure is dynamic and may be updated to reflect evolving regulatory landscapes including, but not limited to, GDPR, CCPA, and SEC Fintech regulations.</p>
+</div>
+</section>
+<section class="mb-16" id="data-sourcing">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-card flex items-center justify-center text-primary text-base">02</span>
+                        Data Sourcing &amp; Integrity
+                    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="p-5 rounded-xl border border-slate-200 dark:border-slate-border bg-slate-50 dark:bg-slate-card/30">
+<h4 class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">cloud_sync</span>
+                                Third-Party Aggregation
+                            </h4>
+<p class="text-sm text-slate-500 dark:text-slate-400">Data is gathered from over 450 verified financial endpoints and public governmental ledgers using proprietary extraction logic.</p>
+</div>
+<div class="p-5 rounded-xl border border-slate-200 dark:border-slate-border bg-slate-50 dark:bg-slate-card/30">
+<h4 class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">memory</span>
+                                Algorithmic Processing
+                            </h4>
+<p class="text-sm text-slate-500 dark:text-slate-400">Raw data undergoes heuristic normalization to ensure cross-platform compatibility and consistency across all ShieldIQ modules.</p>
+</div>
+</div>
+<ul class="space-y-3 list-none pl-0">
+<li class="flex gap-3 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<span>ShieldIQ does not claim ownership over raw data provided by external APIs.</span>
+</li>
+<li class="flex gap-3 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+<span>All sourcing protocols comply with ISO/IEC 27001 data security standards.</span>
+</li>
+</ul>
+</section>
+<section class="mb-16" id="accuracy">
+<div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
+<h3 class="text-2xl font-bold text-red-500 mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined">report_problem</span>
+                            Accuracy Limits &amp; Latency
+                        </h3>
+<p class="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
+                            Users must acknowledge that real-time data streaming is subject to "Network Latency Fluctuations." While ShieldIQ maintains a 99.9% uptime for core services, external data provider lag can reach up to 150ms during peak trading or reporting hours.
+                        </p>
+<div class="bg-white/50 dark:bg-black/20 p-4 rounded-lg font-mono text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-border">
+                            [LATENCY_DISCLOSURE_ID: SIQ-LT-99] The "Confidence Index" score provided per data point is an estimate and not a guarantee of absolute factual precision.
+                        </div>
+</div>
+</section>
+<section class="mb-16" id="regulatory">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-card flex items-center justify-center text-primary text-base">03</span>
+                        Regulatory Standards
+                    </h3>
+<p class="text-slate-600 dark:text-slate-300 mb-6">
+                        ShieldIQ operates within the strictly defined parameters of international digital governance. Below are the specific regulatory identifiers our platform adheres to:
+                    </p>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-border group hover:bg-slate-50 dark:hover:bg-slate-card/20 transition-all">
+<div>
+<h5 class="font-bold text-slate-900 dark:text-white">General Data Protection Regulation</h5>
+<p class="text-xs text-slate-500 font-mono mt-1">EU REGULATION 2016/679</p>
+</div>
+<span class="material-symbols-outlined text-green-500">verified</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-border group hover:bg-slate-50 dark:hover:bg-slate-card/20 transition-all">
+<div>
+<h5 class="font-bold text-slate-900 dark:text-white">California Consumer Privacy Act</h5>
+<p class="text-xs text-slate-500 font-mono mt-1">CCPA-2018-TITLE-1.81.5</p>
+</div>
+<span class="material-symbols-outlined text-green-500">verified</span>
+</div>
+<div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-border group hover:bg-slate-50 dark:hover:bg-slate-card/20 transition-all">
+<div>
+<h5 class="font-bold text-slate-900 dark:text-white">SOC 2 Type II Compliance</h5>
+<p class="text-xs text-slate-500 font-mono mt-1">ID: SOC2-SIQ-AUDIT-2023</p>
+</div>
+<span class="material-symbols-outlined text-green-500">verified</span>
+</div>
+</div>
+</section>
+<section class="mb-16" id="liability">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-card flex items-center justify-center text-primary text-base">04</span>
+                        Limitation of Liability
+                    </h3>
+<div class="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
+<p class="uppercase font-bold text-xs tracking-widest text-slate-400 mb-4">LEGAL NOTICE: READ CAREFULLY</p>
+<p>In no event shall ShieldIQ, its directors, employees, or partners be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the service; (ii) any conduct or content of any third party on the service.</p>
+<div class="mt-8 p-6 rounded-xl bg-slate-100 dark:bg-slate-card/50 border-l-4 border-primary">
+<p class="italic text-sm leading-relaxed">
+                                "The platform is provided on an 'AS IS' and 'AS AVAILABLE' basis. ShieldIQ makes no representations or warranties of any kind, express or implied, as to the operation of their services, or the information, content or materials included therein."
+                            </p>
+</div>
+</div>
+</section>
+<div class="py-12 border-t border-slate-200 dark:border-slate-border mt-12 flex flex-col items-center text-center">
+<div class="size-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6">
+<span class="material-symbols-outlined text-[32px]">assignment_turned_in</span>
+</div>
+<h4 class="text-xl font-bold mb-2">You have reached the end.</h4>
+<p class="text-slate-500 dark:text-slate-400 max-w-md mb-8">Please ensure you have read all sections before providing your final acknowledgement.</p>
+<button class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-10 rounded-xl shadow-lg shadow-primary/20 transition-all transform hover:scale-105 active:scale-95">
+                        I Fully Acknowledge &amp; Agree
+                    </button>
+</div>
+</div>
+</main>
+</div>
+<!-- Fixed Bottom Status Bar -->
+<footer class="no-print h-14 bg-white dark:bg-slate-card border-t border-slate-200 dark:border-slate-border px-6 flex items-center justify-between z-40">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-green-500 animate-pulse"></div>
+<span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Status: Acknowledged</span>
+</div>
+<div class="h-4 w-px bg-slate-200 dark:bg-slate-border"></div>
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="text-xs font-medium">Timestamp: 2023-10-24 14:32:01 UTC</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[16px]">fingerprint</span>
+<span class="text-xs font-mono">HASH: 8f2b-e91a-7c3d-00ff</span>
+</div>
+<button class="text-xs font-bold text-primary hover:underline">View History</button>
+</div>
+</footer>
+</body></html>

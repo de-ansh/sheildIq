@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Policy Comparison | Dark Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "neutral-slate": "#1e293b",
+                        "border-slate": "#334155",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .mono-data { font-family: 'JetBrains Mono', monospace; }
+        .clinical-border { border-color: rgba(51, 65, 85, 0.5); }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-200 antialiased overflow-x-hidden">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-slate/50 px-10 py-3 bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-white text-xl font-black leading-tight tracking-[-0.015em]">ShieldIQ</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64 hidden md:flex">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-neutral-slate/50 border border-border-slate/50">
+<div class="text-slate-400 flex items-center justify-center pl-4 rounded-l-lg" data-icon="search">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-transparent placeholder:text-slate-500 px-4 pl-2 text-sm font-normal" placeholder="Search policies..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<nav class="hidden lg:flex items-center gap-9">
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-white text-sm font-medium border-b-2 border-primary pb-1" href="#">Policy Analysis</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Risk Profile</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Claims</a>
+</nav>
+<div class="flex gap-3">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-neutral-slate/50 border border-border-slate/50 text-white hover:bg-neutral-slate">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-neutral-slate/50 border border-border-slate/50 text-white hover:bg-neutral-slate">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile picture of an analyst" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDWF1uyT4k33bw89YW5IJ0yZhqO3UPnxksjxDCCa0A9MdLDsbUAa-tswo71QIFRrni_5RwvMoVAPb5o0g0GfFqHgkZ00Vu3Ib8yb_QQJFusQRP4A8jG2EGTLf6xKskduZf3dh1OOGc8TeivVyc7ft_bZTOdiKYedXEMeiqqHOChn2QomEgtB7rQ1PeLhZzujICmc-wxS2AHwibmuk_57S_e6VZf1t7wnPSu4iFywCiYRbrqauPzbFttrxifHawVQdfTz3Y_Pm6OU-M");'></div>
+</div>
+</div>
+</header>
+<main class="flex flex-col max-w-[1280px] mx-auto w-full px-6 py-8">
+<!-- Page Header -->
+<div class="flex flex-wrap justify-between items-end gap-4 mb-8">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary font-mono text-sm uppercase tracking-widest font-bold">
+<span class="material-symbols-outlined text-[18px]">analytics</span>
+                        Quantitative Assessment
+                    </div>
+<h1 class="text-white text-4xl font-black tracking-tight">Policy Comparison</h1>
+<p class="text-slate-400 text-lg max-w-2xl">Clinical assessment of risk fit and claims reliability. No jargon, just deterministic data.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center rounded-lg h-11 px-5 bg-neutral-slate/50 border border-border-slate text-white text-sm font-bold hover:bg-neutral-slate transition-all">
+<span class="material-symbols-outlined mr-2 text-[20px]">download</span>
+                        Export Technical Report
+                    </button>
+<button class="flex items-center justify-center rounded-lg h-11 px-5 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined mr-2 text-[20px]">compare_arrows</span>
+                        Update Constraints
+                    </button>
+</div>
+</div>
+<!-- Dashboard Stats Summary -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-neutral-slate/30 border border-border-slate/50">
+<p class="text-slate-400 text-sm font-medium">Average Risk Fit</p>
+<div class="flex items-baseline gap-2">
+<p class="text-white text-3xl font-mono font-bold">84.2%</p>
+<span class="text-emerald-500 text-xs font-mono font-bold flex items-center bg-emerald-500/10 px-1.5 py-0.5 rounded">+2.4%</span>
+</div>
+<div class="w-full h-1 bg-slate-800 rounded-full mt-2">
+<div class="h-full bg-primary rounded-full" style="width: 84.2%"></div>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-neutral-slate/30 border border-border-slate/50">
+<p class="text-slate-400 text-sm font-medium">Market Reliability Benchmark</p>
+<div class="flex items-baseline gap-2">
+<p class="text-white text-3xl font-mono font-bold">92.1%</p>
+<span class="text-emerald-500 text-xs font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">STABLE</span>
+</div>
+<div class="w-full h-1 bg-slate-800 rounded-full mt-2">
+<div class="h-full bg-emerald-500 rounded-full" style="width: 92.1%"></div>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-neutral-slate/30 border border-border-slate/50">
+<p class="text-slate-400 text-sm font-medium">Underwriting Delta</p>
+<div class="flex items-baseline gap-2">
+<p class="text-white text-3xl font-mono font-bold">-0.14</p>
+<span class="text-orange-500 text-xs font-mono font-bold bg-orange-500/10 px-1.5 py-0.5 rounded">LOW VARIANCE</span>
+</div>
+<div class="w-full h-1 bg-slate-800 rounded-full mt-2">
+<div class="h-full bg-orange-500 rounded-full" style="width: 30%"></div>
+</div>
+</div>
+</div>
+<!-- Comparison Tabs -->
+<div class="flex border-b border-border-slate/50 gap-8 mb-6">
+<button class="border-b-2 border-primary text-white pb-3 px-1 text-sm font-bold tracking-wide">COMPREHENSIVE VIEW</button>
+<button class="border-b-2 border-transparent text-slate-500 pb-3 px-1 text-sm font-bold tracking-wide hover:text-slate-300">EXPOSURE ANALYSIS</button>
+<button class="border-b-2 border-transparent text-slate-500 pb-3 px-1 text-sm font-bold tracking-wide hover:text-slate-300">CLAIMS HISTORY</button>
+</div>
+<!-- Clinical Table UI -->
+<div class="bg-neutral-slate/20 border border-border-slate rounded-xl overflow-hidden shadow-2xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-neutral-slate/60 border-b border-border-slate">
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Policy Identifier</th>
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Risk Fit Score</th>
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Premium (p.a.)</th>
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest">CSR Reliability</th>
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Deductible</th>
+<th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Technical Audit</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-slate/50">
+<!-- Policy Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/20 flex items-center justify-center text-primary font-mono font-bold">SG</div>
+<div>
+<p class="text-white font-bold">SecureGuard Pro v4</p>
+<p class="text-xs text-slate-500 mono-data">ID: 4892-UX-01</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<div class="flex flex-col items-center gap-1">
+<span class="text-primary font-mono font-bold text-lg">98.4%</span>
+<div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 98.4%"></div>
+</div>
+</div>
+</td>
+<td class="p-4 font-mono text-white">$1,240.00</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+<span class="mono-data text-white font-bold">99.1%</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-xs font-mono font-bold px-2 py-1 rounded bg-slate-800 text-slate-400 border border-border-slate">HIGH_RETENTION</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-primary hover:text-white font-bold text-sm flex items-center justify-end gap-1 ml-auto group-hover:underline">
+                                        Expand Analysis
+                                        <span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+<!-- Expanded Section 1 (Simulated) -->
+<tr class="bg-neutral-slate/40 border-l-4 border-l-primary">
+<td class="p-6" colspan="6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-primary font-bold text-sm">
+<span class="material-symbols-outlined text-[18px]">balance</span>
+                                                TRADE-OFF EXPLANATIONS
+                                            </div>
+<div class="p-4 bg-background-dark/50 rounded-lg border border-border-slate/30 text-sm leading-relaxed text-slate-300">
+<p>Premium is <span class="text-white font-mono">12%</span> above market average. Delta is justified by the <span class="text-white font-mono">99.1%</span> CSR. Optimal for organizations prioritizing cash flow predictability over monthly cost reduction.</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-2 text-emerald-500 font-bold text-sm">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+                                                AI EXCLUSION ANALYSIS
+                                            </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div class="flex items-start gap-3 p-3 bg-emerald-500/5 rounded border border-emerald-500/20">
+<span class="material-symbols-outlined text-emerald-500">check_circle</span>
+<div>
+<p class="text-white text-xs font-bold">Cyber Extortion</p>
+<p class="text-[10px] text-slate-500">Explicitly covered up to $2M</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 bg-orange-500/5 rounded border border-orange-500/20">
+<span class="material-symbols-outlined text-orange-500">warning</span>
+<div>
+<p class="text-white text-xs font-bold">State Actor Clauses</p>
+<p class="text-[10px] text-slate-500">Partial exclusion if unpatched</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Policy Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700/50 flex items-center justify-center text-slate-400 font-mono font-bold">TS</div>
+<div>
+<p class="text-white font-bold">Titan Shield (Standard)</p>
+<p class="text-xs text-slate-500 mono-data">ID: 1022-XG-09</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<div class="flex flex-col items-center gap-1">
+<span class="text-slate-400 font-mono font-bold text-lg">92.0%</span>
+<div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-slate-500" style="width: 92.0%"></div>
+</div>
+</div>
+</td>
+<td class="p-4 font-mono text-white">$1,100.00</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+<span class="mono-data text-white font-bold">96.4%</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-xs font-mono font-bold px-2 py-1 rounded bg-slate-800 text-slate-400 border border-border-slate">MED_RETENTION</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-slate-500 hover:text-white font-bold text-sm flex items-center justify-end gap-1 ml-auto group-hover:underline transition-colors">
+                                        Expand Analysis
+                                        <span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+<!-- Policy Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-700/50 flex items-center justify-center text-slate-400 font-mono font-bold">AP</div>
+<div>
+<p class="text-white font-bold">Aegis Prime Plus</p>
+<p class="text-xs text-slate-500 mono-data">ID: 9921-BA-03</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<div class="flex flex-col items-center gap-1">
+<span class="text-slate-400 font-mono font-bold text-lg">85.5%</span>
+<div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-slate-500" style="width: 85.5%"></div>
+</div>
+</div>
+</td>
+<td class="p-4 font-mono text-white">$980.00</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="flex h-2 w-2 rounded-full bg-orange-500"></span>
+<span class="mono-data text-white font-bold">94.0%</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-xs font-mono font-bold px-2 py-1 rounded bg-slate-800 text-slate-400 border border-border-slate">LOW_RETENTION</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-slate-500 hover:text-white font-bold text-sm flex items-center justify-end gap-1 ml-auto group-hover:underline transition-colors">
+                                        Expand Analysis
+                                        <span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Trade-off Map (Visual Data Density) -->
+<div class="mt-12 grid grid-cols-1 lg:grid-cols-4 gap-6">
+<div class="lg:col-span-3 bg-neutral-slate/20 border border-border-slate rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+<span class="material-symbols-outlined text-primary">scatter_plot</span>
+                            Risk-to-Premium Density Map
+                        </h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="h-2 w-2 rounded-full bg-primary"></span>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Optimal Fit</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="h-2 w-2 rounded-full bg-slate-600"></span>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Alternative</span>
+</div>
+</div>
+</div>
+<div class="relative h-64 w-full bg-background-dark/50 rounded-lg border border-border-slate/50 flex items-center justify-center">
+<!-- Abstract Data Visualization Pattern -->
+<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, #334155 1px, transparent 0); background-size: 24px 24px;"></div>
+<!-- Simulated Data Points -->
+<div class="absolute bottom-[20%] left-[30%] w-4 h-4 rounded-full bg-primary shadow-[0_0_15px_rgba(36,99,235,0.5)] cursor-help" title="SecureGuard Pro"></div>
+<div class="absolute bottom-[50%] left-[60%] w-4 h-4 rounded-full bg-slate-500 cursor-help" title="Titan Shield"></div>
+<div class="absolute bottom-[80%] left-[80%] w-4 h-4 rounded-full bg-slate-500 cursor-help" title="Aegis Prime"></div>
+<!-- Axis Labels -->
+<div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-slate-500 font-mono">ANNUAL PREMIUM →</div>
+<div class="absolute left-2 top-1/2 -rotate-90 origin-left text-[10px] text-slate-500 font-mono">RISK ALIGNMENT % →</div>
+</div>
+</div>
+<div class="lg:col-span-1 bg-primary border border-primary/20 rounded-xl p-6 text-white shadow-xl shadow-primary/10">
+<h3 class="font-black text-xl mb-4 leading-tight">ShieldIQ Deterministic Recommendation</h3>
+<p class="text-sm opacity-90 mb-6 leading-relaxed">Based on your risk profile <span class="font-mono bg-white/10 px-1 rounded">RP-902</span>, the optimal choice is <strong>SecureGuard Pro v4</strong>.</p>
+<ul class="space-y-3 mb-8">
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+                            Zero exposure delta in core regions
+                        </li>
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+                            Deterministic payout on ransomware
+                        </li>
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+                            Market-leading CSR variance (±0.2%)
+                        </li>
+</ul>
+<button class="w-full bg-white text-primary font-bold py-3 rounded-lg hover:bg-slate-100 transition-colors shadow-lg">
+                        Execute Selection
+                    </button>
+</div>
+</div>
+<!-- Technical Footer -->
+<footer class="mt-16 pt-8 border-t border-border-slate/50 flex flex-col md:flex-row justify-between items-center gap-6 pb-12">
+<div class="flex items-center gap-6">
+<div class="text-slate-600 font-mono text-[10px] uppercase tracking-tighter">
+                        ShieldIQ Analytical Engine v2.4.11-stable
+                    </div>
+<div class="text-slate-600 font-mono text-[10px] uppercase tracking-tighter">
+                        Last Market Sync: 2023-11-20 09:12:00 UTC
+                    </div>
+</div>
+<div class="flex gap-4">
+<a class="text-slate-500 hover:text-white text-[10px] font-bold uppercase tracking-widest" href="#">Methodology</a>
+<a class="text-slate-500 hover:text-white text-[10px] font-bold uppercase tracking-widest" href="#">Privacy Protocol</a>
+<a class="text-slate-500 hover:text-white text-[10px] font-bold uppercase tracking-widest" href="#">Compliance API</a>
+</div>
+</footer>
+</main>
+</div>
+</div>
+</body></html>

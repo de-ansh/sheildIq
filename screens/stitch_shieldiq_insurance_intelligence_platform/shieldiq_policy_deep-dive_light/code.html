@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Policy Deep-Dive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#161121",
+                        "neutral-soft": "#f1f0f4",
+                        "neutral-border": "#dedbe6",
+                        "text-muted": "#6e6189",
+                        "text-dark": "#131118",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono-data { font-family: 'JetBrains Mono', monospace; }
+        .heatmap-cell { transition: all 0.2s ease; }
+        .heatmap-cell:hover { transform: scale(1.05); z-index: 10; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-dark antialiased">
+<div class="relative flex min-h-screen w-full flex-col">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-neutral-border bg-white px-6 py-3 lg:px-10">
+<div class="mx-auto flex max-w-[1440px] items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex h-8 w-8 items-center justify-center rounded bg-primary text-white">
+<span class="material-symbols-outlined text-xl">shield</span>
+</div>
+<h1 class="text-xl font-black tracking-tight text-text-dark">ShieldIQ</h1>
+</div>
+<nav class="hidden flex-1 justify-center lg:flex">
+<div class="flex items-center gap-1 p-1">
+<a class="px-4 py-2 text-sm font-medium text-text-muted hover:text-primary" href="#">Coverage Details</a>
+<a class="px-4 py-2 text-sm font-medium text-text-muted hover:text-primary" href="#">Exclusions</a>
+<a class="rounded-lg bg-primary/10 px-4 py-2 text-sm font-bold text-primary" href="#">Premium Projection</a>
+<a class="px-4 py-2 text-sm font-medium text-text-muted hover:text-primary" href="#">Risk Alignment</a>
+<a class="px-4 py-2 text-sm font-medium text-text-muted hover:text-primary" href="#">Claim History</a>
+<a class="px-4 py-2 text-sm font-medium text-text-muted hover:text-primary" href="#">Sensitivity Analysis</a>
+</div>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-soft text-text-dark">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full border-2 border-primary/20 bg-cover bg-center" data-alt="User profile avatar of a professional male analyst" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDrzlLkSp8JMg_wYfo8-FUwxuSob9g_Fpjlu9jbiatQNzlRIcNondfEGfEs4jooO2rx1h5eKadSELqBR8UF08glRLpUylGDqulXvi-G88_9Xl1AypAcRM7NM_L1OV5DjUDzg-uvh2MhUohy9n0f2oy8RPGMuw38MQYjIOmFRlnK9GeCS23pwRcejRyC4RssUtc2G_9tVvKG904B4naeBd--VuyKpGY_swAD6r3A9DZimZa-QeexB5cnkubXNkH2FnndF--H9X6Ux8')"></div>
+</div>
+</div>
+</header>
+<main class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 p-6 lg:flex-row lg:p-10">
+<!-- Main Content Area -->
+<div class="flex flex-1 flex-col gap-8">
+<!-- Header Section -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+<span class="material-symbols-outlined text-sm">analytics</span>
+                    Actuarial Deep-Dive
+                </div>
+<h2 class="text-3xl font-black tracking-tight text-text-dark lg:text-4xl">Premium Projection Engine</h2>
+<p class="max-w-2xl text-lg text-text-muted">High-fidelity longitudinal projection of policy costs based on current medical inflation vectors and age-based risk adjustments.</p>
+</div>
+<!-- Chart Card -->
+<div class="rounded-xl border border-neutral-border bg-white p-6 shadow-sm">
+<div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold uppercase text-text-muted">Variable Projection</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-black text-text-dark mono-data">10.0%</span>
+<span class="text-sm font-medium text-text-muted">Medical Inflation Rate</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="rounded-lg bg-neutral-soft px-3 py-1.5 text-xs font-bold text-text-dark">Annual View</button>
+<button class="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white">Cumulative View</button>
+</div>
+</div>
+<div class="relative h-[320px] w-full">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between opacity-30">
+<div class="w-full border-t border-dashed border-text-muted"></div>
+<div class="w-full border-t border-dashed border-text-muted"></div>
+<div class="w-full border-t border-dashed border-text-muted"></div>
+<div class="w-full border-t border-dashed border-text-muted"></div>
+<div class="w-full border-t border-dashed border-text-muted"></div>
+</div>
+<!-- SVG Chart -->
+<svg class="relative h-full w-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 300">
+<!-- Gradient Fill -->
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#6324eb" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#6324eb" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,280 Q100,260 200,240 T400,200 T600,120 T800,60 T1000,20 L1000,300 L0,300 Z" fill="url(#chartGradient)"></path>
+<path d="M0,280 Q100,260 200,240 T400,200 T600,120 T800,60 T1000,20" fill="none" stroke="#6324eb" stroke-linecap="round" stroke-width="4"></path>
+<!-- Data Points -->
+<circle cx="200" cy="240" fill="#6324eb" r="5" stroke="white" stroke-width="2"></circle>
+<circle cx="600" cy="120" fill="#6324eb" r="5" stroke="white" stroke-width="2"></circle>
+<circle cx="1000" cy="20" fill="#6324eb" r="5" stroke="white" stroke-width="2"></circle>
+</svg>
+<!-- Tooltip Example -->
+<div class="absolute left-[580px] top-[40px] flex flex-col rounded bg-text-dark p-2 text-[10px] text-white shadow-xl">
+<span class="font-bold opacity-60">Age 60 Milestone</span>
+<span class="mono-data text-xs font-bold">$12,440.00 / yr</span>
+</div>
+</div>
+<div class="mt-6 flex justify-between px-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+<span>Age 30</span>
+<span>Age 40</span>
+<span>Age 50</span>
+<span>Age 60</span>
+<span>Age 70</span>
+<span>Age 75+</span>
+</div>
+</div>
+<!-- Risk Alignment Section -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold text-text-dark">Risk Alignment Matrix</h3>
+<div class="flex items-center gap-2 text-xs font-bold text-text-muted">
+<span class="flex h-3 w-3 rounded-sm bg-primary/20"></span> Weak Fit
+                        <span class="ml-2 flex h-3 w-3 rounded-sm bg-primary"></span> Optimal
+                    </div>
+</div>
+<div class="overflow-hidden rounded-xl border border-neutral-border bg-white">
+<div class="grid grid-cols-6 border-b border-neutral-border bg-neutral-soft/50 text-center text-[10px] font-black uppercase text-text-muted">
+<div class="border-r border-neutral-border p-3">Benefit Area</div>
+<div class="p-3">Critical Care</div>
+<div class="p-3">Diagnostics</div>
+<div class="p-3">In-Patient</div>
+<div class="p-3">Pharmacy</div>
+<div class="p-3">OPD</div>
+</div>
+<!-- Matrix Rows -->
+<div class="grid grid-cols-6 border-b border-neutral-border text-sm">
+<div class="bg-neutral-soft/30 p-4 font-bold text-text-dark border-r border-neutral-border">Liability Index</div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/60"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/80"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/40"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/20"></div></div>
+</div>
+<div class="grid grid-cols-6 border-b border-neutral-border text-sm">
+<div class="bg-neutral-soft/30 p-4 font-bold text-text-dark border-r border-neutral-border">Hereditary Risk</div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/30"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/90"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/10"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/50"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary"></div></div>
+</div>
+<div class="grid grid-cols-6 text-sm">
+<div class="bg-neutral-soft/30 p-4 font-bold text-text-dark border-r border-neutral-border">Lifestyle Impact</div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/70"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/20"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/60"></div></div>
+<div class="heatmap-cell flex items-center justify-center p-4"><div class="h-8 w-8 rounded-lg bg-primary/40"></div></div>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="flex flex-wrap items-center justify-between gap-4 border-t border-neutral-border pt-6 text-[10px] uppercase tracking-widest text-text-muted">
+<div class="flex gap-6">
+<span>Source: Actuarial Table V4.2-2023</span>
+<span>Last Synced: Oct 24, 2023 14:32 UTC</span>
+</div>
+<div class="mono-data">
+                    Reference ID: SH-PROJ-99281-ACT
+                </div>
+</div>
+</div>
+<!-- Right Sidebar: AI Analyst -->
+<aside class="w-full lg:w-[360px]">
+<div class="sticky top-[100px] flex flex-col gap-4 rounded-xl border border-neutral-border bg-white p-6 shadow-sm">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-sm">smart_toy</span>
+</div>
+<h4 class="text-sm font-bold text-text-dark">AI Analyst Insights</h4>
+</div>
+<p class="text-[11px] text-text-muted italic">Powered by ShieldIQ Actuarial Engine</p>
+</div>
+<div class="mt-4 flex flex-col gap-6">
+<!-- Positive Insights -->
+<div class="flex flex-col gap-3">
+<h5 class="flex items-center gap-2 text-xs font-bold text-emerald-600">
+<span class="material-symbols-outlined text-base">check_circle</span>
+                            Why this fits
+                        </h5>
+<ul class="flex flex-col gap-2">
+<li class="rounded-lg bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">
+<strong>Hereditary Alignment:</strong> The policy's intensive diagnostics cover matches your high hereditary risk profile for cardiac care (89% match).
+                            </li>
+<li class="rounded-lg bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">
+<strong>Premium Stability:</strong> Fixed base escalations at age 55 provide superior protection against late-career inflation spikes.
+                            </li>
+</ul>
+</div>
+<!-- Gaps / Warnings -->
+<div class="flex flex-col gap-3">
+<h5 class="flex items-center gap-2 text-xs font-bold text-amber-600">
+<span class="material-symbols-outlined text-base">warning</span>
+                            Potential Gaps
+                        </h5>
+<ul class="flex flex-col gap-2">
+<li class="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+<strong>OPD Coverage:</strong> Out-patient benefits are projected to lag medical inflation by ~2.4% starting at age 62.
+                            </li>
+<li class="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+<strong>Geographic Restriction:</strong> Premium projections assume primary residence within current Tier 1 zones.
+                            </li>
+</ul>
+</div>
+</div>
+<button class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-white transition-opacity hover:opacity-90">
+<span class="material-symbols-outlined text-sm">download</span>
+                    Download Full Actuarial Report
+                </button>
+<p class="text-center text-[10px] leading-tight text-text-muted">
+                    This analysis is based on predictive modeling and does not constitute guaranteed future policy terms.
+                </p>
+</div>
+</aside>
+</main>
+</div>
+</body></html>

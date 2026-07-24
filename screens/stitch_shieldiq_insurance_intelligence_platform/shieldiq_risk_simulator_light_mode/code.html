@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Risk Simulator - Light Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "risk-red": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-gradient-recommended {
+            background: linear-gradient(180deg, rgba(36, 99, 235, 0.1) 0%, rgba(36, 99, 235, 0) 100%);
+        }
+        .chart-line-dashed {
+            background-image: linear-gradient(to right, #2463eb 50%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 10px 1px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-8 flex items-center justify-center bg-primary rounded-lg text-white">
+<span class="material-symbols-outlined">shield_with_heart</span>
+</div>
+<h2 class="text-slate-900 text-lg font-bold leading-tight tracking-tight">ShieldIQ Risk Simulator</h2>
+</div>
+<!-- Scenario Selector -->
+<nav class="flex items-center bg-slate-100 p-1 rounded-xl">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-white/50 text-slate-500">
+<span class="material-symbols-outlined text-[20px]">skull</span>
+                        Early Death
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-primary">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+                        Critical Illness
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-white/50 text-slate-500">
+<span class="material-symbols-outlined text-[20px]">accessible</span>
+                        Total Disability
+                    </button>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full bg-primary/10 border-2 border-primary/20 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional user profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYD1XaUAV_pTHkFXZTWPLd-D3pOOYQbAfgA_up2SCBa3G_HodcSdwJIfSF7sm1FgxndLmm_1gQNY4dA2__ErohlYVQWsGcapNju0_5ogDivMr_3zW6pbu-0V7F21pkFQTy-TxR-3631nc_EpPHAt367jJT4axBQLePFMuI1tyGS5FsaBEudKafZILgYWN0SiISRVrERBdNpinhBVp18LmriOtfzfMd24MqI8y3sIyi7f_wZDeKnWbsw0drfeEF7i3FBWvfp8U8sM0"/>
+</div>
+</div>
+</header>
+<main class="flex-1 px-10 py-8">
+<div class="grid grid-cols-12 gap-6 max-w-[1440px] mx-auto">
+<!-- Left Column: Stress Test Controls -->
+<aside class="col-span-12 lg:col-span-3 flex flex-col gap-6">
+<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+<div class="mb-6">
+<h3 class="text-slate-900 font-bold text-lg">Stress Test Controls</h3>
+<p class="text-slate-500 text-sm">Adjust event severity</p>
+</div>
+<div class="space-y-8">
+<!-- Control Item 1 -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-slate-700">Treatment Cost</label>
+<span class="text-sm font-bold text-primary">$120,000</span>
+</div>
+<input class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" type="range" value="40"/>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium">
+<span>$10k</span>
+<span>$500k</span>
+</div>
+</div>
+<!-- Control Item 2 -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-slate-700">Recovery Years</label>
+<span class="text-sm font-bold text-primary">5 Years</span>
+</div>
+<div class="grid grid-cols-5 gap-2">
+<button class="py-2 rounded bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">1</button>
+<button class="py-2 rounded bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">2</button>
+<button class="py-2 rounded bg-primary border border-primary text-xs font-bold text-white shadow-md">5</button>
+<button class="py-2 rounded bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">8</button>
+<button class="py-2 rounded bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">10</button>
+</div>
+</div>
+<!-- Control Item 3 -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-slate-700">Inflation Rate</label>
+<span class="text-sm font-bold text-primary">4.2%</span>
+</div>
+<input class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" type="range" value="65"/>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium">
+<span>0%</span>
+<span>10%</span>
+</div>
+</div>
+<!-- Control Item 4 -->
+<div class="space-y-3">
+<label class="text-sm font-semibold text-slate-700 block">Lifestyle Adjustment</label>
+<select class="w-full rounded-lg border-slate-200 text-sm focus:ring-primary focus:border-primary">
+<option>Maintain Current Standard</option>
+<option>Minimal Reduction (-10%)</option>
+<option>Significant Reduction (-25%)</option>
+</select>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-slate-900 text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">refresh</span>
+                                Recalculate Model
+                            </button>
+</div>
+<!-- Mini Stats Card -->
+<div class="bg-primary/5 border border-primary/10 p-6 rounded-xl">
+<h4 class="text-primary font-bold text-sm mb-4 uppercase tracking-wider">Simulation Info</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">person</span>
+<div>
+<p class="text-[10px] text-primary/60 font-bold leading-none">PRIMARY INSURED</p>
+<p class="text-sm font-bold text-slate-800 leading-tight">James Harrison (Age 38)</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">event</span>
+<div>
+<p class="text-[10px] text-primary/60 font-bold leading-none">SCENARIO START</p>
+<p class="text-sm font-bold text-slate-800 leading-tight">Year 2024</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Right Column: Visualizer and Analysis -->
+<section class="col-span-12 lg:col-span-9 space-y-6">
+<!-- Top Row: Metrics & Gauge -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-2 flex items-center justify-between">
+<div class="space-y-1">
+<p class="text-slate-500 text-sm font-medium">Projected Shortfall Age</p>
+<h2 class="text-4xl font-extrabold text-risk-red">52 <span class="text-lg font-semibold text-slate-400">Years Old</span></h2>
+<p class="text-xs text-slate-400 italic">Portfolio depletion occurs 14 years post-event.</p>
+</div>
+<div class="h-16 w-px bg-slate-100 hidden md:block"></div>
+<div class="space-y-1">
+<p class="text-slate-500 text-sm font-medium">Estimated Funding Gap</p>
+<h2 class="text-3xl font-extrabold text-slate-900">$842,500</h2>
+<p class="text-xs text-slate-400 font-medium">Total corpus required for full recovery</p>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6">
+<div class="relative size-24 shrink-0">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-slate-100" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="64, 100" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-xl font-bold text-slate-900">64%</span>
+</div>
+</div>
+<div>
+<h4 class="font-bold text-slate-900">Adequacy Score</h4>
+<p class="text-xs text-slate-500">Protection level against stress parameters.</p>
+</div>
+</div>
+</div>
+<!-- Main Chart Area -->
+<div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm min-h-[400px] flex flex-col">
+<div class="flex justify-between items-center mb-10">
+<div>
+<h3 class="text-slate-900 font-bold text-lg">Financial Impact Timeline</h3>
+<p class="text-slate-500 text-sm">Corpus trajectory over time</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="size-3 rounded-full bg-risk-red"></span>
+<span class="text-xs font-bold text-slate-600 uppercase tracking-tighter">Current Protection</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="size-3 rounded-full bg-primary"></span>
+<span class="text-xs font-bold text-slate-600 uppercase tracking-tighter">Recommended Plan</span>
+</div>
+</div>
+</div>
+<!-- Mock Chart Visualization -->
+<div class="flex-1 relative flex items-end gap-1 border-l border-b border-slate-100 pb-1 pl-1">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none pr-4">
+<div class="border-t border-slate-50 w-full h-0"></div>
+<div class="border-t border-slate-50 w-full h-0"></div>
+<div class="border-t border-slate-50 w-full h-0"></div>
+<div class="border-t border-slate-50 w-full h-0"></div>
+</div>
+<!-- Chart SVG Logic -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 300">
+<!-- Recommended Protection Line (Blue) -->
+<path d="M0,50 L100,60 L200,80 L300,110 L400,150 L500,180 L600,200 L700,215 L800,225 L900,230 L1000,232" fill="none" stroke="#2463eb" stroke-linecap="round" stroke-width="4"></path>
+<path d="M0,50 L100,60 L200,80 L300,110 L400,150 L500,180 L600,200 L700,215 L800,225 L900,230 L1000,232 L1000,300 L0,300 Z" fill="url(#blue-grad)" opacity="0.1"></path>
+<!-- Current Protection Line (Red) -->
+<path d="M0,50 L100,70 L200,110 L300,180 L400,280 L500,350 L1000,350" fill="none" stroke="#ef4444" stroke-linecap="round" stroke-width="4"></path>
+<!-- Shortfall Marker -->
+<circle cx="400" cy="280" fill="#ef4444" r="6" stroke="white" stroke-width="2"></circle>
+<line stroke="#ef4444" stroke-dasharray="4" stroke-width="1" x1="400" x2="400" y1="0" y2="300"></line>
+<defs>
+<lineargradient id="blue-grad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2463eb"></stop>
+<stop offset="100%" stop-color="transparent"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Age Labels -->
+<div class="absolute -bottom-6 left-0 right-0 flex justify-between px-2 text-[10px] font-bold text-slate-400">
+<span>AGE 38</span>
+<span>AGE 45</span>
+<span>AGE 52 (SHORTFALL)</span>
+<span>AGE 60</span>
+<span>AGE 65</span>
+<span>AGE 75+</span>
+</div>
+</div>
+</div>
+<!-- Bottom AI Narrative Panel -->
+<div class="bg-slate-900 p-8 rounded-xl shadow-xl relative overflow-hidden">
+<div class="absolute top-0 right-0 p-8 text-white/5 pointer-events-none">
+<span class="material-symbols-outlined text-[120px]">psychology</span>
+</div>
+<div class="relative z-10 flex flex-col md:flex-row gap-8 items-start">
+<div class="bg-primary p-3 rounded-lg text-white">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div class="flex-1 space-y-4">
+<h3 class="text-white font-bold text-xl">AI Risk Narrative</h3>
+<div class="space-y-4 text-slate-300 text-sm leading-relaxed max-w-3xl">
+<p>
+                                            Based on your current <strong>Critical Illness</strong> coverage of $200,000 and the stress parameters defined, your portfolio faces a critical shortfall at <span class="text-white font-bold">Age 52</span>. The depletion is primarily driven by the cumulative impact of treatment costs and loss of earning capacity over the 5-year recovery window.
+                                        </p>
+<p>
+<span class="text-primary font-bold">Strategy recommendation:</span> To extend portfolio viability through age 75, we suggest integrating a <span class="text-white underline decoration-primary">Cost-of-Living Rider</span> and increasing your core CI benefit by <span class="text-white font-bold">$150,000</span>. This would effectively close the funding gap and increase your Adequacy Score to 94%.
+                                        </p>
+</div>
+<div class="pt-4 flex gap-4">
+<button class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all">Apply Recommendation</button>
+<button class="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all">Download PDF Analysis</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Sticky Footer for Quick Actions -->
+<footer class="bg-white border-t border-slate-200 px-10 py-4 flex justify-between items-center">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400">save</span>
+<span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Auto-saved 2m ago</span>
+</div>
+<div class="h-4 w-px bg-slate-200"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-500">check_circle</span>
+<span class="text-xs font-bold text-slate-500 uppercase tracking-widest text-green-600">Compliance Verified</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 bg-slate-100 text-slate-900 rounded-lg font-bold text-sm hover:bg-slate-200 transition-colors">Compare Scenarios</button>
+<button class="px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition-all shadow-md">Generate Quote</button>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

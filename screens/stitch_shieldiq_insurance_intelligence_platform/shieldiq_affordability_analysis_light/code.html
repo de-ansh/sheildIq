@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Affordability Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "neutral-light": "#f8fafc",
+                        "border-light": "#e2e8f0"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .sankey-node { height: 100%; border-radius: 2px; }
+        .sankey-link { opacity: 0.2; }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 antialiased">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Navigation Bar -->
+<header class="sticky top-0 z-50 flex items-center justify-between border-b border-border-light bg-white/80 backdrop-blur-md px-6 py-3 lg:px-10">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<div class="size-8 rounded-lg bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl">shield</span>
+</div>
+<h2 class="text-slate-900 text-xl font-bold leading-tight tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-500 hover:text-primary text-sm font-semibold transition-colors" href="#">Dashboard</a>
+<a class="text-slate-500 hover:text-primary text-sm font-semibold transition-colors" href="#">Policies</a>
+<a class="text-primary text-sm font-semibold transition-colors border-b-2 border-primary pb-1" href="#">Affordability</a>
+<a class="text-slate-500 hover:text-primary text-sm font-semibold transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-64 rounded-lg border-none bg-slate-100 py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20" placeholder="Search insights..." type="text"/>
+</div>
+<button class="relative rounded-lg bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition-colors">
+<span class="material-symbols-outlined text-xl">notifications</span>
+<span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+</button>
+<div class="h-8 w-px bg-border-light"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden lg:block">
+<p class="text-xs font-bold text-slate-900">Alex Rivers</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Premium Member</p>
+</div>
+<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</div>
+</div>
+</div>
+</header>
+<main class="mx-auto w-full max-w-[1440px] flex-1 px-6 py-8 lg:px-10">
+<!-- Hero Stats -->
+<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+<div class="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<div class="flex items-center justify-between">
+<p class="text-sm font-semibold text-slate-500">Budget Fit Score</p>
+<span class="material-symbols-outlined text-primary">speed</span>
+</div>
+<div class="flex items-baseline gap-2">
+<p class="text-4xl font-black text-slate-900">82</p>
+<p class="text-lg font-bold text-slate-400">/100</p>
+</div>
+<div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full w-[82%] bg-primary"></div>
+</div>
+<p class="text-xs font-medium text-emerald-600 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span> Good standing
+                    </p>
+</div>
+<div class="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<p class="text-sm font-semibold text-slate-500">Sustainability Zone</p>
+<div class="flex items-center gap-3">
+<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+<span class="material-symbols-outlined text-3xl">check_circle</span>
+</div>
+<div>
+<p class="text-xl font-bold text-slate-900">Sustainable</p>
+<p class="text-xs text-slate-500 leading-tight">Low risk of premium default</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<p class="text-sm font-semibold text-slate-500">Monthly Surplus</p>
+<div class="flex items-baseline gap-1">
+<p class="text-3xl font-bold text-slate-900 font-mono">$1,240</p>
+<p class="text-xs font-bold text-slate-400">/mo</p>
+</div>
+<p class="text-xs font-medium text-slate-400">After all premiums &amp; tax</p>
+</div>
+<div class="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<p class="text-sm font-semibold text-slate-500">Current Premium Ratio</p>
+<p class="text-3xl font-bold text-slate-900 font-mono">14.2%</p>
+<div class="flex items-center gap-2">
+<div class="h-1.5 grow rounded-full bg-slate-100 overflow-hidden">
+<div class="h-full w-[14.2%] bg-amber-400"></div>
+</div>
+<p class="text-[10px] font-bold text-slate-400 uppercase">Target &lt; 20%</p>
+</div>
+</div>
+</div>
+<!-- Main Dashboard Area -->
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+<!-- Left Content: Charts & Projections -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Financial Flow Visualization -->
+<section class="rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<div class="mb-6 flex items-center justify-between">
+<h3 class="text-lg font-bold text-slate-900">Financial Flow Allocation</h3>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+<span class="size-2 rounded-full bg-primary"></span> Income
+                                </span>
+<span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+<span class="size-2 rounded-full bg-slate-400"></span> Expenses
+                                </span>
+<span class="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+<span class="size-2 rounded-full bg-emerald-500"></span> Premiums
+                                </span>
+</div>
+</div>
+<div class="relative h-48 w-full flex flex-col gap-4">
+<!-- Simplified Sankey Mockup using CSS Flex/Divs -->
+<div class="flex h-12 w-full gap-2">
+<div class="flex-none w-[100%] bg-primary/10 rounded-lg flex items-center px-4 border border-primary/20">
+<span class="text-xs font-bold text-primary uppercase tracking-widest">Total Monthly Income ($8,750)</span>
+</div>
+</div>
+<div class="flex grow gap-2">
+<div class="w-[55%] bg-slate-100 rounded-lg p-4 flex flex-col justify-end border border-slate-200">
+<span class="text-xs font-bold text-slate-500 uppercase">General Expenses</span>
+<span class="text-lg font-mono font-bold">$4,812</span>
+</div>
+<div class="w-[15%] bg-emerald-100 rounded-lg p-4 flex flex-col justify-end border border-emerald-200">
+<span class="text-xs font-bold text-emerald-600 uppercase">Premiums</span>
+<span class="text-lg font-mono font-bold">$1,242</span>
+</div>
+<div class="w-[30%] bg-blue-100 rounded-lg p-4 flex flex-col justify-end border border-blue-200">
+<span class="text-xs font-bold text-blue-600 uppercase">Savings/Debt</span>
+<span class="text-lg font-mono font-bold">$2,696</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Premium Escalation Line Chart -->
+<section class="rounded-xl border border-border-light bg-white p-6 shadow-sm">
+<div class="mb-6 flex items-center justify-between">
+<div>
+<h3 class="text-lg font-bold text-slate-900">Premium Escalation Projection</h3>
+<p class="text-xs text-slate-500">Factoring age &amp; 10% medical inflation trend</p>
+</div>
+<select class="rounded-lg border-slate-200 text-xs font-semibold focus:border-primary focus:ring-primary">
+<option>Next 20 Years</option>
+<option>Next 10 Years</option>
+</select>
+</div>
+<div class="relative h-64 w-full">
+<!-- Visual representation of line chart -->
+<svg class="h-full w-full" preserveaspectratio="none" viewbox="0 0 800 240">
+<path d="M0,220 Q200,200 400,160 T800,40" fill="none" stroke="#2463eb" stroke-dasharray="0" stroke-width="3"></path>
+<path d="M0,220 Q200,215 400,200 T800,160" fill="none" stroke="#94a3b8" stroke-width="2"></path>
+<!-- Points -->
+<circle cx="400" cy="160" fill="white" r="4" stroke="#2463eb" stroke-width="2"></circle>
+<circle cx="800" cy="40" fill="white" r="4" stroke="#2463eb" stroke-width="2"></circle>
+</svg>
+<div class="mt-4 flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+<span>Year 0</span>
+<span>Year 5</span>
+<span>Year 10</span>
+<span>Year 15</span>
+<span>Year 20</span>
+</div>
+<div class="mt-4 flex gap-6">
+<div class="flex items-center gap-2">
+<div class="h-0.5 w-6 bg-primary"></div>
+<span class="text-xs font-medium text-slate-600">With Inflation (10%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="h-0.5 w-6 bg-slate-400"></div>
+<span class="text-xs font-medium text-slate-600">Base Premium</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Long-term Commitment Cards -->
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+<div class="rounded-xl bg-slate-900 p-6 text-white shadow-lg">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">5-Year Commitment</p>
+<p class="mt-2 font-mono text-2xl font-bold tracking-tight">$82,450</p>
+<div class="mt-4 flex items-center gap-1.5 text-xs font-medium text-slate-400">
+<span class="material-symbols-outlined text-sm">event_repeat</span> Avg. $16.5k/yr
+                            </div>
+</div>
+<div class="rounded-xl bg-slate-900 p-6 text-white shadow-lg">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">10-Year Commitment</p>
+<p class="mt-2 font-mono text-2xl font-bold tracking-tight">$184,200</p>
+<div class="mt-4 flex items-center gap-1.5 text-xs font-medium text-slate-400">
+<span class="material-symbols-outlined text-sm">trending_up</span> Inflation Adjusted
+                            </div>
+</div>
+<div class="rounded-xl bg-primary p-6 text-white shadow-lg shadow-primary/20">
+<p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest">20-Year Lifetime</p>
+<p class="mt-2 font-mono text-2xl font-bold tracking-tight">$412,900</p>
+<div class="mt-4 flex items-center gap-1.5 text-xs font-medium text-blue-100">
+<span class="material-symbols-outlined text-sm">auto_awesome</span> Optimization Target
+                            </div>
+</div>
+</section>
+</div>
+<!-- Right Sidebar: AI Suggestions & Table -->
+<div class="lg:col-span-4 space-y-8">
+<!-- AI Optimization Sidebar -->
+<aside class="rounded-xl bg-primary/5 border border-primary/10 p-6">
+<div class="mb-4 flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined font-bold">bolt</span>
+<h3 class="text-sm font-bold uppercase tracking-wider">AI Optimization</h3>
+</div>
+<div class="space-y-4">
+<div class="rounded-lg bg-white p-4 shadow-sm border border-primary/10">
+<div class="mb-1 flex items-center justify-between">
+<p class="text-xs font-bold text-primary">Potential Savings: 4.2%</p>
+<span class="material-symbols-outlined text-sm text-primary/40">close</span>
+</div>
+<p class="text-sm font-medium text-slate-900">Annual Payment Shift</p>
+<p class="mt-1 text-xs text-slate-500 leading-relaxed">Switching your Health Policy to annual payments can save $420/yr in admin fees.</p>
+<button class="mt-3 w-full rounded-lg bg-primary py-2 text-xs font-bold text-white hover:bg-primary/90 transition-colors">Apply Suggestion</button>
+</div>
+<div class="rounded-lg bg-white p-4 shadow-sm border border-primary/10">
+<p class="text-xs font-bold text-emerald-600">Coverage Alert</p>
+<p class="text-sm font-medium text-slate-900">Term Adjustment at Age 55</p>
+<p class="mt-1 text-xs text-slate-500 leading-relaxed">Projections show a sharp spike in Year 15. Consider re-evaluating term length to level premiums.</p>
+<button class="mt-3 w-full rounded-lg border border-primary/20 bg-primary/5 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors">View Details</button>
+</div>
+</div>
+</aside>
+<!-- Policy Premium Breakdown Table -->
+<section class="rounded-xl border border-border-light bg-white overflow-hidden shadow-sm">
+<div class="p-6 border-b border-border-light">
+<h3 class="text-lg font-bold text-slate-900">Policy Breakdown</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 border-b border-border-light">
+<tr>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Policy Type</th>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Premium</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light">
+<tr>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-900">Global Medical Plus</p>
+<p class="text-xs text-slate-500">Life Coverage • Active</p>
+</td>
+<td class="px-6 py-4 text-right">
+<p class="text-sm font-mono font-bold text-slate-900">$450.00</p>
+<p class="text-[10px] text-slate-400 uppercase font-bold">Monthly</p>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-900">Critical Illness Shield</p>
+<p class="text-xs text-slate-500">Health • Active</p>
+</td>
+<td class="px-6 py-4 text-right">
+<p class="text-sm font-mono font-bold text-slate-900">$292.50</p>
+<p class="text-[10px] text-slate-400 uppercase font-bold">Monthly</p>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-slate-900">Family Term 20</p>
+<p class="text-xs text-slate-500">Life • Active</p>
+</td>
+<td class="px-6 py-4 text-right">
+<p class="text-sm font-mono font-bold text-slate-900">$500.00</p>
+<p class="text-[10px] text-slate-400 uppercase font-bold">Monthly</p>
+</td>
+</tr>
+</tbody>
+<tfoot class="bg-slate-50">
+<tr>
+<td class="px-6 py-4 text-xs font-bold text-slate-900 uppercase">Total Commitment</td>
+<td class="px-6 py-4 text-right text-sm font-mono font-bold text-primary">$1,242.50</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</section>
+<!-- Export/Actions -->
+<div class="flex flex-col gap-3">
+<button class="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-sm font-bold text-white hover:bg-slate-800 transition-colors shadow-lg">
+<span class="material-symbols-outlined">description</span>
+                            Generate Comprehensive PDF
+                        </button>
+<button class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined">share</span>
+                            Share with Financial Advisor
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

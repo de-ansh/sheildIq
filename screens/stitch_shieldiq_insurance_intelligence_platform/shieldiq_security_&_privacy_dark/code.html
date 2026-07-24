@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Security &amp; Privacy Dark</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121212",
+                        "surface-dark": "#1e1e1e",
+                        "border-dark": "#333333",
+                        "emergency": "#ef4444"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark px-10 py-3 bg-surface-dark/50 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xl">shield_with_heart</span>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Analytics</a>
+<a class="text-white text-sm font-semibold border-b-2 border-primary py-1" href="#">Security</a>
+<a class="text-slate-400 hover:text-white text-sm font-medium transition-colors" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<label class="hidden lg:flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-border-dark/50 overflow-hidden border border-border-dark hover:border-primary/50 transition-all">
+<div class="text-slate-400 flex items-center justify-center pl-4">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full border-none bg-transparent focus:ring-0 text-white placeholder:text-slate-500 text-sm" placeholder="Search logs..."/>
+</div>
+</label>
+<div class="flex gap-3">
+<button class="flex items-center justify-center rounded-lg size-10 bg-border-dark/50 border border-border-dark text-white hover:bg-border-dark transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg size-10 bg-border-dark/50 border border-border-dark text-white hover:bg-border-dark transition-colors">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="User profile avatar circle" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD25iU1fBocP9ujcxsOwmoeVFnMk2vcoBlPH3-nQkpDbGPdNb7JF8hVpAyGodtmyTk82YsvajxmoVw5H_HHGyUsj1kflmP-fdMra1t2ZbaPbqz9xEHC_PuF0vZwa9tjoJxRz4p6t39-pdBDh9D4HjOAaeQO3X5M8LOSX07aXmSoUWE9fHmC-pO0uyJfscmQMQMia99oZkgbLx99VbNDxHYkl8a2PucEisc4y_nmfvNiD-vPcwzkjcmbzEpS3ezXz1ahnLbIRpVBPEc");'></div>
+</div>
+</header>
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+<!-- Header Section -->
+<div class="flex flex-wrap justify-between items-end gap-6 mb-8">
+<div class="flex flex-col gap-2">
+<h1 class="text-white text-4xl font-black tracking-tight">Security &amp; Privacy</h1>
+<p class="text-slate-400 text-lg max-w-2xl">Manage your ShieldIQ technical integrity, active sessions, and data governance preferences from one central hub.</p>
+</div>
+<button class="group flex items-center gap-2 px-6 py-3 bg-emergency hover:bg-red-700 text-white rounded-lg font-bold transition-all shadow-lg shadow-red-500/20 active:scale-95">
+<span class="material-symbols-outlined">gpp_maybe</span>
+<span>Lockdown Mode</span>
+</button>
+</div>
+<!-- Status Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<div class="flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border border-border-dark relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl text-primary">verified_user</span>
+</div>
+<p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Overall Health</p>
+<p class="text-white text-3xl font-bold">Secure</p>
+<div class="flex items-center gap-2">
+<span class="flex size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(99,36,235,0.8)]"></span>
+<p class="text-primary text-sm font-semibold">Technical checks passed</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border border-border-dark">
+<p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Active Sessions</p>
+<p class="text-white text-3xl font-bold">4 Devices</p>
+<p class="text-slate-500 text-sm mono-text">Last: San Francisco, US</p>
+</div>
+<div class="flex flex-col gap-3 rounded-xl p-6 bg-surface-dark border border-border-dark">
+<p class="text-slate-400 text-sm font-medium uppercase tracking-wider">MFA Status</p>
+<p class="text-white text-3xl font-bold">Enabled</p>
+<p class="text-primary text-sm font-semibold hover:underline cursor-pointer">Manage recovery keys</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Controls -->
+<div class="lg:col-span-1 flex flex-col gap-8">
+<!-- MFA Configuration -->
+<section class="bg-surface-dark border border-border-dark rounded-xl p-6">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">key</span>
+<h3 class="text-white text-xl font-bold">Authentication</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 rounded-lg bg-border-dark/30 border border-border-dark">
+<div class="flex flex-col">
+<span class="text-white text-sm font-semibold">TOTP Authenticator</span>
+<span class="text-slate-500 text-xs">Primary Method</span>
+</div>
+<span class="text-primary material-symbols-outlined">check_circle</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-border-dark/30 border border-border-dark">
+<div class="flex flex-col">
+<span class="text-white text-sm font-semibold">Security Key (WebAuthn)</span>
+<span class="text-slate-500 text-xs">Recommended</span>
+</div>
+<button class="text-xs font-bold text-slate-300 hover:text-white underline">Add</button>
+</div>
+</div>
+</section>
+<!-- Privacy Controls -->
+<section class="bg-surface-dark border border-border-dark rounded-xl p-6">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">visibility_off</span>
+<h3 class="text-white text-xl font-bold">Privacy Controls</h3>
+</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<div class="flex flex-col max-w-[80%]">
+<span class="text-white text-sm font-semibold">Technical Session Logging</span>
+<span class="text-slate-500 text-xs leading-relaxed">Store IP and metadata for security audits.</span>
+</div>
+<button class="relative inline-flex h-6 w-11 items-center rounded-full bg-primary">
+<span class="inline-block h-4 w-4 translate-x-6 rounded-full bg-white transition"></span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex flex-col max-w-[80%]">
+<span class="text-white text-sm font-semibold">3rd Party Analytics</span>
+<span class="text-slate-500 text-xs leading-relaxed">Share anonymized usage data to improve ShieldIQ.</span>
+</div>
+<button class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-700">
+<span class="inline-block h-4 w-4 translate-x-1 rounded-full bg-white transition"></span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex flex-col max-w-[80%]">
+<span class="text-white text-sm font-semibold">Anonymous Training</span>
+<span class="text-slate-500 text-xs leading-relaxed">Allow data to improve intelligence models.</span>
+</div>
+<button class="relative inline-flex h-6 w-11 items-center rounded-full bg-primary">
+<span class="inline-block h-4 w-4 translate-x-6 rounded-full bg-white transition"></span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Metrics & Log -->
+<div class="lg:col-span-2 flex flex-col gap-8">
+<section class="bg-surface-dark border border-border-dark rounded-xl overflow-hidden">
+<div class="p-6 border-b border-border-dark flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">history_edu</span>
+<h3 class="text-white text-xl font-bold">Security Metrics &amp; Recent Activity</h3>
+</div>
+<button class="text-primary text-sm font-bold hover:bg-primary/10 px-3 py-1 rounded transition-colors">Export CSV</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-background-dark/50">
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Event</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">IP Address</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Location</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Timestamp</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<tr class="hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-green-500 text-lg">login</span>
+<span class="text-white text-sm font-medium">Login - Web Dashboard</span>
+</div>
+</td>
+<td class="px-6 py-4 text-slate-400 text-sm mono-text">192.168.1.1</td>
+<td class="px-6 py-4 text-slate-400 text-sm">San Francisco, US</td>
+<td class="px-6 py-4 text-slate-500 text-sm mono-text">2 mins ago</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">token</span>
+<span class="text-white text-sm font-medium">API Token Created</span>
+</div>
+</td>
+<td class="px-6 py-4 text-slate-400 text-sm mono-text">172.16.254.1</td>
+<td class="px-6 py-4 text-slate-400 text-sm">London, UK</td>
+<td class="px-6 py-4 text-slate-500 text-sm mono-text">5 hours ago</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-amber-500 text-lg">security</span>
+<span class="text-white text-sm font-medium">MFA Challenge</span>
+</div>
+</td>
+<td class="px-6 py-4 text-slate-400 text-sm mono-text">192.168.1.1</td>
+<td class="px-6 py-4 text-slate-400 text-sm">San Francisco, US</td>
+<td class="px-6 py-4 text-slate-500 text-sm mono-text">Yesterday</td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-500 text-lg">logout</span>
+<span class="text-white text-sm font-medium">Session Termination</span>
+</div>
+</td>
+<td class="px-6 py-4 text-slate-400 text-sm mono-text">10.0.0.42</td>
+<td class="px-6 py-4 text-slate-400 text-sm">New York, US</td>
+<td class="px-6 py-4 text-slate-500 text-sm mono-text">2 days ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-background-dark/30 border-t border-border-dark flex justify-center">
+<button class="text-slate-400 hover:text-white text-sm font-medium transition-colors">View all activity logs</button>
+</div>
+</section>
+<section class="bg-primary/5 border border-primary/20 rounded-xl p-6">
+<div class="flex items-start gap-4">
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">bolt</span>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-bold mb-1">Quick Action: Session Management</h4>
+<p class="text-slate-400 text-sm mb-4">Suspect unauthorized access? You can immediately invalidate all active login sessions across all devices.</p>
+<button class="px-4 py-2 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary rounded-lg text-sm font-bold transition-all">
+                                        Log out of all other devices
+                                    </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Legal Footer -->
+<footer class="mt-12 border-t border-border-dark bg-background-dark/50 py-10 px-6">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm">shield</span>
+<span class="text-sm font-medium">© 2024 ShieldIQ Intelligence. All rights reserved.</span>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-500 hover:text-primary text-xs font-semibold uppercase tracking-widest transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 hover:text-primary text-xs font-semibold uppercase tracking-widest transition-colors" href="#">Terms of Use</a>
+<a class="text-slate-500 hover:text-primary text-xs font-semibold uppercase tracking-widest transition-colors" href="#">Security Disclosure</a>
+<a class="text-slate-500 hover:text-primary text-xs font-semibold uppercase tracking-widest transition-colors" href="#">Cookie Settings</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="size-6 bg-slate-800 rounded flex items-center justify-center grayscale hover:grayscale-0 transition-all cursor-pointer">
+<span class="material-symbols-outlined text-white text-xs">share</span>
+</div>
+<div class="size-6 bg-slate-800 rounded flex items-center justify-center grayscale hover:grayscale-0 transition-all cursor-pointer">
+<span class="material-symbols-outlined text-white text-xs">database</span>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

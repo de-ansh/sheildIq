@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Settings - Financial Assumptions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#161121",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom range slider styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #6324eb;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#131118]">
+<div class="relative flex min-h-screen w-full flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between border-b border-solid border-[#e5e7eb] bg-white px-8 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined block">shield_lock</span>
+</div>
+<h2 class="text-[#131118] text-xl font-bold leading-tight tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#6e6189] hover:text-primary text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-[#6e6189] hover:text-primary text-sm font-medium transition-colors" href="#">Reports</a>
+<a class="text-primary text-sm font-semibold transition-colors border-b-2 border-primary py-4 -mb-4" href="#">Settings</a>
+<a class="text-[#6e6189] hover:text-primary text-sm font-medium transition-colors" href="#">Support</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6e6189] text-xl">search</span>
+<input class="bg-[#f1f0f4] border-none rounded-lg pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-primary/20" placeholder="Search settings..." type="text"/>
+</div>
+<button class="p-2 hover:bg-[#f1f0f4] rounded-lg transition-colors text-[#131118]">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-8 w-[1px] bg-[#e5e7eb] mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border-2 border-white shadow-sm" data-alt="User profile picture showing a smiling man" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDbLc3U0L1uIz8ArBJJSUP6Pj_G1xvxuq5xrtVoZuzhfHEc4MuAazYGZtgxWsbpR6OBZg0dmV4DWTTLpROcDtjtvzZ9iMw6E9edU16WGdfi5Q3R042rIY9_wg1KmaUxqS-lF3DiF7ln7nfkzRurw5vKF4IRl5yrzfnmYkNY3SZvBSPJa2MFO4X8KzT258kUVBu4-TMQtQ-CVmQufOzKUYmxJZ-AybkyLCfKedhB5lTba3NnhDdyaNy18bBh1hx7HVVmjF903iS_hII");'></div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-72 bg-white border-r border-[#e5e7eb] flex flex-col justify-between py-6 px-4">
+<div class="flex flex-col gap-1">
+<div class="px-4 py-2 mb-2 text-xs font-bold text-[#6e6189] uppercase tracking-wider">Account Settings</div>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#6e6189] hover:bg-[#f1f0f4] transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">person</span>
+<span class="text-sm font-medium">Personal Details</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-primary/10 text-primary border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined">finance</span>
+<span class="text-sm font-semibold">Financial Assumptions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#6e6189] hover:bg-[#f1f0f4] transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">security</span>
+<span class="text-sm font-medium">Account Security</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#6e6189] hover:bg-[#f1f0f4] transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">account_balance_wallet</span>
+<span class="text-sm font-medium">Plan Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#6e6189] hover:bg-[#f1f0f4] transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">settings_suggest</span>
+<span class="text-sm font-medium">Preferences</span>
+</a>
+<div class="h-px bg-[#e5e7eb] my-4 mx-4"></div>
+<div class="px-4 py-2 mb-2 text-xs font-bold text-[#6e6189] uppercase tracking-wider">Appearance</div>
+<div class="flex bg-[#f1f0f4] rounded-lg p-1 gap-1 mx-2">
+<button class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md bg-white shadow-sm text-primary">
+<span class="material-symbols-outlined text-lg">light_mode</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#6e6189] hover:text-primary">
+<span class="material-symbols-outlined text-lg">dark_mode</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#6e6189] hover:text-primary">
+<span class="material-symbols-outlined text-lg">desktop_windows</span>
+</button>
+</div>
+</div>
+<div class="px-4 py-4 mt-auto">
+<div class="bg-primary/5 rounded-xl p-4 border border-primary/10">
+<p class="text-xs font-semibold text-primary mb-1">PRO PLAN ACTIVE</p>
+<p class="text-xs text-[#6e6189] mb-3">Your subscription renews in 12 days.</p>
+<button class="w-full py-2 bg-white border border-primary/20 rounded-lg text-primary text-xs font-bold hover:bg-primary/5 transition-colors">
+                        Manage Plan
+                    </button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-white">
+<div class="max-w-[1000px] mx-auto px-12 py-10">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-sm font-medium text-[#6e6189] mb-4">
+<a class="hover:text-primary transition-colors" href="#">Settings</a>
+<span class="material-symbols-outlined text-base">chevron_right</span>
+<span class="text-[#131118]">Financial Assumptions</span>
+</nav>
+<!-- Page Title -->
+<div class="flex items-center justify-between mb-8">
+<div>
+<h1 class="text-3xl font-black text-[#131118] tracking-tight mb-2">Financial Assumptions</h1>
+<p class="text-[#6e6189] text-base">Configure global parameters used for protection strategy calculations.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-lg font-bold text-sm text-[#6e6189] hover:bg-[#f1f0f4] transition-colors border border-[#e5e7eb]">Discard</button>
+<button class="px-5 py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-sm shadow-primary/20">Save Changes</button>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-10">
+<!-- Inflation & Taxes Section -->
+<section>
+<div class="flex items-center gap-2 mb-6 border-b border-[#e5e7eb] pb-3">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+<h2 class="text-xl font-bold text-[#131118]">Inflation &amp; Taxes</h2>
+</div>
+<div class="space-y-8">
+<!-- Inflation Rate Slider -->
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<label class="block text-sm font-semibold text-[#131118]">
+                                        Global Inflation Rate
+                                        <span class="material-symbols-outlined text-sm text-[#6e6189] align-middle ml-1 cursor-help" title="Expected annual inflation for projections">info</span>
+</label>
+<div class="flex items-center gap-2">
+<input class="w-20 rounded-lg border-[#e5e7eb] text-sm focus:border-primary focus:ring-primary/20" step="0.1" type="number" value="2.5"/>
+<span class="text-sm font-bold text-[#6e6189]">%</span>
+</div>
+</div>
+<input class="w-full accent-primary h-1.5 bg-gray-200 rounded-lg cursor-pointer" max="10" min="0" step="0.1" type="range" value="2.5"/>
+<div class="flex justify-between text-[10px] font-bold text-[#6e6189] uppercase tracking-tighter">
+<span>Conservative (0%)</span>
+<span>Moderate (5%)</span>
+<span>High (10%)</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Tax Slab Dropdown -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#131118]">Current Tax Slab</label>
+<select class="rounded-lg border-[#e5e7eb] bg-white text-sm py-2.5 focus:border-primary focus:ring-primary/20">
+<option>Lowest Bracket (10-12%)</option>
+<option selected="">Standard Bracket (22-24%)</option>
+<option>High Bracket (32-35%)</option>
+<option>Premium Bracket (37% +)</option>
+</select>
+<p class="text-xs text-[#6e6189]">Based on your last reported annual income.</p>
+</div>
+<!-- Retirement Age -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#131118]">Target Retirement Age</label>
+<input class="rounded-lg border-[#e5e7eb] text-sm py-2.5 focus:border-primary focus:ring-primary/20" type="number" value="65"/>
+<p class="text-xs text-[#6e6189]">The age you expect to stop full-time work.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Active Protection Plan -->
+<section>
+<div class="flex items-center gap-2 mb-6 border-b border-[#e5e7eb] pb-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<h2 class="text-xl font-bold text-[#131118]">Active Protection Plan</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Plan Card 1 -->
+<div class="border border-[#e5e7eb] rounded-xl p-5 hover:border-primary/50 transition-colors cursor-pointer relative group">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-3xl text-[#6e6189]">spa</span>
+<div class="h-5 w-5 rounded-full border-2 border-[#e5e7eb] flex items-center justify-center"></div>
+</div>
+<h3 class="font-bold text-[#131118] mb-1">Starter</h3>
+<p class="text-xs text-[#6e6189] mb-4">Essential coverage for individuals.</p>
+<p class="text-lg font-black text-[#131118]">$19<span class="text-xs font-normal text-[#6e6189]">/mo</span></p>
+</div>
+<!-- Plan Card 2 (Active) -->
+<div class="border-2 border-primary rounded-xl p-5 bg-primary/[0.02] relative shadow-lg shadow-primary/5">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Active Plan</div>
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-3xl text-primary">rocket_launch</span>
+<div class="h-5 w-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[12px] font-black">check</span>
+</div>
+</div>
+<h3 class="font-bold text-[#131118] mb-1">Professional</h3>
+<p class="text-xs text-[#6e6189] mb-4">Advanced strategy &amp; automation.</p>
+<p class="text-lg font-black text-[#131118]">$49<span class="text-xs font-normal text-[#6e6189]">/mo</span></p>
+</div>
+<!-- Plan Card 3 -->
+<div class="border border-[#e5e7eb] rounded-xl p-5 hover:border-primary/50 transition-colors cursor-pointer relative group">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-3xl text-[#6e6189]">diamond</span>
+<div class="h-5 w-5 rounded-full border-2 border-[#e5e7eb] flex items-center justify-center"></div>
+</div>
+<h3 class="font-bold text-[#131118] mb-1">Enterprise</h3>
+<p class="text-xs text-[#6e6189] mb-4">Full management for families.</p>
+<p class="text-lg font-black text-[#131118]">$99<span class="text-xs font-normal text-[#6e6189]">/mo</span></p>
+</div>
+</div>
+</section>
+<!-- Advanced Strategy Controls -->
+<section class="mb-20">
+<div class="flex items-center gap-2 mb-6 border-b border-[#e5e7eb] pb-3">
+<span class="material-symbols-outlined text-primary">tune</span>
+<h2 class="text-xl font-bold text-[#131118]">Advanced Sensitivity</h2>
+</div>
+<div class="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-6">
+<div class="flex items-start gap-4 mb-6">
+<div class="p-2 bg-yellow-100 rounded-lg">
+<span class="material-symbols-outlined text-yellow-700">warning</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-[#131118]">Manual Override Controls</h4>
+<p class="text-sm text-[#6e6189]">Changes here will bypass ShieldIQ's automated AI logic. Use with caution for custom financial modeling.</p>
+</div>
+</div>
+<div class="space-y-4">
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-5 h-5 rounded text-primary border-[#e5e7eb] focus:ring-primary/20" type="checkbox"/>
+<span class="text-sm font-medium text-[#131118]">Allow volatile market variance (+/- 15% annually)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input checked="" class="w-5 h-5 rounded text-primary border-[#e5e7eb] focus:ring-primary/20" type="checkbox"/>
+<span class="text-sm font-medium text-[#131118]">Include projected social security benefits</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-5 h-5 rounded text-primary border-[#e5e7eb] focus:ring-primary/20" type="checkbox"/>
+<span class="text-sm font-medium text-[#131118]">Apply regional cost of living adjustments</span>
+</label>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer Action Bar -->
+<footer class="sticky bottom-0 w-full bg-white border-t border-[#e5e7eb] py-4 px-12 z-50">
+<div class="max-w-[1000px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-2 text-xs text-[#6e6189]">
+<span class="material-symbols-outlined text-base">sync</span>
+<span>Last updated: Oct 24, 2023 at 11:42 AM</span>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 rounded-lg font-bold text-sm text-[#6e6189] hover:bg-[#f1f0f4] transition-colors">Cancel</button>
+<button class="px-8 py-2 rounded-lg bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">Save Changes</button>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Policy Comparison</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono-numeric { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen text-slate-900">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined text-2xl leading-none">shield</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900">ShieldIQ</h1>
+</div>
+<div class="hidden md:flex items-center gap-1">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+</div>
+<input class="block w-64 pl-10 pr-3 py-1.5 border-none bg-slate-100 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search policies..." type="text"/>
+</div>
+</div>
+</div>
+<nav class="flex items-center gap-6">
+<div class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary border-b-2 border-primary pb-0.5" href="#">Policy Comparison</a>
+<a class="hover:text-primary transition-colors" href="#">Claims Hub</a>
+<a class="hover:text-primary transition-colors" href="#">Risk Profile</a>
+</div>
+<div class="flex items-center gap-3 border-l border-slate-200 pl-6">
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-slate-200 border border-slate-300 overflow-hidden">
+<img alt="User Avatar" data-alt="User profile avatar circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7k1rhhfgfd57d6ObYxtmYbCvzMHZSLXBIIlMgnVgikwve-mEp7IuCPdoT_2gItl98iOMBXurILuFui0qeC8g5Lb0fCCAm7fksmfmmjSqd4Cui2zquTMiFxfOot0RaNRw_qUrARtwtJhDL3fsStCI6L1FaKkj0iBIy915UJXHMu1-I-R3N1R1aY7VeiUeTcXrK5-97HUR3fq1rbgjUtpdyVXxXoCHiYqyQb26QajIQCc__RdWXD0520-lihKAsxFPnfGiZ1h7eLUw"/>
+</div>
+</div>
+</nav>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-8">
+<!-- Breadcrumbs & Header -->
+<div class="mb-8">
+<nav class="flex text-sm text-slate-500 mb-4 gap-2 items-center">
+<a class="hover:text-slate-700" href="#">Analytics</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 font-medium">Policy Comparison</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-1">
+<h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Quantitative Policy Analysis</h2>
+<p class="text-slate-500 max-w-2xl">Objective evaluation prioritizing claim settlement reliability and long-term risk fit over short-term premium savings.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+<span class="material-symbols-outlined text-sm">tune</span>
+                        Filter Criteria
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
+<span class="material-symbols-outlined text-sm">download</span>
+                        Export Analysis
+                    </button>
+</div>
+</div>
+</div>
+<!-- Risk Profile Context Bar -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+<div class="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Primary Insured</p>
+<p class="text-sm font-bold text-slate-800">Male, 32 Years</p>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+<div class="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">location_on</span>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Risk Location</p>
+<p class="text-sm font-bold text-slate-800">Mumbai, Tier 1</p>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+<div class="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Sum Insured</p>
+<p class="text-sm font-bold text-slate-800 mono-numeric">₹1,000,000</p>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+<div class="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Past Claims</p>
+<p class="text-sm font-bold text-slate-800">None (Healthy)</p>
+</div>
+</div>
+</div>
+<!-- Comparison Table -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50/80 border-b border-slate-200">
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Insurer &amp; Plan</th>
+<th class="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Coverage (₹)</th>
+<th class="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Annual Premium (₹)</th>
+<th class="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">CSR (%)</th>
+<th class="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Wait Pd (Y)</th>
+<th class="px-4 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Co-pay (%)</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-primary text-center">Risk Fit Score</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Row 1: High Scorer -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-lg border border-slate-100 bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
+<img alt="Insurer Logo" data-alt="Insurance company logo symbol" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsTWATej5ppdkf6UvGb8-Sb6oZu4nSCcGXPzhVxr1p4yfh8Vf2Kqh3HRYSdyFKL_FOrpqQp1siRisnYEQ2LRSK7Xap9VP56--6ecW4UT4gOsLT5eJM1MRPDPAv4MNU3imge1OUFmloc7TYTkP-ZLXfyICwYWf2qaCp8KtSMRUYj8rQ6nUzLf1KtTVYpAFj9BjTft4sur0qNo77B5vjAAVfJxPHnX458sG9gTdUzfgTsvKotTY74v3ZiSTNJk_sShS1d_0CZ4uMDpA"/>
+</div>
+<div>
+<p class="font-bold text-slate-900 leading-tight">HDFC ERGO</p>
+<p class="text-xs text-slate-500">Optima Secure</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-5 text-right mono-numeric font-medium text-slate-700">10,00,000</td>
+<td class="px-4 py-5 text-right mono-numeric font-bold text-slate-900">14,842</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">98.4<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">2.0</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">0<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-6 py-5 text-center">
+<div class="inline-flex items-center justify-center px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+<span class="mono-numeric font-bold text-primary">94</span>
+<span class="text-[10px] text-primary/70 font-bold ml-1">/100</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Mid Scorer -->
+<tr class="group hover:bg-slate-50/50 transition-colors bg-slate-50/30">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-lg border border-slate-100 bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
+<img alt="Insurer Logo" data-alt="Corporate insurance brand logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcWpug4h46X7gtDsKBm8rkje_c84P6nsMo3T55AWh7x4VNdxNeS3ITG_8sir37pc3Vh4YWoBXajrmafCjo2N3_0SZWkEE-I7na3QH6npaez7kPjXroAtdM5QzXavVQUYLVS2FQz46fe7zTLJFJ3oHy-ZDrrZGXcLZgvkwW562CuqX_MHvIzn36tREqgLYmPUJShGNeLOJPdsM8eS-RoswL7UCaHxcY2u8rEw_yY5hd0PLZn0hU_OIK978yIDJOSCbgl7u1Z8-NezU"/>
+</div>
+<div>
+<p class="font-bold text-slate-900 leading-tight">Care Health</p>
+<p class="text-xs text-slate-500">Care Supreme</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-5 text-right mono-numeric font-medium text-slate-700">10,00,000</td>
+<td class="px-4 py-5 text-right mono-numeric font-bold text-slate-900">12,120</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">95.2<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">4.0</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">10<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-6 py-5 text-center">
+<div class="inline-flex items-center justify-center px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+<span class="mono-numeric font-bold text-blue-600">81</span>
+<span class="text-[10px] text-blue-600/70 font-bold ml-1">/100</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+<!-- Expanded Row Details (Example) -->
+<tr class="bg-primary/[0.02]">
+<td class="px-6 py-8 border-t border-slate-100" colspan="8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- AI Insights -->
+<div class="bg-white border border-primary/20 rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4 text-primary">
+<span class="material-symbols-outlined text-lg">auto_awesome</span>
+<h4 class="font-bold text-sm tracking-tight">AI Insights: Why this matches your profile</h4>
+</div>
+<ul class="space-y-3">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-green-500 text-sm mt-0.5">check_circle</span>
+<p class="text-xs text-slate-600 leading-relaxed"><span class="font-bold text-slate-800">Hospital Network:</span> 84% of hospitals in Mumbai-West (your location) are covered under the cashless network.</p>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-green-500 text-sm mt-0.5">check_circle</span>
+<p class="text-xs text-slate-600 leading-relaxed"><span class="font-bold text-slate-800">Future-Proof:</span> The 'Optima Secure' benefit automatically doubles your sum insured every year, ideal for your long-term risk profile.</p>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-green-500 text-sm mt-0.5">check_circle</span>
+<p class="text-xs text-slate-600 leading-relaxed"><span class="font-bold text-slate-800">Settlement History:</span> Highest reliability score for respiratory-related claims, matching your declared urban environment profile.</p>
+</li>
+</ul>
+</div>
+<!-- Exclusions & Actions -->
+<div class="flex flex-col justify-between gap-6">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<h5 class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-widest">Notable Exclusions</h5>
+<ul class="space-y-1">
+<li class="flex items-center gap-2 text-xs text-slate-500">
+<span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                        Cosmetic surgeries
+                                                    </li>
+<li class="flex items-center gap-2 text-xs text-slate-500">
+<span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                        Alternative therapy (Limited)
+                                                    </li>
+<li class="flex items-center gap-2 text-xs text-slate-500">
+<span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                                        Obesity treatment
+                                                    </li>
+</ul>
+</div>
+<div class="bg-slate-50 p-4 rounded-lg flex flex-col justify-center">
+<p class="text-xs text-slate-500 mb-1">Estimated Renewal Load</p>
+<p class="text-xl font-bold mono-numeric text-slate-800">+4.2<span class="text-xs font-normal text-slate-400">%</span></p>
+<p class="text-[10px] text-slate-400 mt-1 italic">Based on 5-year trend</p>
+</div>
+</div>
+<div class="flex gap-3 pt-4 border-t border-slate-100">
+<button class="flex-1 py-2.5 px-4 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">Compare Technical Detail</button>
+<button class="flex-1 py-2.5 px-4 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Select Plan</button>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 3: Budget Option -->
+<tr class="group hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-lg border border-slate-100 bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
+<img alt="Insurer Logo" data-alt="Insurance provider minimal logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFawTT9742424IZebpDdjIL8urgvofwwyKAUBZoScOj7T1hKGG7_955DmoKRfCMryR5UVu6f_pi0JhKl03BfhhL1STOHhhZaiwoIR_nP2cfmI6RbIMHwLLp6vNfXMXaCQYlAHmrIfD_Ixi4dnDtAeD5Eksja6pIjAAoE6Yr4IfSlD_F0_gIPVJo9QE_NXI7KMmZiiivgaAbSDoR4SZZKlDIDnn5l2UDVkgbJkT882A2Ygixsomb6MiVKwMIODpjPyqwRynelYpNVQ"/>
+</div>
+<div>
+<p class="font-bold text-slate-900 leading-tight">Star Health</p>
+<p class="text-xs text-slate-500">Assure Policy</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-5 text-right mono-numeric font-medium text-slate-700">10,00,000</td>
+<td class="px-4 py-5 text-right mono-numeric font-bold text-slate-900">10,850</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">92.8<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">3.0</td>
+<td class="px-4 py-5 text-center mono-numeric text-slate-700">20<span class="text-[10px] font-normal text-slate-400 ml-0.5">%</span></td>
+<td class="px-6 py-5 text-center">
+<div class="inline-flex items-center justify-center px-3 py-1 bg-amber-50 rounded-full border border-amber-100">
+<span class="mono-numeric font-bold text-amber-600">67</span>
+<span class="text-[10px] text-amber-600/70 font-bold ml-1">/100</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Stats -->
+<div class="bg-slate-50/50 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-t border-slate-200">
+<p class="text-xs text-slate-500 italic">Data compiled from IRDAI Annual Reports (FY 2023-24) and current market rate tables.</p>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary/20 border border-primary/40"></span>
+<span class="text-xs font-semibold text-slate-600">High Reliability</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-100 border border-amber-300"></span>
+<span class="text-xs font-semibold text-slate-600">Moderate Risk</span>
+</div>
+<nav class="flex gap-1 ml-4">
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-primary">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-primary bg-primary text-white font-bold text-xs">1</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:border-primary text-xs">2</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-primary">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</nav>
+</div>
+</div>
+</div>
+<!-- Analytical Comparison Legend Card -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="p-5 bg-white rounded-xl border border-slate-200">
+<h5 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                    Risk Fit Calculation
+                </h5>
+<p class="text-xs text-slate-500 leading-relaxed">
+                    ShieldIQ's proprietary score accounts for claim speed, cashless network density in your PIN code, and historical renewal hikes.
+                </p>
+</div>
+<div class="p-5 bg-white rounded-xl border border-slate-200">
+<h5 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+                    Claims Reliability
+                </h5>
+<p class="text-xs text-slate-500 leading-relaxed">
+                    CSR is weighted by 'Claim Repudiation Rate'. A high CSR alone doesn't guarantee a stress-free settlement for complex cases.
+                </p>
+</div>
+<div class="p-5 bg-white rounded-xl border border-slate-200">
+<h5 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">timer</span>
+                    Waiting Periods
+                </h5>
+<p class="text-xs text-slate-500 leading-relaxed">
+                    Our analysis highlights the actual lock-in period for pre-existing conditions like diabetes or hypertension based on your health logs.
+                </p>
+</div>
+</div>
+</main>
+<footer class="mt-12 py-12 bg-white border-t border-slate-200">
+<div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-2 opacity-60">
+<span class="material-symbols-outlined text-lg">shield</span>
+<span class="text-sm font-bold">ShieldIQ</span>
+<span class="text-xs text-slate-500">© 2024 Policy Analytics Platform</span>
+</div>
+<div class="flex gap-8 text-xs text-slate-500 font-medium">
+<a class="hover:text-primary" href="#">Privacy Policy</a>
+<a class="hover:text-primary" href="#">Methodology</a>
+<a class="hover:text-primary" href="#">API Documentation</a>
+<a class="hover:text-primary" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

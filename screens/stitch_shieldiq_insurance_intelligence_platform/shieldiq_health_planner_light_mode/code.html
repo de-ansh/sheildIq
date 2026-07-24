@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Health Planner | Actuarial Coverage Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "neutral-border": "#e2e8f0",
+                        "neutral-subtle": "#f8fafc",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-background-light text-[#111318] antialiased">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between border-b border-neutral-border bg-white px-8 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="bg-primary text-white p-1.5 rounded">
+<span class="material-symbols-outlined text-xl block">shield_with_heart</span>
+</div>
+<h2 class="text-[#111318] text-lg font-extrabold tracking-tight">Shield<span class="text-primary">IQ</span></h2>
+<div class="h-4 w-[1px] bg-neutral-border mx-2"></div>
+<span class="text-xs font-semibold uppercase tracking-widest text-[#616e89]">Health Planner v4.2</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="flex items-center gap-6">
+<a class="text-sm font-semibold text-primary border-b-2 border-primary pb-1" href="#">Planner</a>
+<a class="text-sm font-medium text-[#616e89] hover:text-[#111318]" href="#">Actuarial Models</a>
+<a class="text-sm font-medium text-[#616e89] hover:text-[#111318]" href="#">Global Benchmarks</a>
+</nav>
+<div class="flex items-center gap-3 border-l border-neutral-border pl-6">
+<button class="bg-primary text-white text-xs font-bold px-4 py-2 rounded uppercase tracking-wider hover:bg-blue-700 transition-colors">
+                    Generate Report
+                </button>
+<div class="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">JD</div>
+</div>
+</div>
+</header>
+<main class="flex min-h-[calc(100vh-64px)]">
+<!-- Sidebar: Control Center -->
+<aside class="w-80 border-r border-neutral-border bg-white flex flex-col shrink-0">
+<div class="p-5 border-b border-neutral-border">
+<h3 class="text-xs font-bold uppercase tracking-widest text-[#616e89] mb-4">Simulation Parameters</h3>
+<!-- Family Size -->
+<div class="space-y-4">
+<div>
+<label class="text-[11px] font-bold text-[#111318] uppercase mb-1.5 block">Family Demographics</label>
+<div class="grid grid-cols-2 gap-2">
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-xs text-[#616e89] font-medium">Adults</span>
+<input class="w-full pl-14 pr-3 py-2 text-sm border-neutral-border rounded focus:ring-primary focus:border-primary mono" type="number" value="2"/>
+</div>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-xs text-[#616e89] font-medium">Kids</span>
+<input class="w-full pl-12 pr-3 py-2 text-sm border-neutral-border rounded focus:ring-primary focus:border-primary mono" type="number" value="2"/>
+</div>
+</div>
+</div>
+<!-- City Tier -->
+<div>
+<label class="text-[11px] font-bold text-[#111318] uppercase mb-1.5 block">Location (Cost Tier)</label>
+<select class="w-full text-sm border-neutral-border rounded focus:ring-primary focus:border-primary">
+<option>Tier 1 - Major Metropolitan</option>
+<option>Tier 2 - Secondary City</option>
+<option>Tier 3 - Rural/Regional</option>
+</select>
+</div>
+<!-- Employer Coverage -->
+<div>
+<label class="text-[11px] font-bold text-[#111318] uppercase mb-1.5 block">Employer Contribution</label>
+<div class="relative">
+<input class="w-full pl-3 pr-8 py-2 text-sm border-neutral-border rounded focus:ring-primary focus:border-primary mono" type="text" value="80"/>
+<span class="absolute right-3 top-2.5 text-xs text-[#616e89] font-bold">%</span>
+</div>
+</div>
+<!-- Risk Factors -->
+<div>
+<label class="text-[11px] font-bold text-[#111318] uppercase mb-1.5 block">Clinical Risk Profile</label>
+<div class="space-y-2">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs text-[#111318]">Chronic Management</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs text-[#111318]">Critical Care Exposure</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-xs text-[#111318]">Maternity Projections</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto p-5">
+<button class="w-full bg-primary text-white py-3 rounded font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all">
+<span class="material-symbols-outlined text-sm">refresh</span>
+                    RE-RUN SIMULATION
+                </button>
+<p class="text-[10px] text-center text-[#616e89] mt-3 uppercase font-medium">Last synced: 2 min ago</p>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<section class="flex-1 p-8 overflow-y-auto">
+<div class="max-w-6xl mx-auto space-y-8">
+<!-- Recommendation Hero -->
+<div class="bg-white border border-neutral-border rounded-xl p-8 flex items-center justify-between shadow-sm">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-lg">verified</span>
+<span class="text-xs font-bold uppercase tracking-widest">Actuarial Recommendation</span>
+</div>
+<h1 class="text-4xl font-black text-[#111318] tracking-tight mono">$1,250,000</h1>
+<p class="text-[#616e89] text-sm font-medium">Optimal Aggregate Coverage Limit for 2024-2025</p>
+</div>
+<div class="flex gap-8 text-right">
+<div>
+<p class="text-[10px] font-bold text-[#616e89] uppercase">Monthly Premium</p>
+<p class="text-xl font-bold text-[#111318] mono">$450.00</p>
+</div>
+<div class="h-12 w-[1px] bg-neutral-border"></div>
+<div>
+<p class="text-[10px] font-bold text-[#616e89] uppercase">Safety Margin</p>
+<p class="text-xl font-bold text-emerald-600 mono">+18.4%</p>
+</div>
+</div>
+</div>
+<!-- Simulation Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Cost Projection Chart (Placeholder Visual) -->
+<div class="bg-white border border-neutral-border rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<h4 class="text-sm font-bold text-[#111318]">20-Year Healthcare Cost Projection</h4>
+<span class="material-symbols-outlined text-[#616e89] cursor-help">info</span>
+</div>
+<div class="h-64 relative flex items-end justify-between gap-1 px-2">
+<!-- Visualizing a line chart area with CSS bars for simplicity in this mockup -->
+<div class="w-full h-full absolute inset-0 flex items-center justify-center">
+<div class="w-full h-full opacity-10 bg-gradient-to-t from-primary to-transparent rounded-lg"></div>
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="none" viewbox="0 0 400 200">
+<path d="M0,180 Q100,160 200,120 T400,40" fill="none" stroke="#2463eb" stroke-width="3"></path>
+<path d="M0,180 Q100,170 200,150 T400,120" fill="none" stroke="#94a3b8" stroke-dasharray="4" stroke-width="2"></path>
+</svg>
+</div>
+<div class="absolute bottom-0 left-0 text-[10px] text-[#616e89] mono">2024</div>
+<div class="absolute bottom-0 right-0 text-[10px] text-[#616e89] mono">2044</div>
+</div>
+<div class="mt-4 flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
+<div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-primary rounded-full"></span> Projected Need</div>
+<div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-slate-300 rounded-full"></span> Inflation Target</div>
+</div>
+</div>
+<!-- Risk Analysis Table -->
+<div class="bg-white border border-neutral-border rounded-xl p-6">
+<h4 class="text-sm font-bold text-[#111318] mb-6">Simulation Metrics: Variance Analysis</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-neutral-subtle rounded">
+<span class="text-xs font-medium text-[#616e89]">Maximum Out-of-Pocket Exposure</span>
+<span class="text-xs font-bold text-[#111318] mono">$6,500</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-neutral-subtle rounded">
+<span class="text-xs font-medium text-[#616e89]">Catastrophic Event Probability</span>
+<span class="text-xs font-bold text-amber-600 mono">2.41%</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-neutral-subtle rounded">
+<span class="text-xs font-medium text-[#616e89]">Network Gap Exposure</span>
+<span class="text-xs font-bold text-[#111318] mono">$12,400</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded">
+<span class="text-xs font-bold text-primary">Coverage Adequacy Score</span>
+<span class="text-xs font-bold text-primary mono">94/100</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Coverage Adequacy Bar Chart -->
+<div class="bg-white border border-neutral-border rounded-xl p-6">
+<h4 class="text-sm font-bold text-[#111318] mb-6">Current Benefits vs. Projected Needs</h4>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-[11px] font-bold uppercase text-[#616e89]">
+<span>Employer Provided (Current)</span>
+<span class="mono text-[#111318]">$250,000</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-slate-400" style="width: 25%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[11px] font-bold uppercase text-[#616e89]">
+<span>Projected Minimum Requirement</span>
+<span class="mono text-[#111318]">$850,000</span>
+</div>
+<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500" style="width: 70%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[11px] font-bold uppercase text-primary">
+<span>ShieldIQ Recommended (Alpha Scenario)</span>
+<span class="mono text-primary font-black">$1,250,000</span>
+</div>
+<div class="h-3 w-full bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 100%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Reasoning Footer -->
+<div class="bg-neutral-subtle border border-neutral-border rounded-lg p-6">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-sm text-[#616e89]">psychology</span>
+<h5 class="text-[11px] font-bold text-[#616e89] uppercase tracking-widest">Actuarial Logic &amp; AI Reasoning</h5>
+</div>
+<div class="mono text-[11px] leading-relaxed text-[#616e89]">
+<p class="mb-2">Calculated recommendation based on <span class="text-[#111318] font-bold">14.2 million anonymized claims records</span> within City Tier 1. The model incorporates a 3.8% annual medical inflation coefficient (MCPI) and a weighted variance for the identified clinical risk factors.</p>
+<p>Simulation ID: <span class="text-primary font-bold">AX-9942-BETA</span> | Confidence Interval: <span class="text-[#111318] font-bold">95.4%</span> | Convergence: <span class="text-emerald-600 font-bold">Stable</span></p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Side: Comparison Quick View (Optional) -->
+<aside class="w-16 border-l border-neutral-border bg-white flex flex-col items-center py-6 gap-6 shrink-0">
+<button class="w-10 h-10 rounded flex items-center justify-center text-[#616e89] hover:bg-neutral-subtle transition-colors">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+<button class="w-10 h-10 rounded flex items-center justify-center text-[#616e89] hover:bg-neutral-subtle transition-colors">
+<span class="material-symbols-outlined">compare_arrows</span>
+</button>
+<button class="w-10 h-10 rounded flex items-center justify-center text-primary bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">settings_suggest</span>
+</button>
+<div class="mt-auto">
+<button class="w-10 h-10 rounded flex items-center justify-center text-[#616e89] hover:bg-neutral-subtle transition-colors">
+<span class="material-symbols-outlined text-xl">help</span>
+</button>
+</div>
+</aside>
+</main>
+<!-- Map and data visualization contexts -->
+<div class="hidden">
+<img alt="Health Data Pattern" data-alt="Abstract clinical health data pattern blue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6KmCo2OWv7EsXo9AmN21ZyTUgsMJ0qqjGczaUBZwnprRgTDXQ5urwGnuJYy2viDfCfuOk5n-BFQQXSJ36ba_wuLicTeWBA3g2AAjCeSw9_5yd4mMVX6CsAMdmcglEpCOlB6me67R1GDxwZMPk6OWuK6x0vJdgmhrX_Y0DLH-MK0AL59VTDnMG6gjsLhLothtptrOR2GHyzHAU2TUXt4WN5hoBXiyllvrbc5-lCv1NiJ4vIFa5xeNnxnVXPbxPRCcW1MbwOdjW56Q"/>
+<div data-alt="Actuarial risk map visualization" data-location="New York City" style=""></div>
+</div>
+</body></html>

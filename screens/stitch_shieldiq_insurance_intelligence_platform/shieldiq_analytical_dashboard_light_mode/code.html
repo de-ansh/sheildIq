@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Analytical Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter and JetBrains Mono -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "warning": "#f59e0b",
+                        "success": "#10b981",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .mono-figure { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+<div class="flex items-center gap-10">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined block">shield_with_heart</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900">ShieldIQ</h1>
+</div>
+<!-- Navigation -->
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-semibold text-primary border-b-2 border-primary pb-4 mt-4" href="#">Dashboard</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors pb-4 mt-4" href="#">Calculators</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors pb-4 mt-4" href="#">Policies</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors pb-4 mt-4" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Search insights..." type="text"/>
+</div>
+<!-- Icons -->
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+<span class="material-symbols-outlined">contrast</span>
+</button>
+<!-- Profile -->
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-900 uppercase tracking-wider">A. Chatterjee</p>
+<p class="text-[10px] text-slate-500">Premium Member</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border border-slate-300">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="User profile photo showing professional male portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMg27q0EknrgLn-ggMNifYVuKC3AlidKJEZgqmEm8R7Bk_qiQ9x8BokeH07wRtRXpk5m6I4WgFKT4rlUpmXKXKqMv8uAc2Wx_9F6mL8h3ZBugzqnZmxG41bVOVMLWrlofkt4cPuCQmkVmE_y_MPvGiU72pkEZsT0L9ONzIo5PTL_BIzpHh25kCTdr96quEx9wXr9ZLxJ2XdXWjSSxoFegJm_oLatD1mnp6gOiYoEBmDqNy4h7Qwn-cEG9dpaltedVYGeCcbQqBrBA"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto p-6 space-y-6">
+<!-- Metric Cards Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Recommended Life Coverage -->
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<p class="text-sm font-medium text-slate-500">Rec. Life Coverage</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1 rounded">safety_check</span>
+</div>
+<h3 class="mono-figure text-2xl font-bold text-slate-900">₹1.2 Cr</h3>
+<div class="mt-2 flex items-center gap-1 text-success text-xs font-semibold">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+<span>Stable recommendation</span>
+</div>
+</div>
+<!-- Recommended Health Coverage -->
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<p class="text-sm font-medium text-slate-500">Rec. Health Coverage</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1 rounded">medical_services</span>
+</div>
+<h3 class="mono-figure text-2xl font-bold text-slate-900">₹25 Lakhs</h3>
+<div class="mt-2 flex items-center gap-1 text-slate-500 text-xs">
+<span class="material-symbols-outlined text-xs">info</span>
+<span>Based on current age</span>
+</div>
+</div>
+<!-- Coverage Gap -->
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<p class="text-sm font-medium text-slate-500">Current Coverage Gap</p>
+<span class="material-symbols-outlined text-warning bg-warning/10 p-1 rounded">warning</span>
+</div>
+<h3 class="mono-figure text-2xl font-bold text-warning">₹85 Lakhs</h3>
+<div class="mt-2 flex items-center gap-1 text-warning text-xs font-semibold">
+<span class="material-symbols-outlined text-xs">error</span>
+<span>High Risk exposure</span>
+</div>
+</div>
+<!-- Sustainability Score -->
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<p class="text-sm font-medium text-slate-500">Premium Score</p>
+<span class="material-symbols-outlined text-success bg-success/10 p-1 rounded">verified</span>
+</div>
+<h3 class="mono-figure text-2xl font-bold text-success">78/100</h3>
+<div class="mt-2 flex items-center gap-1 text-success text-xs font-semibold">
+<span class="material-symbols-outlined text-xs">expand_less</span>
+<span>+5% from last month</span>
+</div>
+</div>
+</div>
+<!-- Main Content Area -->
+<div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+<!-- Left Column: Protection Summary & Risk Exposure (60%) -->
+<div class="lg:col-span-6 space-y-6">
+<!-- Protection Summary Card -->
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h2 class="text-lg font-bold text-slate-900">Protection Summary</h2>
+<p class="text-sm text-slate-500">Required vs. Current Coverage analysis</p>
+</div>
+<div class="flex gap-2">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-sm bg-slate-200"></div>
+<span class="text-xs font-medium text-slate-600">Current</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-sm bg-primary"></div>
+<span class="text-xs font-medium text-slate-600">Required</span>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Life -->
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-slate-700 uppercase tracking-tight">
+<span>Life Protection</span>
+<span class="mono-figure text-primary">62% Covered</span>
+</div>
+<div class="h-6 w-full bg-slate-100 rounded overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 62%;"></div>
+<div class="h-full bg-primary/30" style="width: 38%;"></div>
+</div>
+</div>
+<!-- Health -->
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-slate-700 uppercase tracking-tight">
+<span>Health Protection</span>
+<span class="mono-figure text-primary">40% Covered</span>
+</div>
+<div class="h-6 w-full bg-slate-100 rounded overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 40%;"></div>
+<div class="h-full bg-primary/30" style="width: 60%;"></div>
+</div>
+</div>
+<!-- Critical Illness -->
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-slate-700 uppercase tracking-tight">
+<span>Critical Illness</span>
+<span class="mono-figure text-warning">15% Covered</span>
+</div>
+<div class="h-6 w-full bg-slate-100 rounded overflow-hidden flex">
+<div class="h-full bg-warning" style="width: 15%;"></div>
+<div class="h-full bg-warning/20" style="width: 85%;"></div>
+</div>
+</div>
+<!-- Disability -->
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold text-slate-700 uppercase tracking-tight">
+<span>Disability</span>
+<span class="mono-figure text-primary">70% Covered</span>
+</div>
+<div class="h-6 w-full bg-slate-100 rounded overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 70%;"></div>
+<div class="h-full bg-primary/30" style="width: 30%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Risk Exposure Donut -->
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+<h2 class="text-lg font-bold text-slate-900 mb-6">Risk Exposure Distribution</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+<div class="relative flex justify-center">
+<!-- Simple SVG Donut representation -->
+<svg class="w-48 h-48 -rotate-90">
+<circle class="text-slate-100" cx="96" cy="96" fill="transparent" r="70" stroke="currentColor" stroke-width="24"></circle>
+<circle class="text-primary" cx="96" cy="96" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="110" stroke-width="24"></circle>
+<circle class="text-warning" cx="96" cy="96" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="330" stroke-width="24"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-bold mono-figure">High</span>
+<span class="text-xs text-slate-500 uppercase">Overall Risk</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800">Wealth Erosion</p>
+<p class="text-xs text-slate-500">45% Vulnerability</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-warning"></div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800">Health Costs</p>
+<p class="text-xs text-slate-500">30% Vulnerability</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-slate-400"></div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800">Liability Risk</p>
+<p class="text-xs text-slate-500">15% Vulnerability</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-slate-200"></div>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800">Longevity</p>
+<p class="text-xs text-slate-500">10% Vulnerability</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Recommendations & Adjustments (40%) -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Recommended Policy Types -->
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+<h2 class="text-lg font-bold text-slate-900 mb-4">Recommended Policy Types</h2>
+<div class="space-y-3">
+<!-- Policy 1 -->
+<div class="p-4 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 text-primary p-2 rounded-lg">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-900">Term Plus Ultra</p>
+<p class="text-[11px] font-medium text-slate-500">HDFC Life • Coverage ₹2Cr</p>
+</div>
+</div>
+<div class="text-right">
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-full">98% Match</span>
+<button class="block mt-1 text-xs font-bold text-primary hover:underline">Details</button>
+</div>
+</div>
+<!-- Policy 2 -->
+<div class="p-4 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 text-primary p-2 rounded-lg">
+<span class="material-symbols-outlined">health_metrics</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-900">Health Optima</p>
+<p class="text-[11px] font-medium text-slate-500">Star Health • Coverage ₹15L</p>
+</div>
+</div>
+<div class="text-right">
+<span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-full">85% Match</span>
+<button class="block mt-1 text-xs font-bold text-primary hover:underline">Details</button>
+</div>
+</div>
+<!-- Policy 3 -->
+<div class="p-4 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 text-primary p-2 rounded-lg">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-900">CI Defender</p>
+<p class="text-[11px] font-medium text-slate-500">ICICI Lombard • Coverage ₹10L</p>
+</div>
+</div>
+<div class="text-right">
+<span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-full">72% Match</span>
+<button class="block mt-1 text-xs font-bold text-primary hover:underline">Details</button>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 text-sm font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                        View All Recommendations
+                    </button>
+</div>
+<!-- Scenario Adjustments Card -->
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">tune</span>
+<h2 class="text-lg font-bold text-slate-900">Scenario Adjustments</h2>
+</div>
+<div class="space-y-8">
+<!-- Retirement Age Slider -->
+<div class="space-y-3">
+<div class="flex justify-between">
+<label class="text-xs font-bold text-slate-700 uppercase">Retirement Age</label>
+<span class="mono-figure text-sm font-bold text-primary">60 Years</span>
+</div>
+<input class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary" max="75" min="45" type="range" value="60"/>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium">
+<span>45</span>
+<span>75</span>
+</div>
+</div>
+<!-- Inflation Rate Slider -->
+<div class="space-y-3">
+<div class="flex justify-between">
+<label class="text-xs font-bold text-slate-700 uppercase">Inflation Rate</label>
+<span class="mono-figure text-sm font-bold text-primary">6.5%</span>
+</div>
+<input class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary" max="15" min="1" type="range" value="6.5"/>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium">
+<span>1%</span>
+<span>15%</span>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/10">
+<p class="text-xs leading-relaxed text-slate-600">
+<span class="font-bold text-primary italic">Note:</span> Adjusting retirement age significantly impacts wealth erosion risk. Current settings suggest a 12% increase in recommended coverage.
+                        </p>
+</div>
+<button class="w-full mt-6 py-2.5 bg-primary text-white rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                        Update Projections
+                    </button>
+</div>
+</div>
+</div>
+<!-- Footer Legend / Info -->
+<footer class="flex flex-col md:flex-row justify-between items-center py-6 border-t border-slate-200 text-slate-400 text-xs">
+<p>© 2024 ShieldIQ Intelligence Platform. Data refreshed: Oct 24, 14:00 IST</p>
+<div class="flex gap-6 mt-4 md:mt-0">
+<a class="hover:text-slate-600" href="#">Compliance</a>
+<a class="hover:text-slate-600" href="#">Privacy Policy</a>
+<a class="hover:text-slate-600" href="#">Audit Logs</a>
+</div>
+</footer>
+</main>
+</body></html>

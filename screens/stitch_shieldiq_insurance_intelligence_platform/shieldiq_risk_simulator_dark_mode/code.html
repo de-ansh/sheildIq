@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Risk Simulator - Dark Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0c0a12",
+                        "surface-dark": "#161421",
+                        "border-dark": "#2d2839",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .mono-value {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(22, 20, 33, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(45, 40, 57, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white selection:bg-primary/30">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark px-6 py-3 bg-surface-dark/50 sticky top-0 z-50 backdrop-blur-md">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xl">shield_with_heart</span>
+</div>
+<div class="flex flex-col">
+<h2 class="text-white text-base font-bold leading-tight tracking-tight">ShieldIQ Risk Simulator</h2>
+<span class="text-[10px] uppercase tracking-widest text-[#a69db9] font-semibold">System Optimized</span>
+</div>
+</div>
+<nav class="hidden md:flex items-center gap-7">
+<a class="text-[#a69db9] hover:text-white text-sm font-medium transition-colors" href="#">Dashboard</a>
+<a class="text-white text-sm font-medium border-b-2 border-primary py-4 -mb-4" href="#">Scenarios</a>
+<a class="text-[#a69db9] hover:text-white text-sm font-medium transition-colors" href="#">Portfolios</a>
+<a class="text-[#a69db9] hover:text-white text-sm font-medium transition-colors" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-border-dark/30 rounded-lg border border-border-dark/50">
+<span class="material-symbols-outlined text-[#a69db9] text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 p-0 text-sm w-48 placeholder:text-[#a69db9]" placeholder="Search parameters..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="hidden sm:flex items-center gap-2 cursor-pointer rounded-lg h-9 px-4 bg-border-dark text-white text-xs font-bold transition-all hover:bg-border-dark/80">
+<span class="material-symbols-outlined text-sm">share</span>
+<span>Share Scenario</span>
+</button>
+<button class="flex items-center gap-2 cursor-pointer rounded-lg h-9 px-4 bg-primary text-white text-xs font-bold transition-all hover:shadow-[0_0_15px_rgba(99,36,235,0.4)]">
+<span class="material-symbols-outlined text-sm">ios_share</span>
+<span>Export Report</span>
+</button>
+</div>
+<div class="size-9 rounded-full border-2 border-primary p-0.5">
+<div class="w-full h-full bg-center bg-cover rounded-full" data-alt="User profile picture showing a professional male" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCLVkzyA5nAYvYpbnJ_YEMof_qH4V8RQRQ5bGVrNc15s5320-2yAACofULsAcFAvoyS_EtmlCGz92C6uDLpybn1a5Y0rY-e9ts-XpkZLFoCmXG3O-eIhNGgSgYZNsL9pJjfjbspLjh5zhrOTFh-cV-piCChiObx9yc4Kz6keDxCezAxe1TwoZWNpoLUoqT94oydVhCFBu1MDY6VVDH-6MiPfinIeDH-fXAGxtjWGw56bliYNfParJiFnMXZuZAXZf_vY8nUzMKlGpY");'></div>
+</div>
+</div>
+</header>
+<main class="flex flex-1 overflow-hidden">
+<!-- Sidebar: Scenario Selection -->
+<aside class="w-72 border-r border-border-dark bg-surface-dark/30 p-4 flex flex-col gap-6">
+<div>
+<h3 class="text-[#a69db9] text-[11px] font-bold uppercase tracking-[0.15em] mb-4">Risk Scenarios</h3>
+<div class="flex flex-col gap-1">
+<button class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#a69db9] hover:bg-border-dark transition-colors group">
+<span class="material-symbols-outlined text-lg group-hover:text-white">skull</span>
+<span class="text-sm font-medium group-hover:text-white">Death</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#a69db9] hover:bg-border-dark transition-colors group">
+<span class="material-symbols-outlined text-lg group-hover:text-white">accessible</span>
+<span class="text-sm font-medium group-hover:text-white">Disability</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/20 text-white border border-primary/30 relative">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full"></div>
+<span class="material-symbols-outlined text-lg text-primary">medical_services</span>
+<span class="text-sm font-semibold">Critical Illness</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#a69db9] hover:bg-border-dark transition-colors group">
+<span class="material-symbols-outlined text-lg group-hover:text-white">car_crash</span>
+<span class="text-sm font-medium group-hover:text-white">Accident</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#a69db9] hover:bg-border-dark transition-colors group">
+<span class="material-symbols-outlined text-lg group-hover:text-white">monitor_heart</span>
+<span class="text-sm font-medium group-hover:text-white">Health Event</span>
+</button>
+</div>
+</div>
+<div class="mt-auto p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
+<p class="text-white text-xs font-bold mb-1">Portfolio Summary</p>
+<p class="text-[#a69db9] text-[11px] leading-relaxed mb-3">Stress test active for <span class="text-white">John Doe Family Trust</span>.</p>
+<button class="w-full py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all">
+                            Run Simulation
+                        </button>
+</div>
+</aside>
+<!-- Content Area -->
+<div class="flex-1 flex flex-col overflow-y-auto">
+<!-- Page Title & Quick Stats -->
+<div class="p-6 pb-0 flex flex-wrap justify-between items-end gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest rounded border border-red-500/20">High Stress</span>
+<span class="text-[#a69db9] text-xs font-medium">Simulation active</span>
+</div>
+<h1 class="text-white text-3xl font-black tracking-tight leading-none">Critical Illness Impact</h1>
+<p class="text-[#a69db9] mt-2 text-sm max-w-xl">Testing portfolio survival under major health event conditions including loss of income and high medical expenses.</p>
+</div>
+<div class="flex gap-4 mb-1">
+<button class="px-4 py-2 border border-border-dark hover:bg-border-dark/50 text-white text-xs font-bold rounded-lg transition-colors">
+                                Reset Parameters
+                            </button>
+</div>
+</div>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+<div class="bg-surface-dark border border-border-dark p-5 rounded-xl shadow-lg flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<span class="text-[#a69db9] text-xs font-semibold uppercase tracking-wider">Projected Shortfall</span>
+<span class="material-symbols-outlined text-[#fa6c38] text-xl">trending_up</span>
+</div>
+<p class="mono-value text-2xl font-bold text-white">$420,500.00</p>
+<p class="text-red-400 text-xs font-medium">+12.4% from baseline</p>
+</div>
+<div class="bg-surface-dark border border-border-dark p-5 rounded-xl shadow-lg flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<span class="text-[#a69db9] text-xs font-semibold uppercase tracking-wider">Survival Period</span>
+<span class="material-symbols-outlined text-[#fa6c38] text-xl">hourglass_bottom</span>
+</div>
+<p class="mono-value text-2xl font-bold text-white">14.5 Years</p>
+<p class="text-red-400 text-xs font-medium">-2.1% from baseline</p>
+</div>
+<div class="bg-surface-dark border border-border-dark p-5 rounded-xl shadow-lg flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<span class="text-[#a69db9] text-xs font-semibold uppercase tracking-wider">Risk Score</span>
+<span class="material-symbols-outlined text-[#fa6c38] text-xl">warning</span>
+</div>
+<p class="text-2xl font-bold text-white">Extreme</p>
+<div class="w-full bg-border-dark h-1.5 mt-2 rounded-full overflow-hidden">
+<div class="w-[85%] h-full bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+</div>
+</div>
+</div>
+<!-- Main Chart Section -->
+<div class="px-6 pb-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+<div class="lg:col-span-3 bg-surface-dark border border-border-dark rounded-xl p-6 shadow-xl overflow-hidden relative">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-white text-lg font-bold">Financial Impact Timeline</h3>
+<p class="text-[#a69db9] text-sm">Cash Flow Survival vs. Depletion (30 Year View)</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(99,36,235,0.8)]"></div>
+<span class="text-[10px] text-white uppercase font-bold">Survival</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-[#fa6c38] shadow-[0_0_8px_rgba(250,108,56,0.8)]"></div>
+<span class="text-[10px] text-white uppercase font-bold">Depletion</span>
+</div>
+</div>
+</div>
+<div class="relative h-[280px] w-full flex flex-col justify-end">
+<!-- Area Chart Visualization -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 1000 300">
+<defs>
+<lineargradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#6324eb" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#6324eb" stop-opacity="0"></stop>
+</lineargradient>
+<lineargradient id="depletionGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#fa6c38" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#fa6c38" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Depletion Curve -->
+<path d="M0,280 Q250,260 500,280 T1000,150 L1000,300 L0,300 Z" fill="url(#depletionGradient)"></path>
+<path d="M0,280 Q250,260 500,280 T1000,150" fill="none" stroke="#fa6c38" stroke-dasharray="8 4" stroke-width="3"></path>
+<!-- Survival Curve -->
+<path d="M0,50 Q250,120 500,180 T1000,290 L1000,300 L0,300 Z" fill="url(#chartGradient)"></path>
+<path d="M0,50 Q250,120 500,180 T1000,290" fill="none" stroke="#6324eb" stroke-linecap="round" stroke-width="4"></path>
+<!-- Intersection Point -->
+<circle class="animate-pulse" cx="680" cy="235" fill="#6324eb" r="6"></circle>
+<circle cx="680" cy="235" fill="none" r="10" stroke="#6324eb" stroke-width="1"></circle>
+</svg>
+<!-- Tooltip Overlay -->
+<div class="absolute left-[66%] top-[140px] glass-panel p-3 rounded-lg z-10 border border-primary/40">
+<p class="text-[10px] text-[#a69db9] font-bold uppercase mb-1">Year 14.5</p>
+<p class="mono-value text-white text-sm font-bold">$1,240,500.00</p>
+<p class="text-red-400 text-[10px] font-bold">Depletion Critical Point</p>
+</div>
+<div class="flex justify-between mt-4 pt-4 border-t border-border-dark/50">
+<span class="text-[#a69db9] text-[11px] font-bold tracking-widest">5Y</span>
+<span class="text-[#a69db9] text-[11px] font-bold tracking-widest">10Y</span>
+<span class="text-white text-[11px] font-black tracking-widest bg-primary/20 px-2 py-0.5 rounded">15Y</span>
+<span class="text-[#a69db9] text-[11px] font-bold tracking-widest">20Y</span>
+<span class="text-[#a69db9] text-[11px] font-bold tracking-widest">25Y</span>
+<span class="text-[#a69db9] text-[11px] font-bold tracking-widest">30Y</span>
+</div>
+</div>
+</div>
+<!-- Adequacy Gauge Side -->
+<div class="lg:col-span-1 flex flex-col gap-6">
+<div class="bg-surface-dark border border-border-dark rounded-xl p-5 flex flex-col items-center shadow-xl">
+<h4 class="text-white text-sm font-bold w-full text-center mb-4">Coverage Adequacy</h4>
+<div class="relative w-40 h-24 mb-4">
+<!-- Gauge SVG -->
+<svg class="w-full h-full transform transition-transform" viewbox="0 0 100 60">
+<path d="M10,50 A40,40 0 0,1 90,50" fill="none" stroke="#2d2839" stroke-linecap="round" stroke-width="10"></path>
+<path d="M10,50 A40,40 0 0,1 40,15" fill="none" stroke="#ef4444" stroke-linecap="round" stroke-width="10"></path>
+<path d="M40,15 A40,40 0 0,1 65,18" fill="none" stroke="#eab308" stroke-linecap="round" stroke-width="10"></path>
+<path d="M65,18 A40,40 0 0,1 90,50" fill="none" stroke="#22c55e" stroke-linecap="round" stroke-width="10"></path>
+<!-- Needle -->
+<line stroke="white" stroke-linecap="round" stroke-width="2" x1="50" x2="25" y1="50" y2="25"></line>
+<circle cx="50" cy="50" fill="white" r="4"></circle>
+</svg>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+<p class="text-red-400 text-xl font-black">34%</p>
+<p class="text-[#a69db9] text-[10px] uppercase font-bold">Inadequate</p>
+</div>
+</div>
+<p class="text-center text-xs text-[#a69db9] leading-relaxed">
+                                    Current coverage covers only <span class="text-white font-bold">1/3rd</span> of predicted critical illness liabilities.
+                                </p>
+</div>
+<div class="bg-surface-dark border border-border-dark rounded-xl p-5 shadow-xl grow">
+<h4 class="text-white text-sm font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+                                    Strategy Optimization
+                                </h4>
+<div class="space-y-4">
+<div class="p-3 bg-primary/5 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-1">
+<p class="text-white text-xs font-bold">Premium Waiver Rider</p>
+<span class="text-emerald-400 text-[10px] font-bold">-15% Risk</span>
+</div>
+<p class="text-[#a69db9] text-[10px]">Offsets ongoing premiums during illness period.</p>
+<div class="mt-2 h-1 w-full bg-border-dark rounded-full overflow-hidden">
+<div class="w-[15%] h-full bg-emerald-400"></div>
+</div>
+</div>
+<div class="p-3 bg-white/5 rounded-lg border border-border-dark hover:border-border-dark/80 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-1">
+<p class="text-white text-xs font-bold">Increase Sum Assured</p>
+<span class="text-emerald-400 text-[10px] font-bold">+12y Survival</span>
+</div>
+<p class="text-[#a69db9] text-[10px]">Extends survival period by increasing lump sum.</p>
+<div class="mt-2 h-1 w-full bg-border-dark rounded-full overflow-hidden">
+<div class="w-[45%] h-full bg-primary"></div>
+</div>
+</div>
+<button class="w-full py-2.5 text-primary text-xs font-bold border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
+                                        View All 8 Solutions
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

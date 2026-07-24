@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Onboarding - Family &amp; Liabilities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111318]">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Navigation Header -->
+<header class="flex items-center justify-between border-b border-primary/10 bg-white px-6 md:px-20 py-4">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined">security</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight text-[#111318]">ShieldIQ</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex flex-col items-end mr-2">
+<span class="text-xs font-semibold text-primary/70 uppercase tracking-wider">Onboarding</span>
+<span class="text-sm font-medium text-[#111318]">Step 2 of 3</span>
+</div>
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20">
+<span class="material-symbols-outlined">person</span>
+</button>
+</div>
+</header>
+<main class="flex flex-1 flex-col items-center px-4 py-8 md:py-12">
+<div class="w-full max-w-[800px]">
+<!-- Progress Section -->
+<div class="mb-10 flex flex-col gap-4 px-2">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<h1 class="text-2xl md:text-3xl font-bold text-[#111318]">Family &amp; Liabilities</h1>
+<p class="mt-1 text-sm text-[#616e89]">Help us understand your financial dependencies and obligations.</p>
+</div>
+<div class="text-right">
+<span class="text-lg font-bold text-primary">66%</span>
+<span class="block text-[10px] font-bold uppercase tracking-widest text-[#616e89]">Progress</span>
+</div>
+</div>
+<div class="h-2 w-full overflow-hidden rounded-full bg-primary/10">
+<div class="h-full bg-primary transition-all duration-500" style="width: 66%;"></div>
+</div>
+</div>
+<!-- Form Card -->
+<div class="rounded-xl border border-primary/10 bg-white p-6 shadow-sm md:p-10">
+<form class="space-y-8">
+<!-- Family Section -->
+<section>
+<div class="mb-6 flex items-center gap-2 border-b border-primary/5 pb-2">
+<span class="material-symbols-outlined text-primary">family_restroom</span>
+<h3 class="text-lg font-semibold text-[#111318]">Family Details</h3>
+</div>
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Number of Dependents</label>
+<div class="relative">
+<select class="w-full rounded-lg border-primary/20 bg-white p-3 pr-10 text-[#111318] focus:border-primary focus:ring-2 focus:ring-primary/20">
+<option value="0">No dependents</option>
+<option value="1">1 Dependent</option>
+<option value="2">2 Dependents</option>
+<option selected="" value="3">3 Dependents</option>
+<option value="4+">4 or more</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Children's Ages</label>
+<div class="flex flex-wrap gap-2 rounded-lg border border-primary/20 bg-background-light/50 p-2 min-h-[50px] items-center">
+<span class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                                            6 Years <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span>
+</span>
+<span class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                                            12 Years <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span>
+</span>
+<input class="flex-1 min-w-[60px] border-none bg-transparent p-1 text-sm focus:ring-0" placeholder="Add age..." type="text"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Liabilities Section -->
+<section>
+<div class="mb-6 flex items-center gap-2 border-b border-primary/5 pb-2">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+<h3 class="text-lg font-semibold text-[#111318]">Outstanding Liabilities</h3>
+</div>
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Home Loan Outstanding</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-[#616e89]">₹</span>
+<input class="w-full rounded-lg border-primary/20 bg-white p-3 pl-8 text-[#111318] placeholder:text-[#616e89]/50 focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number" value="4500000"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Car Loan Outstanding</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-[#616e89]">₹</span>
+<input class="w-full rounded-lg border-primary/20 bg-white p-3 pl-8 text-[#111318] placeholder:text-[#616e89]/50 focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number" value="850000"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Other Liabilities</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-[#616e89]">₹</span>
+<input class="w-full rounded-lg border-primary/20 bg-white p-3 pl-8 text-[#111318] placeholder:text-[#616e89]/50 focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Credit card, Personal loan, etc." type="number"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#111318]">Monthly Household Expenses</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-[#616e89]">₹</span>
+<input class="w-full rounded-lg border-primary/20 bg-white p-3 pl-8 text-[#111318] placeholder:text-[#616e89]/50 focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Average per month" type="number" value="75000"/>
+</div>
+<p class="text-[10px] text-[#616e89]">Include rent, groceries, utilities, and lifestyle costs.</p>
+</div>
+</div>
+</section>
+<!-- Navigation Buttons -->
+<div class="flex items-center justify-between border-t border-primary/5 pt-8">
+<button class="flex items-center gap-2 px-6 py-3 text-sm font-bold text-[#616e89] transition-colors hover:text-[#111318]" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                                Back
+                            </button>
+<button class="flex items-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl active:scale-95" type="button">
+                                Continue
+                                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+<!-- Footer Info -->
+<div class="mt-8 flex flex-col items-center justify-center gap-4 text-center">
+<div class="flex items-center gap-2 text-[#616e89]">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span class="text-xs">Your financial data is encrypted and secure with ShieldIQ bank-grade security.</span>
+</div>
+<div class="flex gap-6">
+<a class="text-xs font-medium text-[#616e89] hover:underline" href="#">Privacy Policy</a>
+<a class="text-xs font-medium text-[#616e89] hover:underline" href="#">Terms of Service</a>
+<a class="text-xs font-medium text-[#616e89] hover:underline" href="#">Help Center</a>
+</div>
+</div>
+</div>
+</main>
+<!-- Decorative background elements -->
+<div class="fixed -bottom-24 -left-24 -z-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl"></div>
+<div class="fixed -right-24 -top-24 -z-10 h-96 w-96 rounded-full bg-primary/5 blur-3xl"></div>
+</div>
+</body></html>

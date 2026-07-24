@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Dashboard - Empty State</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .ghost-chart-dash {
+            stroke-dasharray: 4 4;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined">shield</span>
+</div>
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">ShieldIQ</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-semibold text-primary" href="#">Dashboard</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">Assessments</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="size-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+<img alt="User Profile" class="size-full object-cover" data-alt="Close up portrait of a professional man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtGIZSCkKqhe8WxyMIXDXZ5-n837HyT_IDBoyonWJV1PmuMUNDVw_fxyrCu9g2OcFSnrkWtV3Q8bCc2Zxsa_9Ac7adPoUeYbhMrZw2leVyzGeMJLWkKUmPmGETuO0luJFodQQwWDlrmp40cBp6iTfe-a43upMwveHNqLE76AVoqODAGsDBAgqgo0p2PlbNR4yJ_85jdVBfs1faOsTLa86xcdWU0flfes51hMRiLUsXPeWNnTrpYy2VGcZIKyM6j7LKXKyypYgwX2k"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Ghost Dashboard Content -->
+<div class="relative min-h-[600px] flex flex-col items-center justify-center">
+<!-- Ghost UI Skeletons Background -->
+<div class="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-8 opacity-20 pointer-events-none select-none overflow-hidden">
+<!-- Ghost Chart 1 -->
+<div class="p-6 border border-dashed border-slate-400 rounded-xl flex flex-col gap-4">
+<div class="h-4 w-32 bg-slate-300 rounded"></div>
+<div class="h-8 w-24 bg-slate-300 rounded"></div>
+<div class="flex-1 flex items-end gap-2 pb-2">
+<div class="flex-1 bg-slate-200 border border-dashed border-slate-400" style="height: 40%"></div>
+<div class="flex-1 bg-slate-200 border border-dashed border-slate-400" style="height: 70%"></div>
+<div class="flex-1 bg-slate-200 border border-dashed border-slate-400" style="height: 55%"></div>
+<div class="flex-1 bg-slate-200 border border-dashed border-slate-400" style="height: 85%"></div>
+<div class="flex-1 bg-slate-200 border border-dashed border-slate-400" style="height: 30%"></div>
+</div>
+</div>
+<!-- Ghost Chart 2 -->
+<div class="p-6 border border-dashed border-slate-400 rounded-xl flex flex-col gap-4">
+<div class="h-4 w-40 bg-slate-300 rounded"></div>
+<div class="h-8 w-16 bg-slate-300 rounded"></div>
+<div class="flex-1 relative">
+<svg class="w-full h-full" viewbox="0 0 400 150">
+<path class="ghost-chart-dash" d="M0,100 Q50,80 100,110 T200,60 T300,90 T400,40" fill="none" stroke="#94a3b8" stroke-width="2"></path>
+<path class="ghost-chart-dash" d="M0,120 Q50,100 100,130 T200,80 T300,110 T400,60" fill="none" stroke="#cbd5e1" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<!-- Ghost Stats Cards Row -->
+<div class="col-span-full grid grid-cols-3 gap-8">
+<div class="h-32 border border-dashed border-slate-400 rounded-xl bg-slate-50/50"></div>
+<div class="h-32 border border-dashed border-slate-400 rounded-xl bg-slate-50/50"></div>
+<div class="h-32 border border-dashed border-slate-400 rounded-xl bg-slate-50/50"></div>
+</div>
+</div>
+<!-- Central Empty State Card -->
+<div class="relative z-10 max-w-lg w-full bg-white dark:bg-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl shadow-primary/10 border border-primary/5 text-center flex flex-col items-center">
+<div class="size-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary text-4xl">analytics</span>
+</div>
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-3">No Protection Data Found</h1>
+<p class="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                    Welcome to ShieldIQ! Begin your risk assessment to see your personalized intelligence dashboard and security insights.
+                </p>
+<button class="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg shadow-lg shadow-primary/25 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+                    Start Risk Onboarding
+                </button>
+</div>
+</div>
+<!-- Quick Start Section -->
+<section class="mt-16">
+<div class="flex items-center gap-4 mb-8">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider text-sm">Quick Start Resources</h2>
+<div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Quick Card 1 -->
+<div class="group p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer">
+<div class="size-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">calculate</span>
+</div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Life Calculator</h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 leading-normal">
+                        Estimate coverage needs for long-term life security and family protection.
+                    </p>
+<div class="mt-4 flex items-center text-primary text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        Launch Tool <span class="material-symbols-outlined ml-1 text-[16px]">chevron_right</span>
+</div>
+</div>
+<!-- Quick Card 2 -->
+<div class="group p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer">
+<div class="size-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">health_metrics</span>
+</div>
+<h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Health Calculator</h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 leading-normal">
+                        Analyze potential health-related financial risks and coverage gaps.
+                    </p>
+<div class="mt-4 flex items-center text-primary text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        Launch Tool <span class="material-symbols-outlined ml-1 text-[16px]">chevron_right</span>
+</div>
+</div>
+<!-- Quick Card 3 (Placeholder for layout balance) -->
+<div class="hidden lg:flex p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 items-center justify-center text-slate-400 dark:text-slate-600">
+<div class="text-center">
+<span class="material-symbols-outlined text-3xl mb-2">add_circle</span>
+<p class="text-sm font-medium">More Tools Soon</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="mt-auto py-8 border-t border-slate-200 dark:border-slate-800 text-center">
+<p class="text-sm text-slate-500 dark:text-slate-500">
+            © 2024 ShieldIQ Intelligence. All rights protected.
+        </p>
+</footer>
+</body></html>

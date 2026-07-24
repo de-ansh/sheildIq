@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Empty State Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .skeleton-shimmer {
+            background: linear-gradient(90deg, rgba(36, 99, 235, 0.05) 25%, rgba(36, 99, 235, 0.1) 50%, rgba(36, 99, 235, 0.05) 75%);
+            background-size: 200% 100%;
+        }
+        .blueprint-grid {
+            background-image: radial-gradient(circle at 1px 1px, rgba(36, 99, 235, 0.1) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111621] z-20">
+<div class="flex items-center gap-3 px-6 py-8">
+<div class="flex size-8 items-center justify-center rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined text-xl">shield</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">ShieldIQ</h2>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-semibold">Overview</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm font-medium">Risk Analytics</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-sm font-medium">Compliance</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm font-medium">Documents</span>
+</div>
+<div class="pt-4 pb-2">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">Administration</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 rounded-xl bg-slate-100 dark:bg-slate-900/50 p-3">
+<div class="size-8 rounded-full bg-slate-300 dark:bg-slate-700" data-alt="User profile avatar placeholder"></div>
+<div class="flex flex-col">
+<span class="text-xs font-bold">Alex Rivera</span>
+<span class="text-[10px] text-slate-500">Premium Plan</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative overflow-hidden">
+<!-- Top Navbar -->
+<header class="flex h-16 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111621] px-8 z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-sm text-slate-500">
+<span>Dashboard</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 dark:text-white font-medium">Overview</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="h-9 w-64 rounded-lg border-none bg-slate-100 dark:bg-slate-900 pl-10 text-sm focus:ring-2 focus:ring-primary/50" placeholder="Search insights..." type="text"/>
+</div>
+<button class="relative p-2 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-primary"></span>
+</button>
+<button class="p-2 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Dashboard Content with Empty State Overlay -->
+<div class="flex-1 p-8 relative overflow-hidden bg-background-light dark:bg-background-dark">
+<!-- Ghost Dashboard Framework (The skeleton behind the message) -->
+<div class="grid grid-cols-12 gap-6 opacity-30 pointer-events-none select-none filter blur-[1px]">
+<!-- Stats Rows -->
+<div class="col-span-3 h-32 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col p-5 gap-3">
+<div class="h-4 w-24 bg-slate-300 dark:bg-slate-700 rounded"></div>
+<div class="h-8 w-16 bg-slate-400 dark:bg-slate-600 rounded"></div>
+</div>
+<div class="col-span-3 h-32 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col p-5 gap-3">
+<div class="h-4 w-24 bg-slate-300 dark:bg-slate-700 rounded"></div>
+<div class="h-8 w-16 bg-slate-400 dark:bg-slate-600 rounded"></div>
+</div>
+<div class="col-span-3 h-32 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col p-5 gap-3">
+<div class="h-4 w-24 bg-slate-300 dark:bg-slate-700 rounded"></div>
+<div class="h-8 w-16 bg-slate-400 dark:bg-slate-600 rounded"></div>
+</div>
+<div class="col-span-3 h-32 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col p-5 gap-3">
+<div class="h-4 w-24 bg-slate-300 dark:bg-slate-700 rounded"></div>
+<div class="h-8 w-16 bg-slate-400 dark:bg-slate-600 rounded"></div>
+</div>
+<!-- Main Chart Skeleton -->
+<div class="col-span-8 h-80 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 flex flex-col">
+<div class="flex justify-between items-center mb-8">
+<div class="h-5 w-40 bg-slate-300 dark:bg-slate-700 rounded"></div>
+<div class="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
+</div>
+<div class="flex-1 flex items-end gap-4 px-4 pb-4">
+<div class="h-1/2 flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+<div class="h-3/4 flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+<div class="h-2/3 flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+<div class="h-full flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+<div class="h-3/5 flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+<div class="h-4/5 flex-1 bg-slate-200/50 dark:bg-slate-700/30 rounded-t"></div>
+</div>
+</div>
+<!-- Donut Chart Skeleton -->
+<div class="col-span-4 h-80 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center">
+<div class="w-full h-5 w-40 bg-slate-300 dark:bg-slate-700 rounded mb-8"></div>
+<div class="size-48 rounded-full border-[16px] border-slate-200 dark:border-slate-700 relative flex items-center justify-center">
+<div class="size-24 rounded-full bg-slate-100 dark:bg-slate-800/50"></div>
+</div>
+<div class="mt-8 flex gap-4">
+<div class="size-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+<div class="size-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+<div class="size-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+</div>
+</div>
+</div>
+<!-- Empty State Content Overlay -->
+<div class="absolute inset-0 flex flex-col items-center justify-center z-10 px-4">
+<div class="blueprint-grid absolute inset-0 -z-10 opacity-50"></div>
+<div class="max-w-md w-full flex flex-col items-center text-center">
+<!-- Blueprint Icon Box -->
+<div class="relative mb-8 flex items-center justify-center">
+<!-- Background Circles -->
+<div class="absolute size-64 rounded-full border border-primary/20 bg-primary/5 animate-pulse"></div>
+<div class="absolute size-48 rounded-full border border-primary/30"></div>
+<!-- Central Icon Container -->
+<div class="relative size-32 rounded-2xl bg-white dark:bg-slate-800 shadow-xl shadow-primary/10 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+<div class="absolute -top-2 -right-2 size-10 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-white text-xl">add</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-primary text-5xl">shield</span>
+<div class="flex items-end gap-1 h-4">
+<div class="w-1.5 h-2 bg-primary/40 rounded-t-sm"></div>
+<div class="w-1.5 h-4 bg-primary/80 rounded-t-sm"></div>
+<div class="w-1.5 h-3 bg-primary/60 rounded-t-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Typography -->
+<h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-3">
+                            No Protection Data Found
+                        </h1>
+<p class="text-slate-500 dark:text-slate-400 text-base leading-relaxed mb-10">
+                            Complete your first risk assessment to unlock analytical insights, coverage recommendations, and real-time security intelligence.
+                        </p>
+<!-- CTA Button -->
+<button class="group flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-xl shadow-primary/30 transform hover:-translate-y-0.5">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">assignment_turned_in</span>
+<span>Start Risk Assessment</span>
+</button>
+<!-- Quick Link -->
+<a class="mt-6 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span>Watch platform walkthrough</span>
+<span class="material-symbols-outlined text-xs">play_circle</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Context Footer -->
+<footer class="h-12 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111621] px-8 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="size-1.5 rounded-full bg-emerald-500"></span>
+<span>System Status: Operational</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span>v4.2.0-stable</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="hover:text-slate-600 transition-colors" href="#">Documentation</a>
+<a class="hover:text-slate-600 transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-slate-600 transition-colors" href="#">Support</a>
+</div>
+</footer>
+</main>
+</div>
+</body></html>

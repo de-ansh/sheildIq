@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ - Onboarding Step 3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dbdee6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111318] font-display min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Navigation Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 bg-white px-10 py-3 lg:px-40">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-[#111318] text-xl font-bold leading-tight tracking-[-0.015em]">ShieldIQ</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<div class="hidden md:flex items-center gap-9">
+<a class="text-[#111318] text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Protection</a>
+<a class="text-[#111318] text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Resources</a>
+<a class="text-[#111318] text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Support</a>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="Professional user profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA195ZW5kqll9N8TWmz0frKBRzdfK2MU6FOhjuo1VizgwCfrDKFw6HhqNJyKcatH0KU7qSezdEKSaZR0-G-OKfccKXael4XO5PLCHBv3eDLzOBcEopZO8fUdAkGetN1N3hm4ugN8PSia0_V2Vku7wB3FOt98onK5uMuqleLQIVmTpoah7yXA4a5o7O_IQLE_SjBbe1n3B9qYdoQ_iqXnnxQTPt0a0BUHfvgumzWO5krLaFJgMReRWAHR_Hebc1hoYa36ptKhLPqPZQ");'></div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-8 px-4 lg:px-40">
+<div class="layout-content-container flex flex-col max-w-[960px] flex-1 bg-white rounded-xl shadow-sm border border-primary/5 p-8">
+<!-- Breadcrumbs & Step Indicator -->
+<div class="flex flex-wrap gap-2 mb-6">
+<a class="text-primary/60 text-sm font-medium hover:text-primary" href="#">Home</a>
+<span class="text-primary/40 text-sm font-medium">/</span>
+<a class="text-primary/60 text-sm font-medium hover:text-primary" href="#">Onboarding</a>
+<span class="text-primary/40 text-sm font-medium">/</span>
+<span class="text-[#111318] text-sm font-semibold">Step 3: Current Coverage</span>
+</div>
+<div class="flex flex-col gap-2 mb-8">
+<h1 class="text-[#111318] text-3xl font-black leading-tight tracking-tight">Step 3 of 3: Finalize Protection</h1>
+<p class="text-slate-500 text-base font-normal">Finalize your protection profile to calculate your custom risk score and coverage gap.</p>
+</div>
+<!-- Progress Bar -->
+<div class="flex flex-col gap-3 mb-10">
+<div class="flex gap-6 justify-between items-center">
+<p class="text-primary text-sm font-bold uppercase tracking-wider">Final Step</p>
+<p class="text-[#111318] text-sm font-bold">100% Complete</p>
+</div>
+<div class="rounded-full bg-slate-100 h-2.5 w-full overflow-hidden">
+<div class="h-full rounded-full bg-primary" style="width: 100%;"></div>
+</div>
+</div>
+<form class="flex flex-col gap-10">
+<!-- Section: Existing Protection -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col gap-4">
+<label class="text-[#111318] text-lg font-bold leading-tight">Existing Life Insurance Coverage</label>
+<div class="relative group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all group-hover:bg-white" placeholder="0.00" type="text"/>
+</div>
+<p class="text-slate-400 text-xs">Total sum assured across all policies</p>
+</div>
+<div class="flex flex-col gap-4">
+<label class="text-[#111318] text-lg font-bold leading-tight">Existing Health Insurance Coverage</label>
+<div class="relative group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+<input class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all group-hover:bg-white" placeholder="0.00" type="text"/>
+</div>
+<p class="text-slate-400 text-xs">Individual or family floater amount</p>
+</div>
+</div>
+<!-- Section: Employer Coverage -->
+<div class="flex flex-col gap-4 p-6 bg-slate-50/50 border border-slate-100 rounded-xl">
+<h3 class="text-[#111318] text-lg font-bold">Employer-Provided Coverage</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<label class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+<input class="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary" type="checkbox"/>
+<span class="text-sm font-medium text-slate-700">Group Term Life</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+<input class="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary" type="checkbox"/>
+<span class="text-sm font-medium text-slate-700">Critical Illness</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-primary transition-colors">
+<input class="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary" type="checkbox"/>
+<span class="text-sm font-medium text-slate-700">Personal Accident</span>
+</label>
+</div>
+</div>
+<!-- Section: Health Conditions Multi-Select -->
+<div class="flex flex-col gap-4">
+<label class="text-[#111318] text-lg font-bold leading-tight">Known Health Conditions</label>
+<div class="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg min-h-[50px]">
+<div class="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold border border-primary/20">
+                                    Diabetes <span class="material-symbols-outlined text-sm cursor-pointer">close</span>
+</div>
+<div class="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold border border-primary/20">
+                                    Hypertension <span class="material-symbols-outlined text-sm cursor-pointer">close</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 text-sm flex-1 min-w-[150px]" placeholder="Add condition..." type="text"/>
+</div>
+</div>
+<!-- Section: Lifestyle Risks -->
+<div class="flex flex-col gap-4">
+<h3 class="text-[#111318] text-lg font-bold">Lifestyle Risk Indicators</h3>
+<div class="flex flex-wrap gap-6">
+<label class="inline-flex items-center gap-2 cursor-pointer group">
+<input class="peer hidden" type="checkbox"/>
+<div class="w-12 h-6 bg-slate-200 rounded-full relative transition-colors peer-checked:bg-primary group-hover:ring-4 group-hover:ring-primary/5">
+<div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+</div>
+<span class="text-sm font-medium text-slate-700">Tobacco/Smoking</span>
+</label>
+<label class="inline-flex items-center gap-2 cursor-pointer group">
+<input class="peer hidden" type="checkbox"/>
+<div class="w-12 h-6 bg-slate-200 rounded-full relative transition-colors peer-checked:bg-primary group-hover:ring-4 group-hover:ring-primary/5">
+<div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+</div>
+<span class="text-sm font-medium text-slate-700">Regular Alcohol</span>
+</label>
+<label class="inline-flex items-center gap-2 cursor-pointer group">
+<input class="peer hidden" type="checkbox"/>
+<div class="w-12 h-6 bg-slate-200 rounded-full relative transition-colors peer-checked:bg-primary group-hover:ring-4 group-hover:ring-primary/5">
+<div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+</div>
+<span class="text-sm font-medium text-slate-700">High-risk Hobbies</span>
+</label>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="flex items-center justify-between pt-8 border-t border-slate-100">
+<button class="flex items-center gap-2 px-6 py-3 text-slate-600 font-bold text-sm hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined">arrow_back</span>
+                                Back
+                            </button>
+<button class="bg-primary text-white px-8 py-3 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all transform active:scale-[0.98]" type="submit">
+                                Calculate Risk Profile
+                            </button>
+</div>
+</form>
+<!-- Trust Note -->
+<div class="mt-8 flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+<span class="material-symbols-outlined text-primary">security</span>
+<p class="text-xs text-slate-500 leading-relaxed">
+                            Your data is encrypted and strictly used for risk assessment purposes. ShieldIQ does not share your private health information with third-party marketers.
+                        </p>
+</div>
+</div>
+</main>
+<!-- Bottom Spacer/Footer -->
+<footer class="flex flex-col items-center py-10 px-4">
+<p class="text-slate-400 text-xs">© 2024 ShieldIQ Protection Group. All rights reserved.</p>
+</footer>
+</div>
+</div>
+</body></html>

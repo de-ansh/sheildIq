@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Health Coverage Planner - Dark Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f172a",
+                        "surface-dark": "#1e293b",
+                        "border-dark": "#334155",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-border-dark bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-3 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined text-2xl block">shield_with_heart</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">ShieldIQ <span class="text-primary">Health</span></h1>
+</div>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-sm font-medium text-primary border-b-2 border-primary pb-1" href="#">Coverage Planner</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Risk Analytics</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Marketplace</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Scenarios</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="bg-slate-100 dark:bg-surface-dark border-none rounded-lg pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-primary" placeholder="Search data models..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm">save</span>
+                Save Analysis
+            </button>
+<div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-surface-dark border border-slate-300 dark:border-border-dark flex items-center justify-center overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Professional user profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBkY8P00Sq9LXBVLslD0ACx_TNaOEVebYXqahZzmQ0uSn3VRBypImNuDI-m89qfHEJrsx4J30W57sbTF4lTtI98AKfFV3QOfwJ1p2uIMQ4SWEaZY6RhbeHpMHj5yRFrP3n-Vn6Y2hCKdVuiSxpJXVagJ-ScURQkyEMrSdHy1iA4PBchRYg1zlx3rKPk49YScwHNmTW0n926qIK2DhjJPKCE3ROprH-Raa3-GJEnV7AudswUCcX5svC6mNNbddJlkO5l6TRfG1zA6o"/>
+</div>
+</div>
+</header>
+<main class="flex-1 p-6 lg:p-8 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
+<!-- Left Sidebar: Inputs & Profile -->
+<aside class="col-span-12 lg:col-span-3 flex flex-col gap-6">
+<section class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-bold text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">family_history</span>
+                        Family Profile
+                    </h2>
+<button class="text-primary text-xs font-semibold hover:underline">Edit</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-border-dark">
+<div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<p class="text-sm font-bold">Primary Member</p>
+<p class="text-xs text-slate-500">Age 45 • Non-Smoker</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-border-dark">
+<div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+<span class="material-symbols-outlined">person_2</span>
+</div>
+<div>
+<p class="text-sm font-bold">Spouse</p>
+<p class="text-xs text-slate-500">Age 42 • Managed Condition</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-border-dark">
+<div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center">
+<span class="material-symbols-outlined">child_care</span>
+</div>
+<div>
+<p class="text-sm font-bold">Dependents (2)</p>
+<p class="text-xs text-slate-500">Ages 12, 15 • Active Lifestyle</p>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-slate-200 dark:border-border-dark">
+<label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Region Rate Factor</label>
+<select class="w-full bg-slate-100 dark:bg-background-dark border-none rounded-lg text-sm py-2.5 px-3 focus:ring-2 focus:ring-primary">
+<option>Northeast (High Cost)</option>
+<option>Midwest (Average Cost)</option>
+<option>West Coast (Premium)</option>
+</select>
+</div>
+</section>
+<section class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+<h2 class="font-bold text-lg mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-500">analytics</span>
+                    Risk Parameters
+                </h2>
+<div class="space-y-5">
+<div>
+<div class="flex justify-between text-xs mb-2">
+<span class="font-medium">Specialist Visits/Yr</span>
+<span class="text-primary font-bold">8 Visits</span>
+</div>
+<input class="w-full h-1.5 bg-slate-200 dark:bg-background-dark rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+</div>
+<div>
+<div class="flex justify-between text-xs mb-2">
+<span class="font-medium">Prescription Load</span>
+<span class="text-primary font-bold">Medium</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="text-[10px] py-1 bg-slate-100 dark:bg-background-dark rounded border border-transparent">Low</button>
+<button class="text-[10px] py-1 bg-primary text-white rounded border border-primary font-bold">Mid</button>
+<button class="text-[10px] py-1 bg-slate-100 dark:bg-background-dark rounded border border-transparent">High</button>
+</div>
+</div>
+<div class="p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-lg">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-orange-500 text-lg">warning</span>
+<p class="text-[11px] leading-relaxed text-orange-800 dark:text-orange-300">
+<span class="font-bold">Gap Detected:</span> Your current plan model shows a 15% risk of out-of-network costs exceeding $2,500.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+</aside>
+<!-- Right Main Content: Analytics & Charts -->
+<div class="col-span-12 lg:col-span-9 flex flex-col gap-6">
+<!-- Summary Stats Banner -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-primary text-white p-6 rounded-xl shadow-lg relative overflow-hidden group">
+<div class="relative z-10">
+<p class="text-blue-100 text-sm font-medium mb-1">Recommended Coverage</p>
+<p class="text-3xl font-black">$1,450,000</p>
+<div class="mt-4 flex items-center gap-2 text-xs bg-white/20 w-fit px-2 py-1 rounded">
+<span class="material-symbols-outlined text-sm">verified</span>
+                            ShieldIQ Verified
+                        </div>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10 group-hover:scale-110 transition-transform">security</span>
+</div>
+<div class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Monthly Premium Est.</p>
+<p class="text-3xl font-black text-slate-900 dark:text-white">$1,842</p>
+<p class="mt-4 text-xs flex items-center gap-1 text-emerald-500">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+                        4% vs. previous scenario
+                    </p>
+</div>
+<div class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Max Out-of-Pocket</p>
+<p class="text-3xl font-black text-slate-900 dark:text-white">$12,000</p>
+<div class="mt-4 flex items-center gap-1">
+<div class="h-1.5 w-full bg-slate-200 dark:bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-orange-500 rounded-full" style="width: 65%;"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-500">High</span>
+</div>
+</div>
+</div>
+<!-- Visualization Panel -->
+<section class="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm flex-1">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="text-lg font-bold">15-Year Cost Projection</h3>
+<p class="text-xs text-slate-500">Premiums + Anticipated Out-of-Pocket Expenses</p>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-background-dark">Annual</button>
+<button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary text-white">Cumulative</button>
+</div>
+</div>
+<div class="h-64 w-full relative">
+<!-- Placeholder for Chart -->
+<div class="absolute inset-0 flex items-end justify-between px-4 pb-8">
+<div class="w-[6%] bg-primary/20 rounded-t-sm h-[20%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] font-bold text-primary">Y1</div>
+</div>
+<div class="w-[6%] bg-primary/25 rounded-t-sm h-[25%]"></div>
+<div class="w-[6%] bg-primary/30 rounded-t-sm h-[32%]"></div>
+<div class="w-[6%] bg-primary/35 rounded-t-sm h-[38%]"></div>
+<div class="w-[6%] bg-primary/40 rounded-t-sm h-[45%]"></div>
+<div class="w-[6%] bg-primary/45 rounded-t-sm h-[52%]"></div>
+<div class="w-[6%] bg-primary/50 rounded-t-sm h-[58%]"></div>
+<div class="w-[6%] bg-primary/60 rounded-t-sm h-[65%]"></div>
+<div class="w-[6%] bg-primary/70 rounded-t-sm h-[72%]"></div>
+<div class="w-[6%] bg-primary/80 rounded-t-sm h-[80%]"></div>
+<div class="w-[6%] bg-primary/90 rounded-t-sm h-[88%]"></div>
+<div class="w-[6%] bg-primary rounded-t-sm h-[100%]"></div>
+</div>
+<!-- Chart Overlay Grid -->
+<div class="absolute inset-0 border-b border-l border-slate-200 dark:border-border-dark flex flex-col justify-between py-2">
+<div class="w-full border-t border-slate-100 dark:border-slate-800/50 h-0"></div>
+<div class="w-full border-t border-slate-100 dark:border-slate-800/50 h-0"></div>
+<div class="w-full border-t border-slate-100 dark:border-slate-800/50 h-0"></div>
+<div class="w-full border-t border-slate-100 dark:border-slate-800/50 h-0"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 px-4 text-[10px] font-bold text-slate-400">
+<span>2024</span>
+<span>2027</span>
+<span>2030</span>
+<span>2033</span>
+<span>2036</span>
+<span>2039</span>
+</div>
+</section>
+<!-- Scenario Comparison Table -->
+<section class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-sm overflow-hidden">
+<div class="p-5 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/50 dark:bg-background-dark/20">
+<h3 class="font-bold">Scenario Comparison</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Optimal</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gap Risk</span>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead>
+<tr class="bg-slate-50 dark:bg-background-dark/30 text-slate-500 font-semibold border-b border-slate-200 dark:border-border-dark">
+<th class="px-6 py-4">Coverage Tier</th>
+<th class="px-6 py-4">Annual Premium</th>
+<th class="px-6 py-4">Deductible</th>
+<th class="px-6 py-4">ShieldIQ Score</th>
+<th class="px-6 py-4">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-border-dark">
+<tr class="hover:bg-slate-50 dark:hover:bg-background-dark/40 transition-colors">
+<td class="px-6 py-4 font-bold">Standard PPO Plan</td>
+<td class="px-6 py-4 tabular-nums">$22,104</td>
+<td class="px-6 py-4 tabular-nums">$3,500</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold">84</span>
+<div class="w-16 h-1 bg-slate-200 dark:bg-background-dark rounded-full">
+<div class="h-full bg-emerald-500 w-[84%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+<span class="w-1 h-1 rounded-full bg-emerald-500"></span> COVERED
+                                    </span>
+</td>
+</tr>
+<tr class="bg-primary/5 dark:bg-primary/10 border-l-4 border-l-primary">
+<td class="px-6 py-4 font-bold flex items-center gap-2">
+                                    Enhanced Premier 
+                                    <span class="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded uppercase">Recommended</span>
+</td>
+<td class="px-6 py-4 tabular-nums">$26,450</td>
+<td class="px-6 py-4 tabular-nums">$1,500</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold">96</span>
+<div class="w-16 h-1 bg-slate-200 dark:bg-background-dark rounded-full">
+<div class="h-full bg-emerald-500 w-[96%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+<span class="w-1 h-1 rounded-full bg-emerald-500"></span> OPTIMAL
+                                    </span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-background-dark/40 transition-colors">
+<td class="px-6 py-4 font-bold">Value Saver HDHP</td>
+<td class="px-6 py-4 tabular-nums">$15,200</td>
+<td class="px-6 py-4 tabular-nums">$7,000</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-bold">62</span>
+<div class="w-16 h-1 bg-slate-200 dark:bg-background-dark rounded-full">
+<div class="h-full bg-orange-500 w-[62%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[10px] font-bold">
+<span class="w-1 h-1 rounded-full bg-orange-500"></span> RISK GAP
+                                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Methodology & Assumptions -->
+<footer class="bg-slate-100 dark:bg-surface-dark/50 p-5 rounded-xl border border-slate-200 dark:border-border-dark">
+<div class="flex items-start gap-4">
+<div class="bg-white dark:bg-surface-dark p-2 rounded border border-slate-200 dark:border-border-dark">
+<span class="material-symbols-outlined text-slate-400">info</span>
+</div>
+<div>
+<h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Methodology &amp; Analytical Assumptions</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                            Projections are based on the ShieldIQ v4.2 Actuarial Model. Calculations assume a 4.5% annual medical trend inflation rate and a 2% demographic age-up adjustment. Geographic rating factors are based on 2024 CMS Market Data for the selected region. Risk gaps are identified using a Monte Carlo simulation of 10,000 potential health outcome scenarios based on the provided family profile. This tool provides estimates only and does not constitute a legal insurance contract.
+                        </p>
+<div class="flex gap-4 mt-4">
+<a class="text-[10px] font-bold text-primary flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-xs">download</span> Download Data Sheet (CSV)
+                            </a>
+<a class="text-[10px] font-bold text-primary flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-xs">open_in_new</span> View Full Whitepaper
+                            </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</main>
+<!-- Floating Action Button for Mobile -->
+<button class="lg:hidden fixed bottom-6 right-6 bg-primary text-white h-14 w-14 rounded-full shadow-2xl flex items-center justify-center z-50">
+<span class="material-symbols-outlined">add</span>
+</button>
+</body></html>

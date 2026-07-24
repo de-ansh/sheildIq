@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Policy Deep-Dive Dark</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6324eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0a0a0c",
+                        "card-dark": "#161121",
+                        "border-dark": "#2d2839",
+                        "text-muted": "#a69db9"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono-data {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Navigation Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark px-6 py-3 bg-card-dark/50 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="size-6 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">shield_with_heart</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight">ShieldIQ <span class="text-primary font-black uppercase text-xs ml-1 tracking-widest px-1.5 py-0.5 border border-primary/30 rounded">Pro</span></h2>
+</div>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-text-muted hover:text-white text-sm font-medium transition-colors" href="#">Terminal</a>
+<a class="text-white text-sm font-bold border-b-2 border-primary pb-1" href="#">Policy Explorer</a>
+<a class="text-text-muted hover:text-white text-sm font-medium transition-colors" href="#">Actuarial Logs</a>
+<a class="text-text-muted hover:text-white text-sm font-medium transition-colors" href="#">Benchmarks</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center bg-background-dark border border-border-dark rounded-lg px-3 py-1.5 gap-2">
+<span class="material-symbols-outlined text-sm text-text-muted">database</span>
+<span class="text-[10px] uppercase font-bold text-text-muted tracking-tighter">Live Bureau Link: Stable</span>
+</div>
+<button class="flex items-center justify-center rounded-lg h-9 px-4 bg-primary text-white text-xs font-bold uppercase tracking-wider">
+                        Integrity: 98.4%
+                    </button>
+<div class="bg-primary/20 border border-primary/40 flex items-center justify-center rounded-full size-9 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User avatar for security professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCw2Sp6B_nXsxUXiz9FXwXavgLnOlIcn4vw19TmX4ahysrTnCwm2Fh6Q7nimH5-5UXmVKW_cHkeDr1wgjCD_eCRjhxLc9giNa_xHgC4Kx2zrHrQyjfwYCOacASaq2U1kAV51Un9IpZ2LM7AaRl8pqnlF6TmZcv0m6sVgoWguUzM6bgxy7rehAQwmmgt45qOTvJ-vCjmb-3aVRpDBKEOVwTlPSUV5Kf0qbPJAZIs0R_2AkzZCvg-bZudRJq9dRF4zKlz4cpaooir-5k"/>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-[1400px] mx-auto w-full p-6 space-y-6">
+<!-- Meta Info Section -->
+<div class="flex flex-wrap items-end justify-between gap-4 border-b border-border-dark pb-6">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">CARRIER_ID: PX-9928</span>
+<span class="text-xs font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">STATUS: ADMITTED</span>
+</div>
+<h1 class="text-white text-3xl font-black leading-tight tracking-tight">Technical Deep-Dive: Enterprise Shield V4</h1>
+<p class="text-text-muted text-sm font-normal">Last Comprehensive Actuarial Audit: Oct 24, 2023 | Source: National Bureau of Insurance Analytics</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-card-dark border border-border-dark rounded-lg text-white text-sm font-bold hover:bg-border-dark transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                            RAW JSON
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-white text-sm font-bold shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">description</span>
+                            GENERATE PDF REPORT
+                        </button>
+</div>
+</div>
+<!-- Analysis Tabs -->
+<div class="flex gap-8 border-b border-border-dark px-2">
+<button class="pb-3 border-b-2 border-primary text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">list_alt</span> Exclusions
+                    </button>
+<button class="pb-3 border-b-2 border-transparent text-text-muted text-sm font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">monitoring</span> Claim History
+                    </button>
+<button class="pb-3 border-b-2 border-transparent text-text-muted text-sm font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">science</span> Sensitivity Analysis
+                    </button>
+<button class="pb-3 border-b-2 border-transparent text-text-muted text-sm font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">timeline</span> Financial Projections
+                    </button>
+</div>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Exclusions & Data -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Exclusions Table -->
+<div class="bg-card-dark border border-border-dark rounded-xl overflow-hidden shadow-2xl">
+<div class="p-4 border-b border-border-dark flex justify-between items-center">
+<h3 class="text-white font-bold uppercase text-xs tracking-widest">Actuarial Exclusion Matrix</h3>
+<div class="flex gap-2">
+<span class="size-2 rounded-full bg-red-500"></span>
+<span class="size-2 rounded-full bg-amber-500"></span>
+<span class="size-2 rounded-full bg-emerald-500"></span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-background-dark/50">
+<th class="px-6 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Domain</th>
+<th class="px-6 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Provision Description</th>
+<th class="px-6 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Ref ID</th>
+<th class="px-6 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Impact Factor</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<span class="text-[10px] font-mono bg-white/10 text-white px-2 py-1 rounded">GENERAL</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-200">Pre-existing Systemic Vulnerabilities</td>
+<td class="px-6 py-4 font-mono text-xs text-text-muted">STATUTE 4.2-A</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-white group-hover:bg-primary transition-colors" style="width: 85%;"></div>
+</div>
+<span class="mono-data text-xs text-white">0.85</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<span class="text-[10px] font-mono bg-white/10 text-white px-2 py-1 rounded">TECHNICAL</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-200">Cyber-Warfare &amp; State-Spon. Clauses</td>
+<td class="px-6 py-4 font-mono text-xs text-text-muted">CLAUSE 12.4.1</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-white group-hover:bg-primary transition-colors" style="width: 40%;"></div>
+</div>
+<span class="mono-data text-xs text-white">0.40</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<span class="text-[10px] font-mono bg-white/10 text-white px-2 py-1 rounded">TEMPORAL</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-200">Waiting Period (90 Days post-inception)</td>
+<td class="px-6 py-4 font-mono text-xs text-text-muted">SCH B-1.02</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-white group-hover:bg-primary transition-colors" style="width: 60%;"></div>
+</div>
+<span class="mono-data text-xs text-white">0.60</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<span class="text-[10px] font-mono bg-white/10 text-white px-2 py-1 rounded">OPERATIONAL</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-200">Unpatched Zero-Day Negligence</td>
+<td class="px-6 py-4 font-mono text-xs text-text-muted">OPS-22-SEC</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-white group-hover:bg-primary transition-colors" style="width: 92%;"></div>
+</div>
+<span class="mono-data text-xs text-white">0.92</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Claim History Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-card-dark border border-border-dark rounded-xl p-6 shadow-xl">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="text-white text-sm font-bold tracking-tight">Claim Settlement Ratio</h4>
+<p class="text-text-muted text-xs">Industry comparison benchmark</p>
+</div>
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div class="space-y-4">
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] uppercase font-bold tracking-widest mb-1">
+<span class="text-text-muted">Policy Carrier</span>
+<span class="text-white mono-data">94.8%</span>
+</div>
+<div class="h-8 bg-primary/20 border border-primary/30 rounded flex items-center px-1">
+<div class="h-6 bg-primary rounded shadow-lg shadow-primary/30" style="width: 94.8%;"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] uppercase font-bold tracking-widest mb-1">
+<span class="text-text-muted">Industry Mean</span>
+<span class="text-slate-400 mono-data">88.2%</span>
+</div>
+<div class="h-8 bg-white/5 border border-white/10 rounded flex items-center px-1">
+<div class="h-6 bg-slate-600 rounded" style="width: 88.2%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-card-dark border border-border-dark rounded-xl p-6 shadow-xl">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="text-white text-sm font-bold tracking-tight">Incurred Claim Ratio</h4>
+<p class="text-text-muted text-xs">Financial solvency indicator</p>
+</div>
+<span class="material-symbols-outlined text-amber-500">account_balance_wallet</span>
+</div>
+<div class="flex items-center justify-center py-4">
+<div class="relative size-32">
+<svg class="size-full" viewbox="0 0 36 36">
+<path class="text-white/5 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+<path class="text-primary stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="72, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="mono-data text-2xl font-bold text-white">72%</span>
+<span class="text-[8px] uppercase font-black text-text-muted tracking-widest">Optimized</span>
+</div>
+</div>
+<div class="ml-6 space-y-2">
+<div class="flex items-center gap-2">
+<div class="size-2 bg-primary rounded-full"></div>
+<span class="text-[10px] text-text-muted uppercase font-bold tracking-tighter">Current Pool</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 bg-white/10 rounded-full"></div>
+<span class="text-[10px] text-text-muted uppercase font-bold tracking-tighter">Reserve Req.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Sensitivity Analysis Simulator -->
+<div class="lg:col-span-4 space-y-6">
+<div class="bg-card-dark border border-border-dark rounded-xl p-6 shadow-xl flex flex-col h-full">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-white font-bold uppercase text-xs tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-primary">model_training</span>
+                                    Sensitivity Simulator
+                                </h3>
+<span class="bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded tracking-widest">BETA</span>
+</div>
+<div class="space-y-8 flex-1">
+<!-- Inflation Toggle -->
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-white">Inflation Adjustment</label>
+<span class="mono-data text-xs text-primary font-bold">+4.5% / Year</span>
+</div>
+<input class="w-full h-1.5 bg-border-dark rounded-lg appearance-none cursor-pointer accent-primary" max="15" min="0" type="range" value="4.5"/>
+<div class="flex justify-between text-[10px] text-text-muted font-bold tracking-widest">
+<span>STABLE (0%)</span>
+<span>HYPER (15%)</span>
+</div>
+</div>
+<!-- Stress Test Toggles -->
+<div class="space-y-4">
+<label class="text-[10px] uppercase font-black text-text-muted tracking-widest block">Stress Scenarios</label>
+<div class="space-y-3">
+<label class="flex items-center justify-between group cursor-pointer">
+<span class="text-sm text-slate-300 group-hover:text-white transition-colors">Market Volatility Spike</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-border-dark peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between group cursor-pointer">
+<span class="text-sm text-slate-300 group-hover:text-white transition-colors">Global Supply Chain Lag</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-border-dark peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</div>
+<!-- Simulation Projection -->
+<div class="bg-background-dark/80 rounded-lg p-4 border border-border-dark/50 mt-4">
+<p class="text-[10px] uppercase font-black text-text-muted tracking-widest mb-4">Coverage Adequacy (20Y Projection)</p>
+<div class="flex items-end gap-2 h-24 mb-2">
+<div class="flex-1 bg-primary/20 rounded-t-sm" style="height: 40%;"></div>
+<div class="flex-1 bg-primary/40 rounded-t-sm" style="height: 60%;"></div>
+<div class="flex-1 bg-primary/60 rounded-t-sm" style="height: 55%;"></div>
+<div class="flex-1 bg-primary/80 rounded-t-sm" style="height: 75%;"></div>
+<div class="flex-1 bg-primary rounded-t-sm shadow-lg shadow-primary/20" style="height: 90%;"></div>
+</div>
+<div class="flex justify-between text-[10px] mono-data text-text-muted">
+<span>2024</span>
+<span>2034</span>
+<span>2044</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-border-dark">
+<div class="flex justify-between mb-1">
+<span class="text-xs text-text-muted font-bold tracking-tight">Projected Out-of-Pocket</span>
+<span class="mono-data text-white font-bold">$12,482.00</span>
+</div>
+<div class="flex justify-between">
+<span class="text-xs text-text-muted font-bold tracking-tight">Sustainability Rating</span>
+<span class="mono-data text-emerald-500 font-bold uppercase text-[10px]">Tier A (High)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Technical Footer Info -->
+<div class="bg-card-dark border border-border-dark rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-text-muted">history</span>
+<span class="text-[10px] font-mono text-text-muted uppercase">Data Stream: 412ms latency</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-text-muted">lock</span>
+<span class="text-[10px] font-mono text-text-muted uppercase">AES-256 Actuarial Encryption Active</span>
+</div>
+</div>
+<div class="text-[10px] text-text-muted font-mono uppercase tracking-widest">
+                        Node: SHIELDIQ-US-EAST-01 // PID: 9928-ALPHA
+                    </div>
+</div>
+</main>
+<!-- Bottom Margin for scroll -->
+<div class="h-12"></div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ Risk Profile Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2424eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111121",
+                        "accent-yellow": "#f59e0b",
+                        "accent-red": "#ef4444",
+                        "accent-green": "#10b981"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 md:px-20 lg:px-40 py-3">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-8 flex items-center justify-center bg-primary text-white rounded-lg">
+<span class="material-symbols-outlined text-xl">shield</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-black leading-tight tracking-tight">ShieldIQ</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary" href="#">Risk Profile</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">History</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">Settings</a>
+</nav>
+<div class="flex gap-3">
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-8">
+<div class="layout-content-container flex flex-col max-w-[1024px] flex-1 px-4 md:px-10">
+<!-- Breadcrumbs & Header -->
+<div class="flex flex-col gap-1 mb-8">
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-2">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 dark:text-slate-100">Risk Profile Results</span>
+</div>
+<div class="flex flex-wrap justify-between items-end gap-4">
+<div class="flex flex-col gap-1">
+<h1 class="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-tight">Your Protection Risk Profile</h1>
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal">Last updated: Oct 24, 2023 • Profile ID: SIQ-9921</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-lg">download</span>
+                                    Download PDF
+                                </button>
+<button class="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-lg">share</span>
+                                    Share
+                                </button>
+</div>
+</div>
+</div>
+<!-- 2x2 Analysis Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+<!-- Card 1: Income Replacement -->
+<div class="flex flex-col gap-4 p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start">
+<div class="size-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">account_balance_wallet</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 dark:text-slate-600 cursor-help" title="Based on current salary and lifestyle expenses">info</span>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Income Replacement Requirement</p>
+<h3 class="text-slate-900 dark:text-white text-3xl font-black mt-1">₹ 4,50,00,000</h3>
+<p class="text-slate-600 dark:text-slate-400 text-sm mt-3 leading-relaxed">
+                                    The estimated capital required to sustain your family's current lifestyle and long-term goals in your absence.
+                                </p>
+</div>
+</div>
+<!-- Card 2: Health Risk Tier -->
+<div class="flex flex-col gap-4 p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start">
+<div class="size-12 bg-accent-yellow/10 rounded-lg flex items-center justify-center text-accent-yellow">
+<span class="material-symbols-outlined text-3xl">favorite</span>
+</div>
+<div class="px-3 py-1 bg-accent-yellow/10 text-accent-yellow text-xs font-bold rounded-full uppercase">Current Status</div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Health Risk Tier</p>
+<div class="flex items-center gap-2 mt-1">
+<h3 class="text-accent-yellow text-3xl font-black">Medium</h3>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm mt-3 leading-relaxed">
+                                    Determined by analyzing your current age (34), BMI, self-reported lifestyle factors, and disclosed medical history.
+                                </p>
+</div>
+</div>
+<!-- Card 3: Coverage Gap Estimate -->
+<div class="flex flex-col gap-4 p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start">
+<div class="size-12 bg-accent-red/10 rounded-lg flex items-center justify-center text-accent-red">
+<span class="material-symbols-outlined text-3xl">emergency_home</span>
+</div>
+<div class="flex items-center gap-1 text-accent-red text-xs font-bold">
+<span class="material-symbols-outlined text-xs">warning</span> High Attention
+                                </div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Coverage Gap Estimate</p>
+<h3 class="text-accent-red text-3xl font-black mt-1">₹ 1,20,00,000</h3>
+<p class="text-slate-600 dark:text-slate-400 text-sm mt-3 leading-relaxed">
+                                    The shortfall between your existing insurance policies (₹ 3.3Cr) and your actual protection needs. This gap leaves your family vulnerable.
+                                </p>
+</div>
+</div>
+<!-- Card 4: Risk Exposure Score -->
+<div class="flex flex-col gap-4 p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start">
+<div class="size-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">speed</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-6 items-center">
+<div class="relative flex items-center justify-center size-32">
+<!-- Circular Gauge SVG -->
+<svg class="size-full -rotate-90 transform" viewbox="0 0 100 100">
+<circle class="text-slate-100 dark:text-slate-800" cx="50" cy="50" fill="transparent" r="45" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="50" cy="50" fill="transparent" r="45" stroke="currentColor" stroke-dasharray="282.7" stroke-dashoffset="98.9" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-black text-slate-900 dark:text-white leading-none">65</span>
+<span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">out of 100</span>
+</div>
+</div>
+<div class="flex-1">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Risk Exposure Score</p>
+<p class="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">
+                                        A consolidated score representing your overall vulnerability across health, life, and critical illness pillars.
+                                    </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Action Section -->
+<div class="flex flex-col items-center gap-6 p-10 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20">
+<div class="text-center max-w-2xl">
+<h4 class="text-slate-900 dark:text-white text-xl font-bold mb-2">Ready for a deeper dive?</h4>
+<p class="text-slate-600 dark:text-slate-400">Our detailed analysis breaks down your risk across 12 specific dimensions and provides personalized recommendations to bridge your coverage gap effectively.</p>
+</div>
+<button class="flex min-w-[280px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 bg-primary text-white gap-3 text-base font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-blue-700 transition-all active:scale-95">
+                            View Detailed Analysis
+                            <span class="material-symbols-outlined">trending_flat</span>
+</button>
+</div>
+<!-- Quick Footer Reference -->
+<div class="mt-12 mb-8 flex flex-col md:flex-row justify-between items-center border-t border-slate-200 dark:border-slate-800 pt-8 gap-4">
+<div class="flex items-center gap-2 text-slate-400 text-xs font-medium">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+                            Calculated using ShieldIQ Engine v2.4.0
+                        </div>
+<div class="flex gap-6">
+<a class="text-slate-400 hover:text-primary text-xs font-medium transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-400 hover:text-primary text-xs font-medium transition-colors" href="#">Methodology</a>
+<a class="text-slate-400 hover:text-primary text-xs font-medium transition-colors" href="#">Contact Expert</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<!-- Background Pattern -->
+<div class="fixed top-0 right-0 -z-10 opacity-[0.03] pointer-events-none text-primary">
+<svg fill="none" height="600" viewbox="0 0 100 100" width="600" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 0L100 100M100 0L0 100" stroke="currentColor" stroke-width="0.5"></path>
+<circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="0.5"></circle>
+</svg>
+</div>
+</body></html>

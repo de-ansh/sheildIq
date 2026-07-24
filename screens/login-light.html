@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShieldIQ - Professional Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2424eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111121",
+                        "slate-custom": "#f8fafc",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display transition-colors duration-300">
+<!-- Top Navigation Utilities -->
+<nav class="fixed top-0 w-full flex justify-end p-6 z-50">
+<button class="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-primary/10 text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+</nav>
+<!-- Main Login Container -->
+<main class="flex-grow flex items-center justify-center px-4 py-12">
+<div class="w-full max-w-[420px]">
+<!-- Login Card -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-primary/5 overflow-hidden">
+<!-- Card Header -->
+<div class="pt-10 pb-6 px-8 text-center">
+<div class="flex justify-center mb-4">
+<div class="bg-primary/10 p-3 rounded-xl">
+<svg class="w-10 h-10 text-primary" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</div>
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">ShieldIQ</h1>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">Risk-Intelligent Protection Planning</p>
+</div>
+<!-- Card Body/Form -->
+<div class="px-8 pb-10">
+<form action="#" class="space-y-5">
+<!-- Email Input -->
+<div>
+<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm" id="email" name="email" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div>
+<div class="flex justify-between mb-1.5">
+<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300" for="password">Password</label>
+<a class="text-xs font-semibold text-primary hover:underline" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">lock</span>
+<input class="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm" id="password" name="password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<!-- Sign In Button -->
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="relative my-8">
+<div class="absolute inset-0 flex items-center">
+<span class="w-full border-t border-slate-100 dark:border-slate-800"></span>
+</div>
+<div class="relative flex justify-center text-xs uppercase">
+<span class="bg-white dark:bg-slate-900 px-4 text-slate-400 font-medium">Analytical Access</span>
+</div>
+</div>
+<!-- Sign Up Link -->
+<p class="text-center text-sm text-slate-600 dark:text-slate-400">
+                        Don't have an account? 
+                        <a class="text-primary font-bold hover:underline" href="#">Sign Up</a>
+</p>
+</div>
+</div>
+<!-- Additional Decorative Content -->
+<div class="mt-8 grid grid-cols-3 gap-4 opacity-40">
+<div class="h-1 bg-primary/20 rounded-full"></div>
+<div class="h-1 bg-primary/40 rounded-full"></div>
+<div class="h-1 bg-primary/20 rounded-full"></div>
+</div>
+</div>
+</main>
+<!-- Footer Disclaimer -->
+<footer class="w-full py-8 px-6 text-center">
+<p class="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500 max-w-lg mx-auto uppercase tracking-widest font-medium">
+            This platform provides analytical insights and does not constitute insurance advisory. 
+            <br class="hidden sm:block"/>
+            © 2024 ShieldIQ Technologies. All rights reserved.
+        </p>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-1/3 h-1/3 bg-primary/5 blur-[120px] rounded-full"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-1/4 h-1/4 bg-primary/5 blur-[100px] rounded-full"></div>
+</body></html>
