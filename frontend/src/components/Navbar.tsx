@@ -11,7 +11,9 @@ import {
   Calculator,
   HeartPulse,
   FileText,
-  UserCheck,
+  DollarSign,
+  Users,
+  BookmarkCheck,
   Moon,
   Sun,
   LogOut,
@@ -23,9 +25,11 @@ const navItems: { id: ScreenId; label: string; icon: React.ComponentType<{ class
   { id: 'analysis', label: 'Analysis', icon: PieChart },
   { id: 'simulator', label: 'Risk Sim', icon: Activity },
   { id: 'calculator', label: 'Life Calc', icon: Calculator },
-  { id: 'healthplanner', label: 'Health Planner', icon: HeartPulse },
+  { id: 'affordability', label: 'Affordability', icon: DollarSign },
+  { id: 'dependencies', label: 'Dependencies', icon: Users },
+  { id: 'healthplanner', label: 'Health', icon: HeartPulse },
+  { id: 'savedplans', label: 'Saved Plans', icon: BookmarkCheck },
   { id: 'deepdive', label: 'Deep Dive', icon: FileText },
-  { id: 'onboarding', label: 'Onboarding', icon: UserCheck },
 ];
 
 export const Navbar: React.FC = () => {
@@ -54,7 +58,7 @@ export const Navbar: React.FC = () => {
         </button>
 
         {/* Navigation Tabs */}
-        <nav className="hidden lg:flex items-center gap-1 bg-muted/60 p-1 rounded-full border border-border/50">
+        <nav className="hidden xl:flex items-center gap-1 bg-muted/60 p-1 rounded-full border border-border/50">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentScreen === item.id;
@@ -62,7 +66,7 @@ export const Navbar: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setCurrentScreen(item.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 uppercase tracking-wider ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 uppercase tracking-wider ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                     : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
@@ -117,8 +121,8 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Nav Drawer Bar */}
-      <div className="lg:hidden mt-3 pt-2 border-t border-border flex items-center gap-1 overflow-x-auto pb-1">
+      {/* Mobile / Medium Screen Nav Drawer Bar */}
+      <div className="xl:hidden mt-3 pt-2 border-t border-border flex items-center gap-1 overflow-x-auto pb-1">
         {navItems.map(item => {
           const Icon = item.icon;
           const isActive = currentScreen === item.id;

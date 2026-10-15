@@ -43,8 +43,10 @@ export const DashboardView: React.FC = () => {
     const { user, policies, currentScreen, setCurrentScreen, logout, isBackendConnected } = useApp();
 
     const handleNavClick = (id: NavItem['id']) => {
-        if (id === 'reports' || id === 'settings') {
-            setCurrentScreen('analysis');
+        if (id === 'reports') {
+            setCurrentScreen('savedplans');
+        } else if (id === 'settings') {
+            setCurrentScreen('settings');
         } else {
             setCurrentScreen(id);
         }
@@ -353,7 +355,32 @@ export const DashboardView: React.FC = () => {
                     </div>
                 </div>
 
-                <footer className="pt-12 text-center">
+                <footer className="pt-12 text-center space-y-3">
+                    <div className="flex justify-center gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        <button
+                            type="button"
+                            onClick={() => setCurrentScreen('compliance')}
+                            className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                        >
+                            Disclaimer & Compliance Disclosure
+                        </button>
+                        <span>•</span>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentScreen('settings')}
+                            className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                        >
+                            Platform Settings
+                        </button>
+                        <span>•</span>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentScreen('systemstates')}
+                            className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                        >
+                            System Status
+                        </button>
+                    </div>
                     <p className="text-[9px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto italic">
                         ShieldIQ Platform • Analytical Intelligence for Human Risk Management • © 2026
                     </p>

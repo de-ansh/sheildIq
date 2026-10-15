@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { LoginView } from '../LoginView';
 import { AppContextProvider } from '@/lib/AppContext';
@@ -30,6 +30,8 @@ describe('LoginView Component', () => {
     expect(emailInput).toHaveValue('user@example.com');
 
     const demoBtn = screen.getByText(/One-Click Demo Sign-In/i);
-    fireEvent.click(demoBtn);
+    await act(async () => {
+      fireEvent.click(demoBtn);
+    });
   });
 });

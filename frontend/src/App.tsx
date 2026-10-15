@@ -10,6 +10,12 @@ import { CoverageAnalysisView } from "./screens/CoverageAnalysisView";
 import { ComparisonView } from "./screens/ComparisonView";
 import { RiskSimulatorView } from "./screens/RiskSimulatorView";
 import { PolicyDeepDiveView } from "./screens/PolicyDeepDiveView";
+import { AffordabilityAnalysisView } from "./screens/AffordabilityAnalysisView";
+import { DependencyModelingView } from "./screens/DependencyModelingView";
+import { SavedPlansView } from "./screens/SavedPlansView";
+import { SettingsView } from "./screens/SettingsView";
+import { ComplianceView } from "./screens/ComplianceView";
+import { SystemStatesView } from "./screens/SystemStatesView";
 
 function MainContent() {
   const { currentScreen } = useApp();
@@ -28,6 +34,12 @@ function MainContent() {
         {currentScreen === "calculator" && <LifeCalculatorView />}
         {currentScreen === "healthplanner" && <HealthPlannerView />}
         {currentScreen === "deepdive" && <PolicyDeepDiveView />}
+        {currentScreen === "affordability" && <AffordabilityAnalysisView />}
+        {currentScreen === "dependencies" && <DependencyModelingView />}
+        {currentScreen === "savedplans" && <SavedPlansView />}
+        {currentScreen === "settings" && <SettingsView />}
+        {currentScreen === "compliance" && <ComplianceView />}
+        {currentScreen === "systemstates" && <SystemStatesView />}
       </main>
     </div>
   );

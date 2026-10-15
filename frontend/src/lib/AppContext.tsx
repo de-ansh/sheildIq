@@ -13,7 +13,10 @@ export type ScreenId =
   | 'deepdive'
   | 'affordability'
   | 'dependencies'
-  | 'savedplans';
+  | 'savedplans'
+  | 'settings'
+  | 'compliance'
+  | 'systemstates';
 
 export interface UserProfile {
   name: string;
@@ -52,6 +55,7 @@ interface AppContextType {
   login: (name: string, email: string) => Promise<boolean>;
   logout: () => void;
   submitOnboarding: (data: Record<string, unknown>) => Promise<boolean>;
+  updateUserProfile: (data: Partial<UserProfile>) => void;
 }
 
 const defaultUser: UserProfile = {
@@ -210,6 +214,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const updateUserProfile = (data: Partial<UserProfile>) => {
+    setUser(prev => ({ ...prev, ...data }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -224,6 +232,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         login,
         logout,
         submitOnboarding,
+        updateUserProfile,
       }}
     >
       {children}
