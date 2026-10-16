@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,22 +8,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
     User,
     Shield,
-    DollarSign,
-    Lock,
     Key,
     CheckCircle2,
     Globe,
     Smartphone,
     Save,
-    RotateCcw,
-    AlertTriangle,
-    Eye,
-    Bell
+    RotateCcw
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi } from '@/lib/api';
 
 export const SettingsView: React.FC = () => {
-    const { user, updateUserProfile, setCurrentScreen } = useApp();
+    const { user, updateUserProfile, setCurrentScreen, logout } = useApp();
 
     const [activeTab, setActiveTab] = useState<'profile' | 'regional' | 'security'>('profile');
     const [savedNotification, setSavedNotification] = useState(false);
@@ -36,7 +32,9 @@ export const SettingsView: React.FC = () => {
     const [occupation, setOccupation] = useState(user?.occupation || 'Senior Systems Architect');
     const [city, setCity] = useState(user?.city || 'San Francisco, CA');
     const [currency, setCurrency] = useState('USD');
-    const [mfaEnabled, setMfaEnabled] = useState(true);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [passwordMessage, setPasswordMessage] = useState<{ ok: boolean; text: string } | null>(null);
     const [sessionLogging, setSessionLogging] = useState(true);
     const [modelTraining, setModelTraining] = useState(false);
 
@@ -53,6 +51,26 @@ export const SettingsView: React.FC = () => {
 
         setSavedNotification(true);
         setTimeout(() => setSavedNotification(false), 3000);
+    };
+
+    const handleChangePassword = async () => {
+        if (newPassword.length < 8) {
+            setPasswordMessage({ ok: false, text: 'New password must be at least 8 characters.' });
+            return;
+        }
+        const res = await ShieldIQApi.changePassword(currentPassword, newPassword);
+        if (res && res.success) {
+            setCurrentPassword('');
+            setNewPassword('');
+            setPasswordMessage({ ok: true, text: 'Password updated. Other sessions have been signed out.' });
+        } else {
+            setPasswordMessage({ ok: false, text: res?.error || 'Cannot reach the ShieldIQ server.' });
+        }
+    };
+
+    const handleLogoutAll = async () => {
+        await ShieldIQApi.logoutAll();
+        logout();
     };
 
     return (
@@ -275,35 +293,78 @@ export const SettingsView: React.FC = () => {
                                 <div>
                                     <CardTitle className="text-xl font-bold">Security & Data Privacy</CardTitle>
                                     <CardDescription className="text-xs text-muted-foreground">
-                                        Manage multi-factor authentication, technical logging, and GDPR/CCPA data export preferences.
+                                        Manage your password, active sessions, and privacy preferences.
                                     </CardDescription>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
+                                    <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-4">
                                         <div className="flex items-center gap-3">
                                             <Key className="w-5 h-5 text-blue-600" />
                                             <div>
-                                                <h4 className="text-sm font-bold text-foreground">Two-Factor Authentication (MFA)</h4>
-                                                <p className="text-xs text-muted-foreground">TOTP Authenticator app active on current session.</p>
+                                                <h4 className="text-sm font-bold text-foreground">Change Password</h4>
+                                                <p className="text-xs text-muted-foreground">Changing your password signs out all other sessions.</p>
                                             </div>
                                         </div>
-                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">
-                                            Active
-                                        </Badge>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="current-password" className="text-xs font-bold">Current Password</Label>
+                                                <Input
+                                                    id="current-password"
+                                                    type="password"
+                                                    autoComplete="current-password"
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-password" className="text-xs font-bold">New Password</Label>
+                                                <Input
+                                                    id="new-password"
+                                                    type="password"
+                                                    autoComplete="new-password"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        {passwordMessage && (
+                                            <p role="status" className={`text-xs font-medium ${passwordMessage.ok ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                {passwordMessage.text}
+                                            </p>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={handleChangePassword}
+                                            disabled={!currentPassword || !newPassword}
+                                            className="text-xs font-bold"
+                                        >
+                                            Update Password
+                                        </Button>
                                     </div>
 
                                     <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
                                         <div className="flex items-center gap-3">
                                             <Smartphone className="w-5 h-5 text-indigo-600" />
                                             <div>
-                                                <h4 className="text-sm font-bold text-foreground">Active Devices</h4>
-                                                <p className="text-xs text-muted-foreground">2 Authorized devices connected in San Francisco, CA.</p>
+                                                <h4 className="text-sm font-bold text-foreground">Active Sessions</h4>
+                                                <p className="text-xs text-muted-foreground">Sign out of ShieldIQ on every device, including this one.</p>
                                             </div>
                                         </div>
-                                        <Button variant="outline" size="sm" type="button" className="text-xs font-bold">
-                                            Manage Devices
+                                        <Button variant="outline" size="sm" type="button" onClick={handleLogoutAll} className="text-xs font-bold">
+                                            Sign Out Everywhere
                                         </Button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
+                                        <div>
+                                            <h4 className="text-sm font-bold text-foreground">Two-Factor Authentication (MFA)</h4>
+                                            <p className="text-xs text-muted-foreground">Authenticator app support is not available yet.</p>
+                                        </div>
+                                        <Badge className="bg-slate-500/10 text-slate-500 border-none font-bold text-xs">
+                                            Not Enabled
+                                        </Badge>
                                     </div>
 
                                     <div className="p-4 rounded-xl border border-border space-y-4">

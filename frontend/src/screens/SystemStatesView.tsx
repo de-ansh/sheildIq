@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {  } from "@/components/ui/badge";
 import {
     Loader2,
     AlertCircle,
     SearchX,
     Settings2,
-    ShieldAlert,
-    ArrowLeft,
-    RefreshCw
+    ShieldAlert
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 
@@ -26,7 +24,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
     description,
     onAction
 }) => {
-    const { setCurrentScreen, isBackendConnected } = useApp();
+    const { setCurrentScreen } = useApp();
     const [selectedType, setSelectedType] = useState<"loading" | "error" | "empty" | "maintenance">(
         propType || "maintenance"
     );

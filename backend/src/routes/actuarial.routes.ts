@@ -59,4 +59,4 @@ router.post('/coverage-analysis', (req: Request, res: Response) => {
   res.json({ success: true, data: result });
 });
 
-export const actuarialRouter = router;
+export const actuarialRouter: Router = router;

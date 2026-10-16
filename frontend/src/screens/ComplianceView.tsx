@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,9 +11,7 @@ import {
     CheckCircle2,
     Lock,
     Printer,
-    Download,
     Calendar,
-    ExternalLink,
     ArrowLeft
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';

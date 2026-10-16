@@ -2,41 +2,69 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, AlertCircle, Loader2 } from "lucide-react";
+import { Shield, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi } from '@/lib/api';
+
+type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
 
 export const LoginView: React.FC = () => {
-    const { login, setCurrentScreen } = useApp();
-    const [email, setEmail] = useState('alex.vance@shieldiq.internal');
-    const [password, setPassword] = useState('password123');
+    const { login, register } = useApp();
+    // Reset links arrive as /?reset=<token>
+    const [resetToken] = useState(() => new URLSearchParams(window.location.search).get('reset'));
+    const [mode, setMode] = useState<Mode>(resetToken ? 'reset' : 'signin');
+    const isSignUp = mode === 'signup';
+    const [notice, setNotice] = useState<string | null>(null);
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setNotice(null);
 
-        if (!email.trim() || !email.includes('@')) {
+        if (mode !== 'reset' && (!email.trim() || !email.includes('@'))) {
             setError('Please enter a valid email address.');
+            return;
+        }
+
+        if ((mode === 'signup' || mode === 'reset') && password.length < 8) {
+            setError('Password must be at least 8 characters.');
             return;
         }
 
         setIsLoading(true);
         try {
-            const displayName = email.split('@')[0].replace('.', ' ');
-            const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-            await login(formattedName, email);
-        } catch {
-            setError('Authentication failed. Please check credentials.');
+            if (mode === 'forgot') {
+                const res = await ShieldIQApi.forgotPassword(email);
+                if (res && res.success) setNotice(res.message);
+                else setError(res?.error || 'Cannot reach the ShieldIQ server. Please try again.');
+            } else if (mode === 'reset') {
+                const res = await ShieldIQApi.resetPassword(resetToken!, password);
+                if (res && res.success) {
+                    window.history.replaceState(null, '', window.location.pathname);
+                    setPassword('');
+                    setMode('signin');
+                    setNotice('Password updated. Please sign in with your new password.');
+                } else {
+                    setError(res?.error || 'Cannot reach the ShieldIQ server. Please try again.');
+                }
+            } else {
+                setError(isSignUp ? await register(name.trim(), email, password) : await login(email, password));
+            }
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDemoLogin = async () => {
+        setError(null);
         setIsLoading(true);
         try {
-            await login('Alex Vance', 'alex.vance@shieldiq.internal');
+            setError(await login('alex.vance@shieldiq.internal', 'Password123!'));
         } finally {
             setIsLoading(false);
         }
@@ -59,6 +87,13 @@ export const LoginView: React.FC = () => {
                     </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {notice && (
+                        <div role="status" className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-lg flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>{notice}</span>
+                        </div>
+                    )}
+
                     {error && (
                         <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
                             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -67,11 +102,30 @@ export const LoginView: React.FC = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {isSignUp && (
+                            <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-medium leading-none text-foreground">
+                                    Full Name
+                                </label>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Jane Doe"
+                                    className="bg-muted/30 border-border"
+                                    autoComplete="name"
+                                    required
+                                />
+                            </div>
+                        )}
+                        {mode !== 'reset' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
+                            <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
                                 Email Address
                             </label>
                             <Input
+                                id="email"
+                                autoComplete="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -80,20 +134,26 @@ export const LoginView: React.FC = () => {
                                 required
                             />
                         </div>
+                        )}
+                        {mode !== 'forgot' && (
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium leading-none text-foreground">
-                                    Password
+                                <label htmlFor="password" className="text-sm font-medium leading-none text-foreground">
+                                    {mode === 'reset' ? 'New Password' : 'Password'}
                                 </label>
+                                {mode === 'signin' && (
                                 <button
                                     type="button"
-                                    onClick={() => setError('Password reset link has been dispatched to your email.')}
+                                    onClick={() => { setMode('forgot'); setError(null); setNotice(null); }}
                                     className="text-xs text-blue-600 hover:underline bg-transparent border-0 p-0 cursor-pointer"
                                 >
                                     Forgot Password?
                                 </button>
+                                )}
                             </div>
                             <Input
+                                id="password"
+                                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -102,6 +162,7 @@ export const LoginView: React.FC = () => {
                                 required
                             />
                         </div>
+                        )}
 
                         <Button
                             type="submit"
@@ -111,14 +172,16 @@ export const LoginView: React.FC = () => {
                             {isLoading ? (
                                 <span className="flex items-center gap-2">
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Authenticating...
+                                    {mode === 'signin' || mode === 'signup' ? 'Authenticating...' : 'Submitting...'}
                                 </span>
                             ) : (
-                                'Sign In'
+                                { signin: 'Sign In', signup: 'Create Account', forgot: 'Send Reset Link', reset: 'Set New Password' }[mode]
                             )}
                         </Button>
                     </form>
 
+                    {/* Demo account is not seeded in production builds */}
+                    {!import.meta.env.PROD && mode === 'signin' && (
                     <div className="pt-2">
                         <Button
                             type="button"
@@ -130,16 +193,17 @@ export const LoginView: React.FC = () => {
                             One-Click Demo Sign-In (Alex Vance)
                         </Button>
                     </div>
+                    )}
 
                     <div className="text-center mt-6">
                         <p className="text-sm text-muted-foreground">
-                            Don't have an account?{' '}
+                            {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
                             <button
                                 type="button"
-                                onClick={() => setCurrentScreen('onboarding')}
+                                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setNotice(null); }}
                                 className="text-blue-600 font-semibold hover:underline bg-transparent border-0 p-0 cursor-pointer"
                             >
-                                Sign Up
+                                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
                             </button>
                         </p>
                     </div>

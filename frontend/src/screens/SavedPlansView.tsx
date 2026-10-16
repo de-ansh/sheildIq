@@ -1,36 +1,24 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useEffect, useState } from 'react';
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
     FileText,
     ShieldCheck,
-    AlertCircle,
     Calendar,
     Download,
     PlusCircle,
-    CheckCircle2,
     Search,
     ExternalLink,
     Clock,
-    Sparkles,
     Trash2,
     Eye
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi, type SavedPlan } from '@/lib/api';
 
-interface SavedPlan {
-    id: string;
-    name: string;
-    category: string;
-    coverageAmount: number;
-    monthlyPremium: number;
-    status: 'Adequate' | 'Gap Detected' | 'Incomplete' | 'Archived';
-    lastModified: string;
-    description: string;
-}
-
+// Shown until the backend responds (and when it is offline)
 const initialSavedPlans: SavedPlan[] = [
     {
         id: 'SIQ-992-X',
@@ -85,13 +73,20 @@ const initialSavedPlans: SavedPlan[] = [
 ];
 
 export const SavedPlansView: React.FC = () => {
-    const { setCurrentScreen, setSelectedPolicyId } = useApp();
+    const { setCurrentScreen, setSelectedPolicyId, user } = useApp();
 
     const [plans, setPlans] = useState<SavedPlan[]>(initialSavedPlans);
     const [statusFilter, setStatusFilter] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newPlanName, setNewPlanName] = useState('');
+
+    useEffect(() => {
+        if (!user.isLoggedIn) return;
+        ShieldIQApi.getPlans().then(res => {
+            if (res && res.success && Array.isArray(res.data)) setPlans(res.data);
+        });
+    }, [user.isLoggedIn]);
 
     const filteredPlans = plans.filter(p => {
         const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
@@ -101,28 +96,32 @@ export const SavedPlansView: React.FC = () => {
         return matchesStatus && matchesSearch;
     });
 
-    const handleCreatePlan = (e: React.FormEvent) => {
+    const handleCreatePlan = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newPlanName.trim()) return;
 
-        const newEntry: SavedPlan = {
-            id: `SIQ-${Math.floor(100 + Math.random() * 900)}-CUSTOM`,
-            name: newPlanName,
+        const draft: Omit<SavedPlan, 'id' | 'lastModified'> = {
+            name: newPlanName.trim(),
             category: 'Custom Bundle',
             coverageAmount: 2500000,
             monthlyPremium: 410,
             status: 'Adequate',
-            lastModified: new Date().toISOString().split('T')[0],
             description: 'Custom configuration generated from live actuarial adjustments.'
         };
 
-        setPlans([newEntry, ...plans]);
+        const res = await ShieldIQApi.createPlan(draft);
+        const created: SavedPlan = res && res.success
+            ? res.data
+            : { ...draft, id: `SIQ-${Math.floor(100 + Math.random() * 900)}-LOCAL`, lastModified: new Date().toISOString().split('T')[0] };
+
+        setPlans(prev => [created, ...prev]);
         setNewPlanName('');
         setIsCreateModalOpen(false);
     };
 
     const handleDeletePlan = (id: string) => {
-        setPlans(plans.filter(p => p.id !== id));
+        ShieldIQApi.deletePlan(id);
+        setPlans(prev => prev.filter(p => p.id !== id));
     };
 
     const getStatusBadge = (status: SavedPlan['status']) => {

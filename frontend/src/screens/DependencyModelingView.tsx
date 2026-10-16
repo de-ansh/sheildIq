@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -10,11 +10,8 @@ import {
     Home,
     Users,
     TrendingUp,
-    AlertCircle,
     CheckCircle2,
-    Calendar,
     Settings2,
-    RefreshCw,
     Download,
     ArrowRight
 } from "lucide-react";
@@ -26,7 +23,6 @@ export const DependencyModelingView: React.FC = () => {
     const [inflationRate, setInflationRate] = useState<number[]>([3.2]);
     const [interestRate, setInterestRate] = useState<number[]>([5.5]);
     const [educationMultiplier, setEducationMultiplier] = useState<number[]>([1.4]);
-    const [activeTimeline, setActiveTimeline] = useState<'30Y' | '10Y'>('30Y');
 
     const dependentsCount = user?.dependents ?? 2;
     const baseIncome = user?.income || 145000;

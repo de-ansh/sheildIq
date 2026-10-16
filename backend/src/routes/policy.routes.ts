@@ -36,4 +36,4 @@ router.post('/compare', (req: Request, res: Response) => {
   res.json({ success: true, data: comparison });
 });
 
-export const policyRouter = router;
+export const policyRouter: Router = router;

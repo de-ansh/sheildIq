@@ -1,0 +1,10 @@
+backend/data/
+node_modules/
+dist/
+.DS_Store
+*.tsbuildinfo
+
+# graphify (local knowledge graph + its Claude Code integration)
+graphify-out/
+CLAUDE.md
+.claude/settings.json

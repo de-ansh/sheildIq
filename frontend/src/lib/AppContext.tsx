@@ -52,7 +52,9 @@ interface AppContextType {
   isBackendConnected: boolean;
   selectedPolicyId: string | null;
   setSelectedPolicyId: (id: string | null) => void;
-  login: (name: string, email: string) => Promise<boolean>;
+  /** Resolves to an error message, or null on success. */
+  login: (email: string, password: string) => Promise<string | null>;
+  register: (name: string, email: string, password: string) => Promise<string | null>;
   logout: () => void;
   submitOnboarding: (data: Record<string, unknown>) => Promise<boolean>;
   updateUserProfile: (data: Partial<UserProfile>) => void;
@@ -114,7 +116,7 @@ const initialPolicies: Policy[] = [
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentScreen, setCurrentScreen] = useState<ScreenId>('dashboard');
+  const [currentScreen, setCurrentScreen] = useState<ScreenId>('login');
   const [user, setUser] = useState<UserProfile>(defaultUser);
   const [policies, setPolicies] = useState<Policy[]>(initialPolicies);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
@@ -124,9 +126,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     ShieldIQApi.getHealth().then(res => {
       if (res && res.status === 'UP') {
         setIsBackendConnected(true);
+        // Restores the session if the httpOnly cookie is still valid; a 401 just leaves us on login.
         ShieldIQApi.getUserProfile().then(userRes => {
           if (userRes && userRes.success && userRes.user) {
-            setUser(prev => ({ ...prev, ...userRes.user }));
+            setUser({ ...userRes.user, isLoggedIn: true });
+            setCurrentScreen(screen => (screen === 'login' ? 'dashboard' : screen));
           }
         });
         ShieldIQApi.getPolicies().then(policyRes => {
@@ -138,43 +142,22 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
   }, []);
 
-  const login = async (name: string, email: string): Promise<boolean> => {
-    try {
-      const res = await ShieldIQApi.login(email, name);
-      if (res && res.success && res.user) {
-        setUser({
-          name: res.user.name || name || 'Alex Vance',
-          email: res.user.email || email,
-          age: res.user.age || 34,
-          income: res.user.income || 145000,
-          dependents: res.user.dependents ?? 2,
-          city: res.user.city || 'San Francisco, CA',
-          occupation: res.user.occupation || 'Senior Systems Architect',
-          isLoggedIn: true,
-        });
-      } else {
-        setUser(prev => ({
-          ...prev,
-          name: name || prev.name,
-          email,
-          isLoggedIn: true,
-        }));
-      }
-      setCurrentScreen('dashboard');
-      return true;
-    } catch {
-      setUser(prev => ({
-        ...prev,
-        name: name || prev.name,
-        email,
-        isLoggedIn: true,
-      }));
-      setCurrentScreen('dashboard');
-      return true;
-    }
+  const startSession = (res: { success?: boolean; user?: UserProfile; error?: string } | null, next: ScreenId) => {
+    if (!res) return 'Cannot reach the ShieldIQ server. Please try again.';
+    if (!res.success || !res.user) return res.error || 'Authentication failed. Please check credentials.';
+    setUser({ ...res.user, isLoggedIn: true });
+    setCurrentScreen(next);
+    return null;
   };
 
+  const login = async (email: string, password: string) =>
+    startSession(await ShieldIQApi.login(email, password), 'dashboard');
+
+  const register = async (name: string, email: string, password: string) =>
+    startSession(await ShieldIQApi.register(email, password, name), 'onboarding');
+
   const logout = () => {
+    ShieldIQApi.logout();
     setUser(prev => ({ ...prev, isLoggedIn: false }));
     setCurrentScreen('login');
   };
@@ -216,6 +199,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const updateUserProfile = (data: Partial<UserProfile>) => {
     setUser(prev => ({ ...prev, ...data }));
+    // email is the login identity and not editable via the profile endpoint
+    const { name, age, income, dependents, city, occupation } = data;
+    ShieldIQApi.updateUserProfile({ name, age, income, dependents, city, occupation }).then(res => {
+      if (res && res.success && res.user) setUser({ ...res.user, isLoggedIn: true });
+    });
   };
 
   return (
@@ -230,6 +218,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         selectedPolicyId,
         setSelectedPolicyId,
         login,
+        register,
         logout,
         submitOnboarding,
         updateUserProfile,

@@ -1,13 +1,31 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { actuarialRouter } from './routes/actuarial.routes.js';
 import { policyRouter } from './routes/policy.routes.js';
 import { userRouter } from './routes/user.routes.js';
 
-export const app = express();
+export const app: Express = express();
 
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+// Credentialed CORS must only trust known frontends, never reflect arbitrary origins.
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(o => o.trim());
+
+app.disable('x-powered-by');
+// Behind a reverse proxy set TRUST_PROXY (e.g. "1" hop) so req.ip is the client, not the proxy, for rate limiting.
+if (process.env.TRUST_PROXY) {
+  const hops = Number(process.env.TRUST_PROXY);
+  app.set('trust proxy', Number.isNaN(hops) ? process.env.TRUST_PROXY : hops);
+}
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+    'Cache-Control': 'no-store',
+  });
+  next();
+});
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(express.json({ limit: '50kb' }));
 
 // Health Check Endpoint
 app.get('/api/v1/health', (_req: Request, res: Response) => {
@@ -30,7 +48,12 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Global Error Middleware
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
+  // Client errors from body-parser (malformed JSON, oversized body) carry a 4xx status.
+  if (err.status && err.status >= 400 && err.status < 500) {
+    res.status(err.status).json({ error: 'Invalid request body' });
+    return;
+  }
   console.error('[ShieldIQ Error]:', err);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  res.status(500).json({ error: 'Internal Server Error' });
 });

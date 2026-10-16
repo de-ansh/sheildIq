@@ -1,4 +1,29 @@
-const API_BASE_URL = 'http://localhost:5001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+/** JSON request sending the httpOnly session cookie; resolves to null when the backend is unreachable. */
+async function request(path: string, method = 'GET', body?: unknown) {
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      credentials: 'include',
+      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export interface SavedPlan {
+  id: string;
+  name: string;
+  category: string;
+  coverageAmount: number;
+  monthlyPremium: number;
+  status: 'Adequate' | 'Gap Detected' | 'Incomplete' | 'Archived';
+  lastModified: string;
+  description: string;
+}
 
 export interface HLVApiInput {
   income: number;
@@ -59,31 +84,31 @@ export const ShieldIQApi = {
     }
   },
 
-  async login(email: string, name?: string) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name }),
-      });
-      return await res.json();
-    } catch {
-      return null;
-    }
-  },
+  login: (email: string, password: string) => request('/auth/login', 'POST', { email, password }),
 
-  async submitOnboarding(data: Record<string, unknown>) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/user/onboarding`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return await res.json();
-    } catch {
-      return null;
-    }
-  },
+  register: (email: string, password: string, name: string) =>
+    request('/auth/register', 'POST', { email, password, name }),
+
+  logout: () => request('/auth/logout', 'POST'),
+
+  logoutAll: () => request('/auth/logout-all', 'POST'),
+
+  forgotPassword: (email: string) => request('/auth/forgot-password', 'POST', { email }),
+
+  resetPassword: (token: string, password: string) => request('/auth/reset-password', 'POST', { token, password }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request('/auth/change-password', 'POST', { currentPassword, newPassword }),
+
+  submitOnboarding: (data: Record<string, unknown>) => request('/user/onboarding', 'POST', data),
+
+  updateUserProfile: (data: Record<string, unknown>) => request('/user/profile', 'PUT', data),
+
+  getPlans: () => request('/plans'),
+
+  createPlan: (plan: Omit<SavedPlan, 'id' | 'lastModified'>) => request('/plans', 'POST', plan),
+
+  deletePlan: (id: string) => request(`/plans/${encodeURIComponent(id)}`, 'DELETE'),
 
   async calculateHLV(input: HLVApiInput): Promise<{ success: boolean; data: HLVResult } | null> {
     try {
@@ -155,12 +180,5 @@ export const ShieldIQApi = {
     }
   },
 
-  async getUserProfile() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/user/profile`);
-      return await res.json();
-    } catch {
-      return null;
-    }
-  },
+  getUserProfile: () => request('/user/profile'),
 };
