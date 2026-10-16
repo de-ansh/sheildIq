@@ -9,6 +9,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // Keeps development same-origin, like production where Express serves the built app.
+    proxy: { '/api': process.env.API_PROXY_TARGET || 'http://localhost:5001' },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

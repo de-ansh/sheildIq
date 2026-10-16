@@ -10,6 +10,20 @@ const sessionCookie = (res: request.Response) => {
   return { Cookie: cookies[0].split(';')[0] };
 };
 
+
+/** A Gemini Interactions server-sent-events stream that emits the given text pieces. */
+const geminiStream = (pieces: string[]) =>
+  new Response(
+    [
+      { event_type: 'step.start', step: { type: 'thought' } },
+      ...pieces.map(text => ({ event_type: 'step.delta', delta: { type: 'text', text } })),
+      { event_type: 'interaction.completed', interaction: { status: 'completed' } },
+    ].map(e => `event: ${e.event_type}\ndata: ${JSON.stringify(e)}\n\n`).join('') + 'event: done\ndata: [DONE]\n\n',
+    { status: 200, headers: { 'Content-Type': 'text/event-stream' } }
+  );
+/** Parses an SSE response body into its JSON events. */
+const sse = (text: string) => text.split('\n\n').filter(b => b.startsWith('data: ')).map(b => JSON.parse(b.slice(6)));
+
 describe('ShieldIQ REST API Endpoints', () => {
   it('GET /api/v1/health returns HTTP 200 UP status', async () => {
     const res = await request(app).get('/api/v1/health');
@@ -45,11 +59,11 @@ describe('ShieldIQ REST API Endpoints', () => {
     expect(res.body.count).toBeGreaterThan(0);
   });
 
-  it('POST /api/v1/policies/compare names the highest claim ratio, not the first item', async () => {
+  it('POST /api/v1/policies/compare names the clearest wording, not the first item', async () => {
     const res = await request(app).post('/api/v1/policies/compare').send({ policyIds: ['HL-FLOATER', 'TL-BASIC'] });
     expect(res.body.data.comparedCount).toBe(2);
     expect(res.body.data.recommendation).toContain('Pure Level Term');
-    expect(res.body.data.recommendation).toContain('99.1%');
+    expect(res.body.data.recommendation).toContain('clarity 95/100');
   });
 
   it('GET /api/v1/user/profile rejects unauthenticated requests', async () => {
@@ -94,6 +108,18 @@ describe('Auth, profile and saved plans', () => {
 
     const upd = await request(app).put('/api/v1/user/profile').set(auth).send({ age: 41, city: 'Pune' });
     expect(upd.body.user).toMatchObject({ age: 41, city: 'Pune', email: 'new.user@example.com' });
+    // Accepting the disclaimer is stored once and survives a fresh profile load.
+    expect(upd.body.user.disclaimerAcknowledgedAt).toBeNull();
+    const ack = (await request(app).post('/api/v1/user/disclaimer').set(auth)).body.user.disclaimerAcknowledgedAt;
+    expect(Date.now() - Date.parse(ack)).toBeLessThan(5000);
+    expect((await request(app).post('/api/v1/user/disclaimer').set(auth)).body.user.disclaimerAcknowledgedAt).toBe(ack);
+    expect((await request(app).get('/api/v1/user/profile').set(auth)).body.user.disclaimerAcknowledgedAt).toBe(ack);
+    expect((await request(app).post('/api/v1/user/disclaimer')).status).toBe(401);
+    // Saving the profile stamps the review date; changing the password does not.
+    const reviewedAt = upd.body.user.profileReviewedAt;
+    expect(Date.now() - Date.parse(reviewedAt)).toBeLessThan(5000);
+    await request(app).post('/api/v1/auth/change-password').set(auth).send({ currentPassword: 'longenough', newPassword: 'longenough-2' });
+    expect((await request(app).get('/api/v1/user/profile').set(auth)).body.user.profileReviewedAt).toBe(reviewedAt);
 
     const onboard = await request(app)
       .post('/api/v1/user/onboarding')
@@ -126,9 +152,18 @@ describe('Auth, profile and saved plans', () => {
     const created = await request(app)
       .post('/api/v1/plans')
       .set(alex)
-      .send({ name: 'Test Plan', coverageAmount: 100, monthlyPremium: 10 });
+      .send({ name: 'Test Plan', coverageAmount: 100, monthlyPremium: 10, snapshot: { score: 100, lifeGap: 0, healthGap: 0, annualPremium: 0 } });
     expect(created.status).toBe(201);
     const id = created.body.data.id;
+    // The snapshot comes from the server's own strategy, not the request body, and is listed back.
+    const strategy = (await request(app).get('/api/v1/strategy').set(alex)).body.data;
+    expect(created.body.data.snapshot).toEqual({
+      score: strategy.score, lifeGap: strategy.life.gap, healthGap: strategy.health.gap, annualPremium: strategy.affordability.estimatedAnnualPremium,
+    });
+    expect(strategy.score).toBeLessThan(100);
+    const listed = (await request(app).get('/api/v1/plans').set(alex)).body.data;
+    expect(listed[0]).toMatchObject({ id, snapshot: created.body.data.snapshot });
+    expect(listed.at(-1).snapshot).toBeNull(); // seeded plans predate snapshots
 
     expect((await request(app).get('/api/v1/plans').set(otherAuth)).body.data).toEqual([]);
     expect((await request(app).delete(`/api/v1/plans/${id}`).set(otherAuth)).status).toBe(404);
@@ -366,30 +401,63 @@ describe('AI features', () => {
     return auth;
   };
 
-  it('chat answers from the user profile without sending name or email', async () => {
-    const fetchMock = gemini({ answer: 'Buy term cover first.', suggestedQuestions: ['Why?'] });
+  it('chat streams the answer, saves the turn, and sends it back as context next time', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(geminiStream(['Buy term ', 'cover first.', '\n---\n- Why term?\n2. How much?']))
+      .mockResolvedValueOnce(geminiStream(['Because it is cheap.']));
     vi.stubGlobal('fetch', fetchMock);
     const auth = await onboarded('chat@example.com');
 
-    const res = await request(app).post('/api/v1/ai/chat').set(auth)
-      .send({ messages: [{ role: 'user', content: 'Prepay loan or buy term?' }] });
+    const res = await request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'Prepay loan or buy term?' });
     expect(res.status).toBe(200);
-    expect(res.body.reply.answer).toBe('Buy term cover first.');
+    expect(res.headers['content-type']).toMatch(/text\/event-stream/);
+    const events = sse(res.text);
+    expect(events.filter(e => 'delta' in e).map(e => e.delta).join('')).toMatch(/^Buy term cover first\./);
+    expect(events.at(-1)).toMatchObject({ done: true, provider: 'gemini', reply: { answer: 'Buy term cover first.', suggestedQuestions: ['Why term?', 'How much?'] } });
+
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toMatchObject({ stream: true, store: false, generation_config: { thinking_level: 'minimal' } });
     expect(body.input).toContain('"homeLoan": 4000000');
     expect(body.input).toContain('USER: Prepay loan or buy term?');
     expect(body.input).not.toMatch(/Rohan|chat@example\.com/);
-    expect(body.store).toBe(false);
 
-    const bad = await request(app).post('/api/v1/ai/chat').set(auth)
-      .send({ messages: [{ role: 'assistant', content: 'hi' }] });
-    expect(bad.status).toBe(400);
+    // History is stored server-side, survives a reload (GET), and feeds the next question.
+    expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toMatchObject([
+      { role: 'user', content: 'Prepay loan or buy term?' }, { role: 'assistant', content: 'Buy term cover first.' },
+    ]);
+    await request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'Why?' });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).input).toContain('SHIELDIQ: Buy term cover first.\n\nUSER: Why?');
+    expect((await request(app).get('/api/v1/user/export').set(auth)).body.chatHistory).toHaveLength(4);
+
+    expect((await request(app).delete('/api/v1/ai/chat').set(auth)).status).toBe(200);
+    expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toEqual([]);
+    expect((await request(app).post('/api/v1/ai/chat').set(auth).send({ message: '' })).status).toBe(400);
+    expect((await request(app).get('/api/v1/ai/chat')).status).toBe(401);
+  });
+
+  it('chat falls back before the first word, but reports a mid-answer failure without saving it', async () => {
+    process.env.OPENAI_API_KEY = 'o';
+    const openai = new Response('data: {"choices":[{"delta":{"content":"From OpenAI."}}]}\n\ndata: [DONE]\n\n', { status: 200 });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response('overloaded', { status: 503 })).mockResolvedValueOnce(openai));
+    const auth = await onboarded('chat-fallback@example.com');
+    const ok = sse((await request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'hi' })).text);
+    expect(ok.at(-1)).toMatchObject({ done: true, provider: 'openai', reply: { answer: 'From OpenAI.' } });
+
+    const broken = new Response(
+      'data: {"event_type":"step.delta","delta":{"type":"text","text":"Half an "}}\n\ndata: {"event_type":"error","error":{"message":"boom"}}\n\n',
+      { status: 200 }
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(broken));
+    const failed = sse((await request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'again' })).text);
+    expect(failed[0]).toEqual({ delta: 'Half an ' });
+    expect(failed.at(-1)).toEqual({ error: 'The answer was interrupted. Please try again.' });
+    expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toHaveLength(2); // only the first turn
   });
 
   it('chat requires onboarding', async () => {
     vi.stubGlobal('fetch', gemini({}));
     const reg = await request(app).post('/api/v1/auth/register').send({ email: 'notyet@example.com', password: 'longenough', name: 'N' });
-    const res = await request(app).post('/api/v1/ai/chat').set(sessionCookie(reg)).send({ messages: [{ role: 'user', content: 'hello' }] });
+    const res = await request(app).post('/api/v1/ai/chat').set(sessionCookie(reg)).send({ message: 'hello' });
     expect(res.status).toBe(409);
   });
 
@@ -411,7 +479,7 @@ describe('AI features', () => {
   it('parse-profile drafts fields and drops unknown benefits', async () => {
     vi.stubGlobal('fetch', gemini({
       age: 32, income: 1800000, maritalStatus: 'Married', dependents: 2, occupation: 'Analyst', cityTier: 'Tier 1 (Metro)',
-      homeLoan: 3000000, otherLoans: null, monthlyExpenses: 60000, existingLifeCover: 5000000, existingHealthCover: null,
+      homeLoan: 3000000, otherLoans: null, monthlyExpenses: 60000, existingLifeCover: 5000000, existingHealthCover: null, liquidSavings: null, spouseIncome: null, dependentDetails: [], parentsHealthCover: null, loanEmi: null, homeLoanYearsLeft: null, existingCiCover: null, existingPaCover: null,
       employerBenefits: ['Group Health', 'Free Lunch'], lifestyleRisks: ['Tobacco/Smoking'], notes: ['Assumed spouse is dependent.'],
     }));
     const reg = await request(app).post('/api/v1/auth/register').send({ email: 'describe@example.com', password: 'longenough', name: 'D' });
@@ -469,7 +537,258 @@ describe('Plan options endpoint', () => {
     const res = await request(app).get('/api/v1/plan-options').set(auth);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(4);
-    expect(res.body.disclaimer).toMatch(/illustrative/);
+    expect(res.body.disclaimer).toMatch(/not insurer quotes/);
+    // Official IRDAI claim records ride along; no invented per-plan ratios or fictional insurers remain.
+    expect(res.body.insurerRecords.source).toMatchObject({ publisher: 'IRDAI', period: 'FY 2024-25' });
+    expect(res.body.insurerRecords.life.find((r: { insurer: string }) => r.insurer === 'LIC')).toMatchObject({ paidByNumberPct: 97.59 });
+    expect(res.body.insurerRecords.health.length).toBeGreaterThan(0);
+    expect(JSON.stringify(res.body.data)).not.toMatch(/claimSettlementRatio|\(sample\)/);
     expect((await request(app).get('/api/v1/policies')).body.count).toBe(16);
+  });
+});
+
+describe('AI cost controls', () => {
+  const env = { ...process.env };
+  beforeEach(() => {
+    resetAuthRateLimit();
+    process.env.GEMINI_API_KEY = 'test-key';
+    delete process.env.OPENAI_API_KEY;
+  });
+  afterEach(() => {
+    process.env = { ...env };
+    vi.unstubAllGlobals();
+  });
+
+  const reply = (payload: unknown) =>
+    vi.fn().mockImplementation(async () =>
+      new Response(JSON.stringify({ status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(payload) }] }] }), { status: 200 })
+    );
+
+  let seq = 0;
+  const onboarded = async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({ email: `cost${++seq}@example.com`, password: 'longenough', name: 'C' });
+    const auth = sessionCookie(reg);
+    await request(app).post('/api/v1/user/onboarding').set(auth).send({ age: 30, income: 1500000, dependents: 1, cityTier: 'Tier 1 (Metro)', monthlyExpenses: 50000 });
+    resetAuthRateLimit(); // registration attempts share the limiter table; start each check clean
+    return auth;
+  };
+  const chat = (auth: Record<string, string>) => request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'hi' });
+  const chatReply = () => vi.fn().mockImplementation(async () => geminiStream(['ok']));
+
+  it('stops all users once the app-wide daily cap is reached', async () => {
+    process.env.AI_DAILY_CALL_LIMIT = '2';
+    const fetchMock = chatReply();
+    vi.stubGlobal('fetch', fetchMock);
+    const [a, b, c] = [await onboarded(), await onboarded(), await onboarded()];
+
+    expect((await chat(a)).status).toBe(200);
+    expect((await chat(b)).status).toBe(200);
+    const blocked = await chat(c);
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/today/);
+    expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('limits one network across accounts and features', async () => {
+    process.env.AI_IP_HOURLY_LIMIT = '2';
+    vi.stubGlobal('fetch', chatReply());
+    const a = await onboarded();
+    const b = await onboarded();
+    expect((await chat(a)).status).toBe(200);
+    expect((await chat(b)).status).toBe(200);
+    const blocked = await chat(a);
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/network/);
+  });
+
+  it('does not charge cached answers against any limit', async () => {
+    process.env.AI_IP_HOURLY_LIMIT = '1';
+    const fetchMock = reply({ summary: 's', drivers: [{ factor: 'Income', effect: 'e' }], whatIfs: [] });
+    vi.stubGlobal('fetch', fetchMock);
+    const auth = await onboarded();
+    const payload = { screen: 'life-calculator', inputs: { income: 1 }, result: { cover: 2 } };
+
+    expect((await request(app).post('/api/v1/ai/explain').set(auth).send(payload)).status).toBe(200);
+    expect((await request(app).post('/api/v1/ai/explain').set(auth).send(payload)).status).toBe(200); // cache hit
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((await request(app).post('/api/v1/ai/explain').set(auth).send({ ...payload, inputs: { income: 9 } })).status).toBe(429);
+  });
+
+  it('rejects PDFs over 4 MB before calling the provider', async () => {
+    const fetchMock = reply({});
+    vi.stubGlobal('fetch', fetchMock);
+    const auth = await onboarded();
+    const big = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(4 * 1024 * 1024 + 10, 0x20)]).toString('base64');
+    const res = await request(app).post('/api/v1/ai/policy-analysis').set(auth).send({ filename: 'big.pdf', data: big });
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('Upload route checks login before reading the body', () => {
+  // Refused before the body is read: a 401, or a reset if the server closes while the client is still sending.
+  const refusedUnread = async (body: string) => {
+    try {
+      const res = await request(app).post('/api/v1/ai/policy-analysis').set('Content-Type', 'application/json').send(body);
+      return res.status;
+    } catch (err) {
+      return (err as NodeJS.ErrnoException).code;
+    }
+  };
+
+  it('refuses anonymous uploads without parsing them', async () => {
+    // A broken body proves the parser never ran: parsing it would answer 400.
+    expect([401, 'ECONNRESET']).toContain(await refusedUnread('{"filename": "x.pdf", "data": ' + 'A'.repeat(1024 * 1024)));
+    // Buffering an oversized body would answer 413.
+    expect([401, 'ECONNRESET']).toContain(await refusedUnread(JSON.stringify({ filename: 'x.pdf', data: 'A'.repeat(7 * 1024 * 1024) })));
+  });
+
+  it('still accepts large bodies for signed-in users and small limits elsewhere', async () => {
+    resetAuthRateLimit();
+    const reg = await request(app).post('/api/v1/auth/register').send({ email: 'upload@example.com', password: 'longenough', name: 'U' });
+    const auth = sessionCookie(reg);
+    // 1 MB of valid JSON passes the parser and reaches validation (bad base64 -> 400 from our schema, not 413).
+    const res = await request(app).post('/api/v1/ai/policy-analysis').set(auth).send({ filename: 'x.pdf', data: '!'.repeat(1024 * 1024) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/PDF up to 4 MB/);
+    // Other routes keep the 50 KB cap.
+    const big = await request(app).put('/api/v1/user/profile').set(auth).send({ occupation: 'x'.repeat(60 * 1024) });
+    expect(big.status).toBe(413);
+  });
+});
+
+describe('Per-account login limit', () => {
+  // Clearing only the per-IP counters simulates an attacker rotating through many IP addresses.
+  const newIp = () => getDatabase().prepare("DELETE FROM auth_attempts WHERE key LIKE 'ip:%'").run();
+  const login = (email: string, password: string) => request(app).post('/api/v1/auth/login').send({ email, password });
+
+  beforeEach(() => resetAuthRateLimit());
+
+  it('locks one account after 10 failed passwords, even from different IPs', async () => {
+    await request(app).post('/api/v1/auth/register').send({ email: 'target@example.com', password: 'correct-horse', name: 'T' });
+    for (let i = 0; i < 10; i++) {
+      newIp();
+      expect((await login('Target@Example.com', `wrong-${i}`)).status).toBe(401);
+    }
+    newIp();
+    const locked = await login('target@example.com', 'correct-horse');
+    expect(locked.status).toBe(429);
+    expect(Number(locked.headers['retry-after'])).toBeGreaterThan(0);
+
+    // Other accounts are unaffected.
+    newIp();
+    expect((await login('alex.vance@shieldiq.internal', 'Password123!')).status).toBe(200);
+  });
+
+  it('does not count successful logins', async () => {
+    await request(app).post('/api/v1/auth/register').send({ email: 'regular@example.com', password: 'correct-horse', name: 'R' });
+    for (let i = 0; i < 12; i++) {
+      newIp();
+      expect((await login('regular@example.com', 'correct-horse')).status).toBe(200);
+    }
+  });
+});
+
+describe('Account export and deletion', () => {
+  beforeEach(() => resetAuthRateLimit());
+
+  const setup = async (email: string) => {
+    const reg = await request(app).post('/api/v1/auth/register').send({ email, password: 'my-password-1', name: 'Erase Me' });
+    const auth = sessionCookie(reg);
+    await request(app).post('/api/v1/user/onboarding').set(auth).send({ age: 40, income: 2000000, dependents: 1, cityTier: 'Tier 1 (Metro)', monthlyExpenses: 70000 });
+    await request(app).post('/api/v1/plans').set(auth).send({ name: 'My plan', coverageAmount: 100, monthlyPremium: 1 });
+    return { auth, userId: reg.body.user.id as string };
+  };
+
+  it('exports everything held about the user, without secrets', async () => {
+    const { auth } = await setup('export@example.com');
+    const res = await request(app).get('/api/v1/user/export').set(auth);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toMatch(/attachment; filename="shieldiq-data-/);
+    expect(res.body.profile).toMatchObject({ email: 'export@example.com', income: 2000000 });
+    expect(res.body.savedPlans).toHaveLength(1);
+    expect(JSON.stringify(res.body)).not.toMatch(/password_hash|salt|"token"/);
+    expect((await request(app).get('/api/v1/user/export')).status).toBe(401);
+  });
+
+  it('deletes the account and all its data only with the right password', async () => {
+    const { auth, userId } = await setup('erase@example.com');
+
+    const wrong = await request(app).delete('/api/v1/user/account').set(auth).send({ password: 'not-it' });
+    expect(wrong.status).toBe(400);
+    expect((await request(app).get('/api/v1/user/profile').set(auth)).status).toBe(200);
+
+    const res = await request(app).delete('/api/v1/user/account').set(auth).send({ password: 'my-password-1' });
+    expect(res.status).toBe(200);
+    expect((res.headers['set-cookie'] as unknown as string[])[0]).toMatch(/siq_session=;/);
+
+    const db = getDatabase();
+    for (const table of ['users', 'sessions', 'saved_plans', 'password_resets', 'ai_strategies', 'audit_logs']) {
+      const col = table === 'users' ? 'id' : 'user_id';
+      expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${col} = ?`).get(userId)).toEqual({ n: 0 });
+    }
+    expect(db.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action = 'ACCOUNT_DELETED' AND user_id IS NULL").get()).toMatchObject({ n: expect.any(Number) });
+    expect((await request(app).get('/api/v1/user/profile').set(auth)).status).toBe(401);
+    expect((await request(app).post('/api/v1/auth/login').send({ email: 'erase@example.com', password: 'my-password-1' })).status).toBe(401);
+    // The email is free to register again.
+    expect((await request(app).post('/api/v1/auth/register').send({ email: 'erase@example.com', password: 'another-pass', name: 'New' })).status).toBe(201);
+  });
+});
+
+describe('AI cache retention', () => {
+  const env = { ...process.env };
+  beforeEach(() => {
+    resetAuthRateLimit();
+    process.env.GEMINI_API_KEY = 'test-key';
+  });
+  afterEach(() => {
+    process.env = { ...env };
+    vi.unstubAllGlobals();
+  });
+
+  it('drops cached explanations older than 30 days when new ones are stored', async () => {
+    const db = getDatabase();
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+    const recent = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    db.prepare('INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES (?, ?, ?, ?)').run('old-entry', 'gemini', '{}', old);
+    db.prepare('INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES (?, ?, ?, ?)').run('recent-entry', 'gemini', '{}', recent);
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify({ summary: 's', drivers: [{ factor: 'f', effect: 'e' }], whatIfs: [] }) }] }],
+    }), { status: 200 })));
+    const reg = await request(app).post('/api/v1/auth/register').send({ email: 'retention@example.com', password: 'longenough', name: 'R' });
+    const auth = sessionCookie(reg);
+    await request(app).post('/api/v1/user/onboarding').set(auth).send({ age: 30, income: 1500000, dependents: 0, cityTier: 'Tier 2 (Emerging Metro)', monthlyExpenses: 40000 });
+    resetAuthRateLimit();
+    expect((await request(app).post('/api/v1/ai/explain').set(auth).send({ screen: 'health-planner', inputs: { a: 1 }, result: { b: 2 } })).status).toBe(200);
+
+    const keys = (db.prepare('SELECT cache_key FROM ai_cache').all() as { cache_key: string }[]).map(r => r.cache_key);
+    expect(keys).not.toContain('old-entry');
+    expect(keys).toContain('recent-entry');
+  });
+});
+
+describe('Dependents list via the API', () => {
+  beforeEach(() => resetAuthRateLimit());
+
+  it('saves the list, derives the stored count, and rejects bad entries', async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({ email: 'deps@example.com', password: 'longenough', name: 'D' });
+    const auth = sessionCookie(reg);
+    const res = await request(app).post('/api/v1/user/onboarding').set(auth).send({
+      age: 38, income: 2500000, dependents: 0, maritalStatus: 'Married', spouseIncome: 0, cityTier: 'Tier 1 (Metro)', monthlyExpenses: 90000,
+      dependentDetails: [{ relation: 'child', age: 6 }, { relation: 'parent', age: 67 }, { relation: 'sibling', age: 19 }],
+      parentsHealthCover: 300000,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.user.dependentDetails).toHaveLength(3);
+    expect(res.body.user.dependents).toBe(4); // 3 listed + non-earning spouse
+    const s = (await request(app).get('/api/v1/strategy').set(auth)).body.data;
+    expect(s.household).toMatchObject({ children: 1, parents: 1, siblings: 1, dependents: 4 });
+    expect(s.parentsHealth.existing).toBe(300000);
+    expect(s.life.educationCorpus).toBe(2 * 2500000);
+
+    const bad = await request(app).put('/api/v1/user/profile').set(auth).send({ dependentDetails: [{ relation: 'cousin', age: 10 }] });
+    expect(bad.status).toBe(400);
   });
 });

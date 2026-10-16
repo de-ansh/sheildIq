@@ -17,13 +17,13 @@ import {
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi } from '@/lib/api';
 import { formatINR } from '@/lib/utils';
+import { EDUCATION_PER_CHILD, householdOf, inEducation } from '@/lib/household';
 
 const RETIREMENT_AGE = 60;
-const EDUCATION_PER_CHILD = 2500000;
 // Child ages aren't collected, so education spending is spread over the next 15 years.
 const EDUCATION_WINDOW_YEARS = 15;
-// Loan tenure isn't collected; outstanding loans are amortised over a typical 20-year home loan.
-const LOAN_TENURE_YEARS = 20;
+// Used when the profile has no years-left figure for the home loan.
+const DEFAULT_LOAN_TENURE_YEARS = 20;
 
 type Status = 'critical' | 'moderate' | 'normal' | 'surplus';
 
@@ -35,10 +35,14 @@ export const DependencyModelingView: React.FC = () => {
     const [educationMultiplier, setEducationMultiplier] = useState<number[]>([1.0]);
     const [incomeReplacement, setIncomeReplacement] = useState<number | null>(null);
 
-    const children = user.maritalStatus === 'Married' ? Math.max(0, user.dependents - 1) : user.dependents;
+    // Children and siblings still in education.
+    const children = inEducation(householdOf(user));
     const workingYears = Math.max(1, RETIREMENT_AGE - user.age);
     const loans = user.homeLoan + user.otherLoans;
-    const cover = user.existingLifeCover;
+    // All loans run down over the home loan's remaining term (the largest loan for most households).
+    const loanTenure = user.homeLoanYearsLeft || DEFAULT_LOAN_TENURE_YEARS;
+    // Funds the family could draw on: life cover plus liquid savings.
+    const cover = user.existingLifeCover + user.liquidSavings;
     const startYear = new Date().getFullYear();
 
     // Income replacement comes from the same engine as every other screen.
@@ -49,14 +53,17 @@ export const DependencyModelingView: React.FC = () => {
                 setIncomeReplacement(0);
                 return;
             }
-            const res = await ShieldIQApi.calculateHLV({ income: user.income, years: workingYears, inflation: inflationRate[0] });
+            const res = await ShieldIQApi.calculateHLV({
+                income: user.income, years: workingYears, inflation: inflationRate[0],
+                spouseIncome: user.spouseIncome, monthlyExpenses: user.monthlyExpenses,
+            });
             if (!cancelled && res && res.success && res.data) setIncomeReplacement(res.data.recommendedCover);
         }, 150);
         return () => {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [user.income, workingYears, inflationRate]);
+    }, [user.income, workingYears, inflationRate, user.spouseIncome, user.monthlyExpenses]);
 
     const projections = useMemo(() => {
         const inf = inflationRate[0] / 100;
@@ -66,9 +73,9 @@ export const DependencyModelingView: React.FC = () => {
 
         // Remaining loan principal after t years of a level EMI.
         const loanBalance = (t: number) => {
-            if (loans <= 0 || t >= LOAN_TENURE_YEARS) return 0;
-            if (r === 0) return loans * (1 - t / LOAN_TENURE_YEARS);
-            const n = LOAN_TENURE_YEARS;
+            if (loans <= 0 || t >= loanTenure) return 0;
+            if (r === 0) return loans * (1 - t / loanTenure);
+            const n = loanTenure;
             return loans * (Math.pow(1 + r, n) - Math.pow(1 + r, t)) / (Math.pow(1 + r, n) - 1);
         };
         // Education still to be paid in year t, in that year's money.
@@ -97,7 +104,7 @@ export const DependencyModelingView: React.FC = () => {
             baseLoans: loans,
             maxObligation: Math.max(1, ...timeline.map(m => m.obligation)),
         };
-    }, [inflationRate, interestRate, educationMultiplier, incomeReplacement, children, loans, cover, workingYears, startYear, user.age]);
+    }, [inflationRate, interestRate, educationMultiplier, incomeReplacement, children, loans, cover, workingYears, startYear, user.age, loanTenure]);
 
     const coveredBadge = (amount: number) =>
         amount === 0
@@ -118,7 +125,7 @@ export const DependencyModelingView: React.FC = () => {
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-foreground">Dependency Modeling</h1>
                     <p className="text-muted-foreground text-sm font-medium">
-                        How {user.name}'s family obligations change from age {user.age} to retirement, against {formatINR(cover)} of existing life cover.
+                        How {user.name}'s family obligations change from age {user.age} to retirement, against {formatINR(cover)} of life cover and savings.
                     </p>
                 </div>
 
@@ -191,7 +198,7 @@ export const DependencyModelingView: React.FC = () => {
                     <div>
                         <CardTitle className="text-lg font-black uppercase tracking-tight">Dependency Heatmap</CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">
-                            Obligations your family would face each year vs your {formatINR(cover)} life cover.
+                            Obligations your family would face each year vs your {formatINR(cover)} of life cover and savings.
                         </CardDescription>
                     </div>
 
@@ -281,7 +288,7 @@ export const DependencyModelingView: React.FC = () => {
                                 <div className="space-y-1">
                                     <h4 className="font-bold text-base text-foreground">Higher Education Fund</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        {children} {children === 1 ? 'child' : 'children'} • {formatINR(EDUCATION_PER_CHILD * educationMultiplier[0])} each at today's cost, over {EDUCATION_WINDOW_YEARS} years
+                                        {children} {children === 1 ? 'dependent' : 'dependents'} in education • {formatINR(EDUCATION_PER_CHILD * educationMultiplier[0])} each at today's cost, over {EDUCATION_WINDOW_YEARS} years
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
                                         <Badge className={`${coveredBadge(projections.baseEducation).cls} border-none text-[10px] font-bold`}>
@@ -339,7 +346,7 @@ export const DependencyModelingView: React.FC = () => {
                                 <div className="space-y-1">
                                     <h4 className="font-bold text-base text-foreground">Debt & Mortgage Clearance</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        Home {formatINR(user.homeLoan)} + other {formatINR(user.otherLoans)} • amortised over {LOAN_TENURE_YEARS} years at {interestRate[0].toFixed(1)}%
+                                        Home {formatINR(user.homeLoan)} + other {formatINR(user.otherLoans)} • amortised over {loanTenure} years at {interestRate[0].toFixed(1)}%
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
                                         <Badge className={`${coveredBadge(projections.baseLoans).cls} border-none text-[10px] font-bold`}>
@@ -437,8 +444,8 @@ export const DependencyModelingView: React.FC = () => {
                             Updates as you move the sliders
                         </div>
                         <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            Inflation drives salary growth and education costs; the interest rate sets how fast loans pay down. Child ages and loan tenure
-                            are not collected, so education is spread over {EDUCATION_WINDOW_YEARS} years and loans over {LOAN_TENURE_YEARS} years.
+                            Inflation drives salary growth and education costs; the interest rate sets how fast loans pay down.
+                            Education is spread over {EDUCATION_WINDOW_YEARS} years; loans run down over {loanTenure} years{user.homeLoanYearsLeft ? '' : ' (add the years left on your home loan in your profile)'}.
                         </p>
                     </div>
 

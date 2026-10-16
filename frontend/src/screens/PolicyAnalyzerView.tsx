@@ -9,7 +9,7 @@ import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, type PolicyAnalysis, type PolicyFit } from '@/lib/api';
 import { formatINR, providerLabel } from '@/lib/utils';
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024; // must match the server's MAX_PDF_BYTES
 const TYPE_LABEL: Record<PolicyAnalysis['policyType'], string> = {
     term_life: 'Term Life',
     health: 'Health',
@@ -48,7 +48,7 @@ export const PolicyAnalyzerView: React.FC = () => {
             return;
         }
         if (file.size > MAX_BYTES) {
-            setError('That PDF is larger than 10 MB. Upload the policy schedule pages only.');
+            setError('That PDF is larger than 4 MB. Upload the policy schedule pages only.');
             return;
         }
         setFileName(file.name);
@@ -103,7 +103,7 @@ export const PolicyAnalyzerView: React.FC = () => {
                         <div className="flex items-start gap-4">
                             <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600"><FileSearch className="w-6 h-6" /></div>
                             <div className="space-y-1">
-                                <p className="font-bold">{fileName ?? 'Choose a policy PDF (up to 10 MB)'}</p>
+                                <p className="font-bold">{fileName ?? 'Choose a policy PDF (up to 4 MB)'}</p>
                                 <p className="text-xs text-muted-foreground max-w-xl">
                                     The document, which may include your name and policy number, is sent to {providerLabel(aiProvider)} to be read, with provider storage turned off.
                                     ShieldIQ does not keep the file.

@@ -1,5 +1,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { actuarialRouter } from './routes/actuarial.routes.js';
 import { policyRouter } from './routes/policy.routes.js';
 import { userRouter } from './routes/user.routes.js';
@@ -16,19 +19,22 @@ if (process.env.TRUST_PROXY) {
   const hops = Number(process.env.TRUST_PROXY);
   app.set('trust proxy', Number.isNaN(hops) ? process.env.TRUST_PROXY : hops);
 }
-app.use((_req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'no-referrer',
-    'Cache-Control': 'no-store',
   });
+  // API responses carry personal data and must never be cached; built frontend assets may be.
+  if (req.path.startsWith('/api/')) res.set('Cache-Control', 'no-store');
   next();
 });
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-// Policy PDFs arrive base64-encoded; only this route gets the larger body limit.
-app.use('/api/v1/ai/policy-analysis', express.json({ limit: '15mb' }));
-app.use(express.json({ limit: '50kb' }));
+// 50 KB bodies everywhere except the PDF upload, which parses its own larger body only after the login check.
+const smallJson = express.json({ limit: '50kb' });
+app.use((req: Request, res: Response, next: NextFunction) =>
+  req.path === '/api/v1/ai/policy-analysis' ? next() : smallJson(req, res, next)
+);
 
 // Health Check Endpoint
 app.get('/api/v1/health', (_req: Request, res: Response) => {
@@ -45,6 +51,19 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
 app.use('/api/v1/actuarial', actuarialRouter);
 app.use('/api/v1/policies', policyRouter);
 app.use('/api/v1', userRouter);
+
+// Serve the built frontend from this same origin, so session cookies (SameSite=Strict) always reach the API.
+// Resolves to <repo>/frontend/dist from both src/ (tsx) and dist/ (compiled); FRONTEND_DIST overrides it.
+const frontendDist = process.env.FRONTEND_DIST
+  ? path.resolve(process.env.FRONTEND_DIST)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
+if (fs.existsSync(path.join(frontendDist, 'index.html'))) {
+  app.use(express.static(frontendDist, { index: false, maxAge: '1h' }));
+  // Client-side screens: any non-API GET gets the app shell.
+  app.get(/^(?!\/api\/).*/, (_req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-cache').sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {

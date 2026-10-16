@@ -15,6 +15,8 @@ const DEBTS = [
   { homeLoan: 8000000, otherLoans: 1500000 },
 ];
 const RISKS = [[], ['Tobacco/Smoking']];
+const SAVINGS = [0, 500000, 50000000];
+const SPOUSE = [0, 1200000];
 
 function* profiles(): Generator<StrategyProfile> {
   for (const age of AGES)
@@ -23,8 +25,10 @@ function* profiles(): Generator<StrategyProfile> {
         for (const debt of DEBTS)
           for (const cityTier of CITY_TIERS)
             for (const lifestyleRisks of RISKS)
+              for (const liquidSavings of SAVINGS)
+              for (const spouseIncome of SPOUSE)
               yield {
-                age, income, ...family, ...debt, cityTier, lifestyleRisks,
+                age, income, ...family, ...debt, cityTier, lifestyleRisks, liquidSavings, spouseIncome, dependentDetails: [], parentsHealthCover: 0, loanEmi: debt.homeLoan > 0 ? 75000 : 0, homeLoanYearsLeft: debt.homeLoan > 0 ? 15 : 0, existingCiCover: 0, existingPaCover: 0,
                 occupation: 'x', monthlyExpenses: Math.round(income / 24), existingLifeCover: 5000000, existingHealthCover: 500000,
                 employerBenefits: [],
               };
@@ -43,18 +47,53 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
 
       for (const [k, v] of Object.entries(s.life)) finiteNonNegative(`life.${k} ${ctx}`, v);
       for (const k of ['recommendedCover', 'basePolicy', 'superTopUp', 'estimatedAnnualPremium', 'gap'] as const) finiteNonNegative(`health.${k}`, s.health[k]);
-      for (const [k, v] of Object.entries(s.affordability)) finiteNonNegative(`affordability.${k}`, v);
+      for (const [k, v] of Object.entries(s.affordability)) if (k !== 'annualSurplus') finiteNonNegative(`affordability.${k}`, v);
+      // The surplus may be negative (that is what it reports), but it must add up exactly.
+      expect(s.affordability.annualSurplus).toBe(p.income - p.monthlyExpenses * 12 - p.loanEmi * 12 - s.affordability.estimatedAnnualPremium);
 
-      expect(s.life.totalNeed).toBe(s.life.humanLifeValue + s.life.liabilities + s.life.educationCorpus);
+      const gross = s.life.humanLifeValue + s.life.liabilities + s.life.educationCorpus;
+      expect(s.life.savings).toBe(Math.min(p.liquidSavings, gross));
+      expect(s.life.totalNeed).toBe(gross - s.life.savings);
       expect(s.life.gap).toBe(Math.max(0, s.life.totalNeed - p.existingLifeCover));
       expect(s.health.gap).toBe(Math.max(0, s.health.recommendedCover - p.existingHealthCover));
       expect(s.health.basePolicy + s.health.superTopUp).toBe(s.health.recommendedCover);
+      for (const c of [s.criticalIllness, s.personalAccident]) expect(c.gap).toBe(Math.max(0, c.recommended - c.existing));
       expect(s.score).toBeGreaterThanOrEqual(0);
       expect(s.score).toBeLessThanOrEqual(100);
       expect(s.insights.length).toBeGreaterThan(0);
       if (s.life.gap === 0) expect(s.life.estimatedAnnualPremiumForGap).toBe(0);
       // Nobody relying on the income and no debts means no income-replacement need.
       if (p.dependents === 0 && p.homeLoan + p.otherLoans === 0) expect(s.life.humanLifeValue).toBe(0);
+      if (p.liquidSavings >= gross) expect(s.life.totalNeed).toBe(0);
+    }
+  });
+
+  it('never raises the need when a partner earns more, and is unchanged for single-income households', () => {
+    for (const p of profiles()) {
+      const solo = ActuarialService.buildStrategy({ ...p, spouseIncome: 0 });
+      const dual = ActuarialService.buildStrategy({ ...p, spouseIncome: 1500000 });
+      expect(dual.life.totalNeed).toBeLessThanOrEqual(solo.life.totalNeed);
+      expect(dual.life.annualIncomeReplaced).toBeLessThanOrEqual(solo.life.annualIncomeReplaced);
+      expect(solo.life.annualIncomeReplaced).toBeCloseTo(p.income * 0.7, 0);
+    }
+  });
+
+  it('adding a dependent parent adds a dependent and never lowers cost, except by dropping riders that no longer fit the budget', () => {
+    for (const p of profiles()) {
+      const listed: StrategyProfile = { ...p, dependentDetails: [{ relation: 'child', age: 5 }] };
+      const withParent: StrategyProfile = { ...listed, dependentDetails: [...listed.dependentDetails, { relation: 'parent', age: 70 }] };
+      const a = ActuarialService.buildStrategy(listed);
+      const b = ActuarialService.buildStrategy(withParent);
+      expect(b.household.dependents).toBe(a.household.dependents + 1);
+      if (a.picks.termId === 'TL-RIDERS' && b.picks.termId === 'TL-BASIC') {
+        // Parents' cover took priority over optional riders: allowed only when riders no longer fit the budget.
+        const ridersPremium = a.picks.termPremium;
+        expect(ridersPremium + b.picks.healthPremium + b.parentsHealth!.estimatedAnnualPremium).toBeGreaterThan(b.affordability.premiumBudget);
+      } else {
+        expect(b.affordability.estimatedAnnualPremium).toBeGreaterThanOrEqual(a.affordability.estimatedAnnualPremium);
+      }
+      expect(b.score).toBeGreaterThanOrEqual(0);
+      expect(b.score).toBeLessThanOrEqual(100);
     }
   });
 
@@ -63,10 +102,12 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
       if (p.dependents === 0 && p.homeLoan === 0) continue;
       const base = ActuarialService.buildStrategy(p);
       const richer = ActuarialService.buildStrategy({ ...p, income: p.income + 500000 });
-      const covered = ActuarialService.buildStrategy({ ...p, existingLifeCover: p.existingLifeCover + 10000000, existingHealthCover: p.existingHealthCover + 1000000 });
+      const covered = ActuarialService.buildStrategy({ ...p, existingLifeCover: p.existingLifeCover + 10000000, existingHealthCover: p.existingHealthCover + 1000000, existingCiCover: 1500000, existingPaCover: 5000000 });
       expect(richer.life.totalNeed).toBeGreaterThanOrEqual(base.life.totalNeed);
       expect(covered.life.gap).toBeLessThanOrEqual(base.life.gap);
       expect(covered.health.gap).toBeLessThanOrEqual(base.health.gap);
+      expect(covered.criticalIllness.gap).toBeLessThanOrEqual(base.criticalIllness.gap);
+      expect(covered.personalAccident.gap).toBeLessThanOrEqual(base.personalAccident.gap);
       expect(covered.score).toBeGreaterThanOrEqual(base.score);
     }
   });
@@ -74,7 +115,7 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
   it('prices older and tobacco-using applicants at least as high', () => {
     const p: StrategyProfile = {
       age: 25, income: 2000000, maritalStatus: 'Married', dependents: 2, cityTier: 'Tier 1 (Metro)', homeLoan: 0, otherLoans: 0,
-      occupation: 'x', monthlyExpenses: 50000, existingLifeCover: 0, existingHealthCover: 0, employerBenefits: [], lifestyleRisks: [],
+      occupation: 'x', monthlyExpenses: 50000, existingLifeCover: 0, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0, employerBenefits: [], lifestyleRisks: [],
     };
     // Same gap at each age so only the rate changes.
     const ratePerGap = (age: number, risks: string[] = []) => {

@@ -130,6 +130,11 @@ export const AffordabilityAnalysisView: React.FC = () => {
                         <p className="text-[10px] text-muted-foreground font-medium mt-2">
                             Loans of {formatINR(user.homeLoan + user.otherLoans)} vs annual income
                         </p>
+                        {a && a.annualEmi > 0 && (
+                            <p className={`text-[10px] font-bold mt-1 ${a.emiToIncomeRatio > 40 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                                EMIs {formatINR(user.loanEmi)}/mo · {a.emiToIncomeRatio}% of income (lenders cap ~40%)
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -190,8 +195,9 @@ export const AffordabilityAnalysisView: React.FC = () => {
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Closing your gaps costs about {formatINR(a.estimatedAnnualPremium)} a year against a {formatINR(a.premiumBudget)} budget
-                                (10% of income). After {formatINR(a.annualExpenses)} of yearly expenses you have about {formatINR(Math.max(0, a.annualIncome - a.annualExpenses - a.estimatedAnnualPremium))} left
-                                before tax, loan EMIs and savings.
+                                (10% of income). {a.annualSurplus >= 0
+                                    ? <>After {formatINR(a.annualExpenses)} of expenses, {formatINR(a.annualEmi)} of EMIs and these premiums, about {formatINR(a.annualSurplus)} a year is left before tax and savings.</>
+                                    : <>Expenses ({formatINR(a.annualExpenses)}), EMIs ({formatINR(a.annualEmi)}) and these premiums exceed your income by {formatINR(-a.annualSurplus)} a year.</>}
                             </p>
                         </div>
                     )}

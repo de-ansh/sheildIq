@@ -15,12 +15,24 @@ import {
     ArrowLeft
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi } from '@/lib/api';
 
 export const ComplianceView: React.FC = () => {
-    const { setCurrentScreen } = useApp();
+    const { setCurrentScreen, user, setUser } = useApp();
 
     const [activeSection, setActiveSection] = useState('intro');
-    const [hasAcknowledged, setHasAcknowledged] = useState(false);
+    const [ackError, setAckError] = useState<string | null>(null);
+    const hasAcknowledged = user.isLoggedIn && user.disclaimerAcknowledgedAt !== null;
+
+    const acknowledge = async () => {
+        const res = await ShieldIQApi.acknowledgeDisclaimer();
+        if (res?.success && res.user) {
+            setUser({ ...res.user, isLoggedIn: true });
+            setAckError(null);
+        } else {
+            setAckError(res?.error || 'Could not save your acknowledgement. Please try again.');
+        }
+    };
 
     const sections = [
         { id: 'intro', title: '01 Introduction & Scope', icon: FileText },
@@ -241,8 +253,8 @@ export const ComplianceView: React.FC = () => {
                             </div>
 
                             <Button
-                                onClick={() => setHasAcknowledged(true)}
-                                disabled={hasAcknowledged}
+                                onClick={acknowledge}
+                                disabled={hasAcknowledged || !user.isLoggedIn}
                                 className={`font-bold px-8 ${hasAcknowledged ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                             >
                                 {hasAcknowledged ? (
@@ -255,6 +267,11 @@ export const ComplianceView: React.FC = () => {
                                 )}
                             </Button>
                         </div>
+                        {hasAcknowledged && (
+                            <p className="text-xs text-muted-foreground">Accepted on {new Date(user.disclaimerAcknowledgedAt!).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>
+                        )}
+                        {!user.isLoggedIn && <p className="text-xs text-muted-foreground">Sign in to record your acknowledgement.</p>}
+                        {ackError && <p role="alert" className="text-xs text-red-600 font-bold">{ackError}</p>}
                     </Card>
                 </div>
             </div>

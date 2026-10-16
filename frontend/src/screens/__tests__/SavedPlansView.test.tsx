@@ -6,8 +6,8 @@ import { toCsv } from '@/lib/utils';
 import { mockApi } from '@/test/mockApi';
 import type { SavedPlan } from '@/lib/api';
 
-const plan = (id: string, name: string, status: SavedPlan['status'] = 'Adequate'): SavedPlan => ({
-  id, name, category: 'Term Life', coverageAmount: 15000000, monthlyPremium: 1200, status, lastModified: '2026-10-01', description: 'd',
+const plan = (id: string, name: string, status: SavedPlan['status'] = 'Adequate', snapshot: SavedPlan['snapshot'] = null): SavedPlan => ({
+  id, name, category: 'Term Life', coverageAmount: 15000000, monthlyPremium: 1200, status, lastModified: '2026-10-01', description: 'd', snapshot,
 });
 
 const loggedIn = (plans: SavedPlan[]) =>
@@ -29,6 +29,21 @@ describe('SavedPlansView Component', () => {
     expect(await screen.findByText(/Most Recent/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Family Term Plan/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₹1.50 Cr/).length).toBeGreaterThan(0);
+  });
+
+  it('shows how the score and gaps changed between saved plans', async () => {
+    loggedIn([
+      plan('SIQ-2', 'After buying term', 'Adequate', { score: 72, lifeGap: 2000000, healthGap: 500000, annualPremium: 30000 }),
+      plan('SIQ-1', 'First plan', 'Gap Detected', { score: 40, lifeGap: 12000000, healthGap: 500000, annualPremium: 45000 }),
+      plan('SIQ-0', 'Legacy plan'), // no snapshot: left out of the timeline
+    ]);
+    render(<AppContextProvider><SavedPlansView /></AppContextProvider>);
+    const table = (await screen.findByText(/Progress Over Time/i)).closest('div.overflow-hidden') as HTMLElement;
+    const rows = table.querySelectorAll('tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain('First plan');
+    expect(rows[1].textContent).toContain('After buying term');
+    expect(rows[1].textContent).toContain('▲ 32');
   });
 
   it('filters plans by search text', async () => {

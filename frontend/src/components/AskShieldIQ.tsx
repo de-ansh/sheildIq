@@ -1,16 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
-import { ShieldIQApi, type ChatMessage } from '@/lib/api';
+import { ShieldIQApi, visibleAnswer, type ChatMessage } from '@/lib/api';
 
 const STARTERS = [
     'Why is my life cover need this high?',
     'Should I prepay my home loan or buy more term cover?',
     'What does my health cover gap mean for my family?',
 ];
-// The backend accepts at most 20 messages; older turns are dropped first.
-const MAX_HISTORY = 19;
 
 /** Floating "Ask ShieldIQ" chat, grounded in the signed-in user's profile and strategy. */
 export const AskShieldIQ: React.FC = () => {
@@ -21,6 +19,17 @@ export const AskShieldIQ: React.FC = () => {
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // The parent keys this component by account, so the saved chat loads once per signed-in user.
+    const [historyLoaded, setHistoryLoaded] = useState(false);
+
+    const openChat = () => {
+        setOpen(true);
+        if (historyLoaded) return;
+        setHistoryLoaded(true);
+        ShieldIQApi.getChatHistory().then(res => {
+            if (res?.success) setMessages(prev => (prev.length ? prev : res.messages.map(({ role, content }) => ({ role, content }))));
+        });
+    };
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
 
@@ -35,18 +44,24 @@ export const AskShieldIQ: React.FC = () => {
     const send = async (text: string) => {
         const content = text.trim();
         if (!content || isSending) return;
-        const history: ChatMessage[] = [...messages, { role: 'user' as const, content }].slice(-MAX_HISTORY);
-        setMessages(history);
+        const before = messages;
+        // The empty assistant message fills in as the answer streams.
+        setMessages([...before, { role: 'user', content }, { role: 'assistant', content: '' }]);
         setDraft('');
         setError(null);
         setIsSending(true);
+        const setAnswer = (update: (text: string) => string) =>
+            setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: update(prev[prev.length - 1].content) }]);
         try {
-            const res = await ShieldIQApi.askShieldIQ(history);
-            if (res && res.success) {
-                setMessages(prev => [...prev, { role: 'assistant', content: res.reply.answer }]);
+            const res = await ShieldIQApi.streamChat(content, delta => setAnswer(text => text + delta));
+            if ('reply' in res) {
+                setAnswer(() => res.reply.answer);
                 setSuggestions(res.reply.suggestedQuestions);
             } else {
-                setError(res?.error || 'Cannot reach ShieldIQ. Please try again.');
+                // Nothing was saved: drop the partial turn and give the question back to retry.
+                setMessages(before);
+                setDraft(content);
+                setError(res.error);
             }
         } finally {
             setIsSending(false);
@@ -61,7 +76,7 @@ export const AskShieldIQ: React.FC = () => {
         return (
             <button
                 type="button"
-                onClick={() => setOpen(true)}
+                onClick={openChat}
                 className={`fixed ${launcherOffset} right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
             >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
@@ -85,9 +100,30 @@ export const AskShieldIQ: React.FC = () => {
                         <p className="text-[10px] text-muted-foreground">Answers use your profile and strategy</p>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close chat">
-                    <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                    {messages.length > 0 && !isSending && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Clear conversation"
+                            title="Clear conversation"
+                            onClick={async () => {
+                                const res = await ShieldIQApi.clearChatHistory();
+                                if (res?.success) {
+                                    setMessages([]);
+                                    setSuggestions(STARTERS);
+                                } else {
+                                    setError('Could not clear the conversation. Please try again.');
+                                }
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close chat">
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4" aria-live="polite">
@@ -96,16 +132,16 @@ export const AskShieldIQ: React.FC = () => {
                         Ask anything about protecting your household: life and health cover, loans, emergency funds, or the numbers on any screen.
                     </p>
                 )}
-                {messages.map((m, i) => (
+                {messages.map((m, i) => m.content && (
                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div
                             className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-muted text-foreground'}`}
                         >
-                            {m.content}
+                            {m.role === 'assistant' ? visibleAnswer(m.content) : m.content}
                         </div>
                     </div>
                 ))}
-                {isSending && (
+                {isSending && !messages[messages.length - 1]?.content && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Thinking…
                     </div>

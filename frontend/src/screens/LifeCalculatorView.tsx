@@ -18,22 +18,23 @@ import {
 import { ShieldIQApi, HLVResult } from '@/lib/api';
 import { useApp } from '@/lib/AppContext';
 import { formatINR } from '@/lib/utils';
+import { EDUCATION_PER_CHILD, householdOf, inEducation } from '@/lib/household';
 import { ExplainResult } from '@/components/ExplainResult';
 
 const RETIREMENT_AGE = 60;
-const EDUCATION_PER_CHILD = 2500000;
 
 export const LifeCalculatorView: React.FC = () => {
     const { user, setCurrentScreen } = useApp();
 
     // Seeded from the user's profile; every input stays editable for what-if analysis.
     const existingCoverTotal = user.existingLifeCover;
-    const children = user.maritalStatus === 'Married' ? Math.max(0, user.dependents - 1) : user.dependents;
+    const household = householdOf(user);
     const [income, setIncome] = useState(user.income || 1200000);
     const [years, setYears] = useState(Math.max(1, RETIREMENT_AGE - user.age));
     const [inflation, setInflation] = useState(6.0);
     const [liabilities, setLiabilities] = useState(user.homeLoan + user.otherLoans);
-    const [educationFund, setEducationFund] = useState(children * EDUCATION_PER_CHILD);
+    const [educationFund, setEducationFund] = useState(inEducation(household) * EDUCATION_PER_CHILD);
+    const [savings, setSavings] = useState(user.liquidSavings);
     const [hlv, setHlv] = useState<HLVResult | null>(null);
     const [calcError, setCalcError] = useState<string | null>(null);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -42,7 +43,10 @@ export const LifeCalculatorView: React.FC = () => {
     useEffect(() => {
         let cancelled = false;
         const timer = setTimeout(async () => {
-            const res = await ShieldIQApi.calculateHLV({ income, years, inflation, existingCover: existingCoverTotal });
+            const res = await ShieldIQApi.calculateHLV({
+                income, years, inflation, existingCover: existingCoverTotal,
+                spouseIncome: user.spouseIncome, monthlyExpenses: user.monthlyExpenses,
+            });
             if (cancelled) return;
             if (res && res.success && res.data) {
                 setHlv(res.data);
@@ -55,12 +59,15 @@ export const LifeCalculatorView: React.FC = () => {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [income, years, inflation, existingCoverTotal]);
+    }, [income, years, inflation, existingCoverTotal, user.spouseIncome, user.monthlyExpenses]);
 
     // Same rule as the strategy engine: with nobody relying on this income and no debts, there is no income to replace.
-    const needsIncomeReplacement = user.dependents > 0 || liabilities > 0;
+    const needsIncomeReplacement = household.count > 0 || liabilities > 0;
     const incomeReplacement = hlv && needsIncomeReplacement ? hlv.recommendedCover : 0;
-    const recommendedCover = hlv ? incomeReplacement + liabilities + educationFund : 0;
+    // Savings the family can draw on reduce what insurance must provide (same rule as the strategy engine).
+    const grossNeed = incomeReplacement + liabilities + educationFund;
+    const savingsApplied = Math.min(savings, grossNeed);
+    const recommendedCover = hlv ? grossNeed - savingsApplied : 0;
     const coverageGap = Math.max(0, recommendedCover - existingCoverTotal);
     const gapPercentage = recommendedCover > 0 ? Number(((coverageGap / recommendedCover) * 100).toFixed(1)) : 0;
     const assetsCoverPct = recommendedCover > 0 ? Math.min(100, Math.round((existingCoverTotal / recommendedCover) * 100)) : 0;
@@ -184,6 +191,17 @@ export const LifeCalculatorView: React.FC = () => {
                                     placeholder="e.g. 2500000"
                                 />
                             </div>
+                            <div className="space-y-2 col-span-2">
+                                <label htmlFor="savings-fund-input" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Savings & Investments (deducted)</label>
+                                <Input
+                                    id="savings-fund-input"
+                                    type="number"
+                                    className="font-mono text-sm bg-muted/30"
+                                    value={savings || ''}
+                                    onChange={(e) => setSavings(Number(e.target.value) || 0)}
+                                    placeholder="e.g. 1000000"
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -205,7 +223,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 </Badge>
                             </div>
                             <p className="mt-6 text-sm text-muted-foreground leading-relaxed font-medium">
-                                Based on your {years}-year income trajectory adjusted for {inflation.toFixed(1)}% annual inflation and immediate liability payoff.
+                                Based on your {years}-year income trajectory adjusted for {inflation.toFixed(1)}% annual inflation and immediate liability payoff{savingsApplied > 0 ? `, less ${formatINR(savingsApplied)} of savings` : ''}.
                             </p>
                             {calcError && (
                                 <p role="alert" className="mt-3 text-sm font-medium text-red-600">{calcError}</p>
@@ -284,7 +302,7 @@ export const LifeCalculatorView: React.FC = () => {
                                     desc: !hlv
                                         ? 'Calculating income replacement…'
                                         : needsIncomeReplacement
-                                            ? `${formatINR(incomeReplacement)} replaces the share of your income your family relies on for ${years} years, growing ${inflation.toFixed(1)}% a year. An increasing-cover term rider keeps pace with that growth.`
+                                            ? `${formatINR(incomeReplacement)} replaces the share of your income your family relies on${user.spouseIncome > 0 ? ' after your partner\'s income' : ''} for ${years} years, growing ${inflation.toFixed(1)}% a year. An increasing-cover term rider keeps pace with that growth.`
                                             : 'No one depends on your income and you have no loans, so no income replacement is needed. Add dependents in your profile if that changes.'
                                 },
                                 {
@@ -296,7 +314,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 {
                                     title: "Education Reserve",
                                     desc: educationFund > 0
-                                        ? `${formatINR(educationFund)} is set aside for children's education at today's costs. Education inflation runs high, so review this every few years.`
+                                        ? `${formatINR(educationFund)} is set aside for children's and siblings' education at today's costs. Education inflation runs high, so review this every few years.`
                                         : 'No education fund is included in this estimate.'
                                 }
                             ].map((item, i) => (
@@ -311,7 +329,7 @@ export const LifeCalculatorView: React.FC = () => {
                         <div className="mt-6">
                             <ExplainResult
                                 screen="life-calculator"
-                                inputs={{ annualIncome: income, yearsToRetirement: years, salaryGrowthPct: inflation, liabilities, educationFund, existingLifeCover: existingCoverTotal }}
+                                inputs={{ annualIncome: income, yearsToRetirement: years, salaryGrowthPct: inflation, liabilities, educationFund, savingsDeducted: savingsApplied, existingLifeCover: existingCoverTotal }}
                                 result={hlv ? { recommendedCover, incomeReplacement, coverageGap, gapPercentage } : null}
                             />
                         </div>

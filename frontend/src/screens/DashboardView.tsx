@@ -21,7 +21,7 @@ import {
     FileSearch
 } from "lucide-react";
 import { useApp, ScreenId } from '@/lib/AppContext';
-import { formatINR } from '@/lib/utils';
+import { formatINR, reviewOverdueMonths } from '@/lib/utils';
 import { ShieldIQApi, type PlanTypeOptions } from '@/lib/api';
 import { AiStrategyPanel } from '@/components/AiStrategyPanel';
 
@@ -171,6 +171,18 @@ export const DashboardView: React.FC = () => {
                     </div>
                 </header>
 
+                {reviewOverdueMonths(user.profileReviewedAt) !== null && (
+                    <div role="status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-amber-500/40 bg-amber-500/10">
+                        <div className="space-y-1">
+                            <p className="font-black text-foreground">Time for your yearly review</p>
+                            <p className="text-sm text-muted-foreground">
+                                Your profile was last updated {reviewOverdueMonths(user.profileReviewedAt)} months ago. Income, loans and family change, and so does the cover you need.
+                            </p>
+                        </div>
+                        <Button variant="outline" onClick={() => setCurrentScreen('onboarding')} className="font-bold shrink-0">Review Profile</Button>
+                    </div>
+                )}
+
                 {/* Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
@@ -183,7 +195,7 @@ export const DashboardView: React.FC = () => {
                                 {strategy ? formatINR(strategy.life.totalNeed) : '—'}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                Income replacement + loans + education
+                                {strategy && strategy.life.savings > 0 ? 'Income + loans + education − savings' : 'Income replacement + loans + education'}
                             </CardDescription>
                         </CardContent>
                     </Card>
@@ -195,10 +207,12 @@ export const DashboardView: React.FC = () => {
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
-                                {strategy ? formatINR(strategy.life.gap + strategy.health.gap) : '—'}
+                                {strategy ? formatINR(strategy.life.gap + strategy.health.gap + (strategy.parentsHealth?.gap ?? 0)) : '—'}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                {strategy ? `Life ${formatINR(strategy.life.gap)} · Health ${formatINR(strategy.health.gap)}` : 'Unsecured exposure'}
+                                {strategy
+                                    ? `Life ${formatINR(strategy.life.gap)} · Health ${formatINR(strategy.health.gap)}${strategy.parentsHealth ? ` · Parents ${formatINR(strategy.parentsHealth.gap)}` : ''}`
+                                    : 'Unsecured exposure'}
                             </CardDescription>
                         </CardContent>
                     </Card>

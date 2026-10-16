@@ -123,8 +123,8 @@ export const PolicyDeepDiveView: React.FC = () => {
 
                         <Card className="shadow-sm border-border">
                             <CardContent className="p-6">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Claim Settlement</p>
-                                <p className="text-xl font-black text-emerald-500">{activePolicy.claimRatio || 99.2}%</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Sold By</p>
+                                <p className="text-sm font-bold text-foreground">{activePolicy.provider}</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -198,7 +198,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                                 </div>
                             </div>
                             <p className="text-xs text-primary-foreground/70 leading-relaxed font-mono">
-                                Clarity reflects how plainly the wording states benefits and exclusions. Claim settlement ratio: {activePolicy.claimRatio ?? '—'}%.
+                                Clarity reflects how plainly the wording states benefits and exclusions. Compare insurers' official IRDAI claim records under Plan Options.
                             </p>
                             <Button
                                 onClick={() => setCurrentScreen('comparison')}

@@ -18,6 +18,11 @@ import {
 import { useApp } from '@/lib/AppContext';
 import type { AiProfileDraft, CityTier } from '@/lib/api';
 import { DescribeYourself } from '@/components/DescribeYourself';
+import { householdOf, type DependentRelation } from '@/lib/household';
+
+type DependentRow = { relation: DependentRelation; age: number | null };
+const RELATION_LABEL: Record<DependentRelation, string> = { child: 'Child', parent: 'Parent', sibling: 'Sibling' };
+const MAX_DEPENDENTS = 12;
 
 export const OnboardingView: React.FC = () => {
     const { user, submitOnboarding, setCurrentScreen } = useApp();
@@ -39,6 +44,17 @@ export const OnboardingView: React.FC = () => {
         monthlyExpenses: user.monthlyExpenses,
         existingLifeCover: user.existingLifeCover,
         existingHealthCover: user.existingHealthCover,
+        liquidSavings: user.liquidSavings,
+        spouseIncome: user.spouseIncome,
+        // Older profiles only stored a count: pre-fill their children (ages blank) so editing never drops them.
+        dependentDetails: (user.dependentDetails.length > 0
+            ? user.dependentDetails
+            : householdOf(user).children.map(() => ({ relation: 'child' as const, age: null }))) as DependentRow[],
+        parentsHealthCover: user.parentsHealthCover,
+        loanEmi: user.loanEmi,
+        homeLoanYearsLeft: user.homeLoanYearsLeft,
+        existingCiCover: user.existingCiCover,
+        existingPaCover: user.existingPaCover,
         employerBenefits: user.employerBenefits,
         lifestyleRisks: user.lifestyleRisks,
     });
@@ -79,20 +95,27 @@ export const OnboardingView: React.FC = () => {
         if (!(income > 0)) return { step: 1, error: 'Enter your annual gross income.' };
         if (!cityTier) return { step: 1, error: 'Select your city category.' };
         if (upTo >= 2 && !(monthlyExpenses > 0)) return { step: 2, error: 'Enter your monthly household expenses.' };
-        const amounts = [formData.homeLoan, formData.otherLoans, formData.existingLifeCover, formData.existingHealthCover];
+        const amounts = [formData.homeLoan, formData.otherLoans, formData.existingLifeCover, formData.existingHealthCover, formData.liquidSavings, formData.spouseIncome, formData.parentsHealthCover, formData.loanEmi, formData.existingCiCover, formData.existingPaCover];
         if (upTo >= 2 && amounts.some(v => !(v >= 0))) return { step: 2, error: 'Amounts cannot be negative.' };
+        if (upTo >= 2 && !(Number.isInteger(formData.homeLoanYearsLeft) && formData.homeLoanYearsLeft >= 0 && formData.homeLoanYearsLeft <= 40)) {
+            return { step: 2, error: 'Enter the years left on your home loan (0–40).' };
+        }
+        if (upTo >= 2 && formData.dependentDetails.some(d => d.age === null || !Number.isInteger(d.age) || d.age < 0 || d.age > 110)) {
+            return { step: 2, error: "Enter each dependent's age (0–110)." };
+        }
         return null;
     };
 
     // Only fields the AI actually found are applied; everything stays editable before saving.
     const applyDraft = (draft: AiProfileDraft) => {
-        const lists = ['notes', 'employerBenefits', 'lifestyleRisks'];
+        const lists = ['notes', 'employerBenefits', 'lifestyleRisks', 'dependentDetails', 'dependents'];
         const found = Object.entries(draft).filter(([key, value]) => value !== null && !lists.includes(key));
         setFormData(prev => ({
             ...prev,
             ...Object.fromEntries(found),
             employerBenefits: draft.employerBenefits.length ? draft.employerBenefits : prev.employerBenefits,
             lifestyleRisks: draft.lifestyleRisks.length ? draft.lifestyleRisks : prev.lifestyleRisks,
+            dependentDetails: draft.dependentDetails.length ? draft.dependentDetails : prev.dependentDetails,
         }));
         setStepError(null);
     };
@@ -116,7 +139,14 @@ export const OnboardingView: React.FC = () => {
         }
         setIsSubmitting(true);
         try {
-            setStepError(await submitOnboarding({ ...formData, cityTier: formData.cityTier as CityTier }));
+            const dependentDetails = formData.dependentDetails.map(d => ({ relation: d.relation, age: d.age as number }));
+            const spouseDependent = formData.maritalStatus === 'Married' && !formData.spouseIncome;
+            setStepError(await submitOnboarding({
+                ...formData,
+                cityTier: formData.cityTier as CityTier,
+                dependentDetails,
+                dependents: dependentDetails.length + (spouseDependent ? 1 : 0),
+            }));
         } finally {
             setIsSubmitting(false);
         }
@@ -273,30 +303,82 @@ export const OnboardingView: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <Label className="font-bold text-foreground">Immediate Dependents</Label>
-                                        <p className="text-xs text-muted-foreground -mt-2">People who rely on your income, including a non-earning spouse and children.</p>
-                                        <div className="grid grid-cols-4 gap-3">
-                                            {[0, 1, 2, 3].map(num => (
-                                                <Button
-                                                    key={num}
-                                                    type="button"
-                                                    variant={formData.dependents === num ? "default" : "outline"}
-                                                    className={`py-8 font-bold text-lg ${formData.dependents === num ? 'bg-blue-600 text-white' : 'dark:hover:bg-slate-800'}`}
-                                                    onClick={() => updateField('dependents', num)}
-                                                >
-                                                    {num === 3 ? "3+" : num}
-                                                </Button>
-                                            ))}
+                                    {formData.maritalStatus === 'Married' && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="spouse-income-input" className="font-bold text-foreground">Partner's Annual Income (INR)</Label>
+                                            <Input
+                                                id="spouse-income-input"
+                                                type="number"
+                                                min={0}
+                                                value={formData.spouseIncome || ''}
+                                                onChange={(e) => updateField('spouseIncome', Number(e.target.value))}
+                                                placeholder="0 if they don't work"
+                                                aria-describedby="spouse-income-help"
+                                                className="bg-muted/30 font-mono"
+                                            />
+                                            <p id="spouse-income-help" className="text-xs text-muted-foreground">
+                                                A working partner's income reduces how much of yours the family would need replaced.
+                                            </p>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    <fieldset className="space-y-3">
+                                        <legend className="font-bold text-foreground text-sm">Who depends on you financially?</legend>
+                                        <p className="text-xs text-muted-foreground">
+                                            Children, parents or siblings you support. {formData.maritalStatus === 'Married' ? 'A non-earning spouse is counted automatically.' : ''}
+                                        </p>
+                                        {formData.dependentDetails.length === 0 && (
+                                            <p className="text-sm text-muted-foreground">No dependents added.</p>
+                                        )}
+                                        {formData.dependentDetails.map((d, i) => (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <select
+                                                    aria-label={`Relationship of dependent ${i + 1}`}
+                                                    value={d.relation}
+                                                    onChange={(e) => updateField('dependentDetails', formData.dependentDetails.map((x, j) => j === i ? { ...x, relation: e.target.value as DependentRelation } : x))}
+                                                    className="h-11 rounded-md border border-input bg-muted/30 px-3 text-sm font-medium"
+                                                >
+                                                    {(Object.keys(RELATION_LABEL) as DependentRelation[]).map(r => <option key={r} value={r}>{RELATION_LABEL[r]}</option>)}
+                                                </select>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    max={110}
+                                                    aria-label={`Age of dependent ${i + 1}`}
+                                                    placeholder="Age"
+                                                    value={d.age ?? ''}
+                                                    onChange={(e) => updateField('dependentDetails', formData.dependentDetails.map((x, j) => j === i ? { ...x, age: e.target.value === '' ? null : Number(e.target.value) } : x))}
+                                                    className="w-24 bg-muted/30 font-mono"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    aria-label={`Remove dependent ${i + 1}`}
+                                                    onClick={() => updateField('dependentDetails', formData.dependentDetails.filter((_, j) => j !== i))}
+                                                    className="text-muted-foreground hover:text-red-600"
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={formData.dependentDetails.length >= MAX_DEPENDENTS}
+                                            onClick={() => updateField('dependentDetails', [...formData.dependentDetails, { relation: 'child', age: null }])}
+                                            className="font-bold"
+                                        >
+                                            + Add Dependent
+                                        </Button>
+                                    </fieldset>
 
                                     <div className="space-y-4 pt-6 border-t border-border">
                                         <Label className="font-bold text-foreground">Total Outstanding Liabilities</Label>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Home Loan</Label>
+                                                <Label htmlFor="home-loan-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Home Loan</Label>
                                                 <Input
+                                                    id="home-loan-input"
                                                     type="number"
                                                     value={formData.homeLoan || ''}
                                                     onChange={(e) => updateField('homeLoan', Number(e.target.value))}
@@ -305,8 +387,9 @@ export const OnboardingView: React.FC = () => {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Other Loans</Label>
+                                                <Label htmlFor="other-loans-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Other Loans</Label>
                                                 <Input
+                                                    id="other-loans-input"
                                                     type="number"
                                                     value={formData.otherLoans || ''}
                                                     onChange={(e) => updateField('otherLoans', Number(e.target.value))}
@@ -318,14 +401,45 @@ export const OnboardingView: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="font-bold text-foreground">Monthly Expenses (Lifestyle)</Label>
+                                        <Label htmlFor="expenses-input" className="font-bold text-foreground">Monthly Expenses (excluding loan EMIs)</Label>
                                         <Input
+                                            id="expenses-input"
                                             type="number"
                                             value={formData.monthlyExpenses || ''}
                                             onChange={(e) => updateField('monthlyExpenses', Number(e.target.value))}
                                             placeholder="₹ Enter average amount"
                                             className="py-6 bg-muted/30 font-mono"
                                         />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="emi-input" className="font-bold text-foreground">Total Monthly EMIs</Label>
+                                            <Input
+                                                id="emi-input"
+                                                type="number"
+                                                min={0}
+                                                value={formData.loanEmi || ''}
+                                                onChange={(e) => updateField('loanEmi', Number(e.target.value))}
+                                                placeholder="₹ 0 if no loans"
+                                                className="bg-muted/30 font-mono"
+                                            />
+                                        </div>
+                                        {formData.homeLoan > 0 && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="loan-years-input" className="font-bold text-foreground">Home Loan Years Left</Label>
+                                                <Input
+                                                    id="loan-years-input"
+                                                    type="number"
+                                                    min={0}
+                                                    max={40}
+                                                    value={formData.homeLoanYearsLeft || ''}
+                                                    onChange={(e) => updateField('homeLoanYearsLeft', Number(e.target.value))}
+                                                    placeholder="e.g. 15"
+                                                    className="bg-muted/30 font-mono"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -341,8 +455,9 @@ export const OnboardingView: React.FC = () => {
                                 <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label className="font-bold text-foreground">Existing Life Cover</Label>
+                                            <Label htmlFor="life-cover-input" className="font-bold text-foreground">Existing Life Cover</Label>
                                             <Input
+                                                id="life-cover-input"
                                                 type="number"
                                                 value={formData.existingLifeCover || ''}
                                                 onChange={(e) => updateField('existingLifeCover', Number(e.target.value))}
@@ -351,8 +466,9 @@ export const OnboardingView: React.FC = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="font-bold text-foreground">Existing Health Cover</Label>
+                                            <Label htmlFor="health-cover-input" className="font-bold text-foreground">Existing Health Cover</Label>
                                             <Input
+                                                id="health-cover-input"
                                                 type="number"
                                                 value={formData.existingHealthCover || ''}
                                                 onChange={(e) => updateField('existingHealthCover', Number(e.target.value))}
@@ -360,6 +476,63 @@ export const OnboardingView: React.FC = () => {
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="ci-cover-input" className="font-bold text-foreground">Critical Illness Cover</Label>
+                                            <Input
+                                                id="ci-cover-input"
+                                                type="number"
+                                                min={0}
+                                                value={formData.existingCiCover || ''}
+                                                onChange={(e) => updateField('existingCiCover', Number(e.target.value))}
+                                                placeholder="₹ Lump sum, incl. riders"
+                                                className="bg-muted/30 font-mono"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="pa-cover-input" className="font-bold text-foreground">Accident & Disability Cover</Label>
+                                            <Input
+                                                id="pa-cover-input"
+                                                type="number"
+                                                min={0}
+                                                value={formData.existingPaCover || ''}
+                                                onChange={(e) => updateField('existingPaCover', Number(e.target.value))}
+                                                placeholder="₹ Personal accident sum insured"
+                                                className="bg-muted/30 font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground -mt-2">Policies you hold yourself. Employer cover ends with your job, so tick it under benefits instead.</p>
+
+                                    {formData.dependentDetails.some(d => d.relation === 'parent') && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="parents-cover-input" className="font-bold text-foreground">Parents' Existing Health Cover</Label>
+                                            <Input
+                                                id="parents-cover-input"
+                                                type="number"
+                                                min={0}
+                                                value={formData.parentsHealthCover || ''}
+                                                onChange={(e) => updateField('parentsHealthCover', Number(e.target.value))}
+                                                placeholder="₹ 0 if they have none"
+                                                className="bg-muted/30 font-mono"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="savings-input" className="font-bold text-foreground">Savings & Investments</Label>
+                                        <Input
+                                            id="savings-input"
+                                            type="number"
+                                            min={0}
+                                            value={formData.liquidSavings || ''}
+                                            onChange={(e) => updateField('liquidSavings', Number(e.target.value))}
+                                            placeholder="₹ FDs, mutual funds, stocks"
+                                            aria-describedby="savings-help"
+                                            className="bg-muted/30 font-mono"
+                                        />
+                                        <p id="savings-help" className="text-xs text-muted-foreground">
+                                            Money your family could use if needed. Leave out your home and locked retirement funds like PF.
+                                        </p>
                                     </div>
 
                                     <div className="space-y-4 pt-6 border-t border-border">

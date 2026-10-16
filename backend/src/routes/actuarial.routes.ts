@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { ActuarialService, CITY_TIERS } from '../services/actuarial.service.js';
+import { ActuarialService, CITY_TIERS, incomeToReplace } from '../services/actuarial.service.js';
 
 const router = Router();
 
@@ -9,6 +9,9 @@ const hlvSchema = z.object({
   years: z.number().min(1).max(60),
   inflation: z.number().min(0).max(20),
   existingCover: z.number().optional(),
+  // Optional household context so calculators use the same income-to-replace rule as the strategy.
+  spouseIncome: z.number().min(0).max(1e10).optional(),
+  monthlyExpenses: z.number().min(0).max(1e9).optional(),
 });
 
 const riskSimSchema = z.object({
@@ -45,7 +48,8 @@ router.post('/hlv-calculator', (req: Request, res: Response) => {
     res.status(400).json({ error: 'Invalid input parameters', details: parse.error.format() });
     return;
   }
-  const result = ActuarialService.calculateHLV(parse.data);
+  const { spouseIncome = 0, monthlyExpenses = 0, ...hlv } = parse.data;
+  const result = ActuarialService.calculateHLV({ ...hlv, annualContribution: incomeToReplace(hlv.income, spouseIncome, monthlyExpenses * 12) });
   res.json({ success: true, data: result });
 });
 

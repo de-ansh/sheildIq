@@ -1,12 +1,20 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { getDatabase } from '../db/database.js';
-import { CITY_TIERS, formatINR, type StrategyProfile, type StrategyResult } from './actuarial.service.js';
+import { CITY_TIERS, DEPENDENT_RELATIONS, formatINR, type StrategyProfile, type StrategyResult } from './actuarial.service.js';
 import type { PlanTypeOptions } from './plans.service.js';
 
 export type AiProvider = 'gemini' | 'openai';
 export class AiNotConfiguredError extends Error {}
 export class AiProviderError extends Error {}
+/** A usage limit refused the call; `retryAfter` is in seconds. */
+export class AiLimitError extends Error {
+  constructor(message: string, readonly retryAfter: number) {
+    super(message);
+  }
+}
+/** Runs right before a paid provider call (never on cache hits); throws AiLimitError to refuse it. */
+export type BeforeAiCall = () => void;
 
 const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
@@ -99,11 +107,16 @@ async function callOpenAI(req: AiRequest): Promise<unknown> {
   return JSON.parse(text);
 }
 
-async function generateJson<T>(req: AiRequest, validator: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<{ data: T; provider: AiProvider }> {
+async function generateJson<T>(
+  req: AiRequest,
+  validator: z.ZodType<T, z.ZodTypeDef, unknown>,
+  beforeCall: BeforeAiCall
+): Promise<{ data: T; provider: AiProvider }> {
   const providers: AiProvider[] = [];
   if (process.env.GEMINI_API_KEY) providers.push('gemini');
   if (process.env.OPENAI_API_KEY) providers.push('openai');
   if (providers.length === 0) throw new AiNotConfiguredError('No AI provider configured');
+  beforeCall();
 
   const errors: string[] = [];
   for (const provider of providers) {
@@ -117,6 +130,117 @@ async function generateJson<T>(req: AiRequest, validator: z.ZodType<T, z.ZodType
     }
   }
   throw new AiProviderError(errors.join(' | '));
+}
+
+// ---------------------------------------------------------------------------
+// Streaming text (chat): same provider order; falls back only if nothing was sent yet.
+// ---------------------------------------------------------------------------
+
+/** Yields the JSON payload of each `data:` line of a server-sent-events response. */
+async function* sseData(res: globalThis.Response): AsyncGenerator<unknown> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newline: number;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (payload === '[DONE]') return;
+      yield JSON.parse(payload);
+    }
+  }
+}
+
+async function* streamGemini(prompt: string, signal: AbortSignal): AsyncGenerator<string> {
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY! },
+    // Minimal thinking: first words in ~1.3 s instead of ~6 s. Chat answers restate figures given in the prompt.
+    body: JSON.stringify({
+      model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview', input: prompt, stream: true, store: false,
+      generation_config: { thinking_level: 'minimal' },
+    }),
+    signal,
+  });
+  if (!res.ok) throw new AiProviderError(`Gemini returned ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  type Event = { event_type?: string; delta?: { type?: string; text?: string }; interaction?: { status?: string }; error?: unknown };
+  for await (const raw of sseData(res)) {
+    const e = raw as Event;
+    // Thought steps stream signatures, not text; only model_output text deltas are shown.
+    if (e.event_type === 'step.delta' && e.delta?.type === 'text' && e.delta.text) yield e.delta.text;
+    else if (e.event_type === 'error' || e.error) throw new AiProviderError(`Gemini stream error: ${JSON.stringify(e.error ?? e).slice(0, 300)}`);
+    else if (e.event_type === 'interaction.completed' && e.interaction?.status && e.interaction.status !== 'completed') {
+      throw new AiProviderError(`Gemini interaction status: ${e.interaction.status}`);
+    }
+  }
+}
+
+async function* streamOpenAI(prompt: string, signal: AbortSignal): AsyncGenerator<string> {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || 'gpt-5-mini', messages: [{ role: 'user', content: prompt }], stream: true, store: false,
+      reasoning_effort: 'minimal',
+    }),
+    signal,
+  });
+  if (!res.ok) throw new AiProviderError(`OpenAI returned ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  for await (const raw of sseData(res)) {
+    const text = (raw as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content;
+    if (text) yield text;
+  }
+}
+
+/** Streams plain text to onDelta and returns the full text; aborts with `signal` (e.g. the client left). */
+async function streamText(
+  prompt: string,
+  onDelta: (text: string) => void,
+  beforeCall: BeforeAiCall,
+  signal: AbortSignal
+): Promise<{ text: string; provider: AiProvider }> {
+  const providers: AiProvider[] = [];
+  if (process.env.GEMINI_API_KEY) providers.push('gemini');
+  if (process.env.OPENAI_API_KEY) providers.push('openai');
+  if (providers.length === 0) throw new AiNotConfiguredError('No AI provider configured');
+  beforeCall();
+
+  const errors: string[] = [];
+  for (const provider of providers) {
+    let text = '';
+    try {
+      const timeout = AbortSignal.any([signal, AbortSignal.timeout(60_000)]);
+      for await (const delta of (provider === 'gemini' ? streamGemini : streamOpenAI)(prompt, timeout)) {
+        text += delta;
+        onDelta(delta);
+      }
+      if (!text.trim()) throw new AiProviderError(`${provider} returned no text`);
+      return { text, provider };
+    } catch (err) {
+      // Once text has reached the user, switching providers would show two different answers.
+      if (text || signal.aborted) throw err;
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+  }
+  throw new AiProviderError(errors.join(' | '));
+}
+
+/** The chat answer streams first; follow-up questions come after a line of three dashes. */
+export const CHAT_SEPARATOR = /\n-{3,}[ \t]*\n/;
+
+export function parseChatReply(text: string): AiChatReply {
+  const parts = text.split(CHAT_SEPARATOR);
+  const answer = (parts.length > 1 ? parts.slice(0, -1).join('\n---\n') : text).trim().slice(0, 4000);
+  const suggestedQuestions = parts.length > 1
+    ? parts[parts.length - 1].split('\n').map(q => q.replace(/^\s*(?:[-*?•]|\d+[.)])\s*/, '').trim()).filter(q => q.length > 0 && q.length <= 160).slice(0, 3)
+    : [];
+  return { answer, suggestedQuestions };
 }
 
 const str = (description?: string) => ({ type: 'string', ...(description && { description }) });
@@ -185,16 +309,10 @@ export const chatMessageSchema = z.object({
 });
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
-const aiChatSchema = z.object({
-  answer: z.string().min(1).max(4000),
-  suggestedQuestions: z.array(z.string().min(1).max(160)).max(3),
-});
-export type AiChatReply = z.infer<typeof aiChatSchema>;
-
-const chatJsonSchema = obj({
-  answer: str('The reply to the latest user message. Plain text; short paragraphs or "- " bullet lines; no markdown headings or tables.'),
-  suggestedQuestions: strList('Up to 3 short follow-up questions this user might ask next.'),
-});
+export interface AiChatReply {
+  answer: string;
+  suggestedQuestions: string[];
+}
 
 // ---------------------------------------------------------------------------
 // 3. Explain a calculator result
@@ -249,6 +367,16 @@ const aiProfileSchema = z.object({
   monthlyExpenses: money,
   existingLifeCover: money,
   existingHealthCover: money,
+  liquidSavings: money,
+  spouseIncome: money,
+  dependentDetails: z
+    .array(z.object({ relation: z.enum(DEPENDENT_RELATIONS), age: z.number().int().min(0).max(110).nullable() }))
+    .max(12),
+  parentsHealthCover: money,
+  loanEmi: money,
+  homeLoanYearsLeft: z.number().int().min(0).max(40).nullable(),
+  existingCiCover: money,
+  existingPaCover: money,
   employerBenefits: z.array(z.string()).transform(list => list.filter(b => (EMPLOYER_BENEFITS as readonly string[]).includes(b))),
   lifestyleRisks: z.array(z.string()).transform(list => list.filter(r => (LIFESTYLE_RISKS as readonly string[]).includes(r))),
   notes: z.array(z.string().max(300)).max(6),
@@ -271,6 +399,18 @@ const profileJsonSchema = obj({
   monthlyExpenses: nullable('number', 'MONTHLY household expenses in rupees (divide annual by 12), or null.'),
   existingLifeCover: nullable('number', 'Personal life insurance sum assured in rupees, excluding employer group cover; null if not stated.'),
   existingHealthCover: nullable('number', 'Personal health insurance sum insured in rupees, excluding employer cover; null if not stated.'),
+  dependentDetails: {
+    type: 'array',
+    description: 'Each child, parent or sibling who depends on them financially (not the spouse). One entry per person; age null if not stated.',
+    items: obj({ relation: { type: 'string', enum: [...DEPENDENT_RELATIONS] }, age: nullable('integer', 'Age in years, or null if not stated.') }),
+  },
+  parentsHealthCover: nullable('number', 'Health insurance their dependent parents already hold, in rupees; null if not stated.'),
+  loanEmi: nullable('number', 'Total MONTHLY loan EMIs in rupees across all loans; null if not stated.'),
+  homeLoanYearsLeft: nullable('integer', 'Years left to repay the home loan; null if not stated.'),
+  existingCiCover: nullable('number', 'Personal critical illness cover (standalone or rider) in rupees, excluding employer cover; null if not stated.'),
+  existingPaCover: nullable('number', 'Personal accident / disability cover in rupees, excluding employer cover; null if not stated.'),
+  spouseIncome: nullable('number', 'Partner\'s ANNUAL gross income in rupees if they work; 0 if they explicitly do not work; null if not mentioned.'),
+  liquidSavings: nullable('number', 'Savings and investments the family could draw on (bank FDs, mutual funds, stocks) in rupees; exclude the home, PF/EPF and other locked retirement funds. Null if not stated.'),
   employerBenefits: { type: 'array', items: { type: 'string', enum: [...EMPLOYER_BENEFITS] }, description: 'Employer-provided benefits mentioned. Group Health = employer hospitalisation insurance; OPD Benefits = outpatient consultations only.' },
   lifestyleRisks: { type: 'array', items: { type: 'string', enum: [...LIFESTYLE_RISKS] }, description: 'Risks explicitly mentioned.' },
   notes: strList('Up to 4 short notes on assumptions you made or ambiguities the user should check.'),
@@ -332,8 +472,13 @@ function cacheGet<T>(key: string, validator: z.ZodType<T, z.ZodTypeDef, unknown>
   const parsed = validator.safeParse(JSON.parse(row.payload));
   return parsed.success ? { data: parsed.data, provider: row.provider } : null;
 }
+const CACHE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
 function cachePut(key: string, provider: string, data: unknown) {
-  getDatabase()
+  const db = getDatabase();
+  // Retention runs on write, like session cleanup, so a long-running server never accumulates old entries.
+  db.prepare('DELETE FROM ai_cache WHERE created_at < ?').run(new Date(Date.now() - CACHE_RETENTION_MS).toISOString());
+  db
     .prepare(
       `INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES (?, ?, ?, ?)
        ON CONFLICT(cache_key) DO UPDATE SET provider = excluded.provider, payload = excluded.payload, created_at = excluded.created_at`
@@ -352,10 +497,11 @@ export class AiService {
   }
 
   /** Generates (and caches) a narrative strategy for the user's current profile. */
-  static async generate(userId: string, profile: StrategyProfile, strategy: StrategyResult) {
+  static async generate(userId: string, profile: StrategyProfile, strategy: StrategyResult, beforeCall: BeforeAiCall) {
     const { data, provider } = await generateJson(
       { prompt: `${STRATEGY_PROMPT}\n\nHousehold and computed analysis (JSON):\n${context(profile, strategy)}`, schema: strategyJsonSchema, schemaName: 'protection_strategy' },
-      aiStrategySchema
+      aiStrategySchema,
+      beforeCall
     );
     const createdAt = new Date().toISOString();
     getDatabase()
@@ -369,7 +515,15 @@ export class AiService {
   }
 
   /** Answers the latest question in a conversation, grounded in the user's own numbers. */
-  static async chat(profile: StrategyProfile, strategy: StrategyResult, messages: ChatMessage[], planOptions: PlanTypeOptions[] = []) {
+  static async chat(
+    profile: StrategyProfile,
+    strategy: StrategyResult,
+    messages: ChatMessage[],
+    planOptions: PlanTypeOptions[],
+    onDelta: (text: string) => void,
+    beforeCall: BeforeAiCall,
+    signal: AbortSignal
+  ): Promise<{ data: AiChatReply; provider: AiProvider }> {
     const plans = planOptions.map(t => ({
       type: t.label,
       cover: t.cover,
@@ -384,8 +538,10 @@ You are "Ask ShieldIQ", answering this user's questions about protecting their h
 - Ground every answer in their profile and computed analysis below; quote their figures where relevant.
 - If the question is about something else entirely, say briefly that you can only help with insurance and protection planning.
 - If a question needs a number that is not given, explain what it depends on instead of inventing it, and point to the screen that computes it (Life Calculator, Risk Simulator, Health Planner, Affordability).
-- When asked which plan to choose, use the quoted plan options below (sample plans; insurer names are illustrative) and their recommendation reasons.
+- When asked which plan to choose, use the quoted plan options below (plan types with estimated premiums, not specific insurer products) and their recommendation reasons.
 - Keep answers under about 180 words. This is guidance, not regulated financial advice; say so only when the user is about to make a purchase decision.
+- Write plain text: short paragraphs or "- " bullet lines; no markdown headings, bold or tables.
+- After the answer, write a line containing only ---, then up to 3 short follow-up questions this user might ask next, one per line.
 
 User profile and computed analysis (JSON):
 ${context(profile, strategy)}
@@ -397,11 +553,21 @@ Conversation so far:
 ${transcript}
 
 Reply to the last USER message.`;
-    return generateJson({ prompt, schema: chatJsonSchema, schemaName: 'chat_reply' }, aiChatSchema);
+    const { text, provider } = await streamText(prompt, onDelta, beforeCall, signal);
+    const data = parseChatReply(text);
+    if (!data.answer) throw new AiProviderError(`${provider} returned an empty answer`);
+    return { data, provider };
   }
 
   /** Plain-language explanation of one calculator result; cached per identical input. */
-  static async explain(userId: string, profile: StrategyProfile, screen: ExplainScreen, inputs: Record<string, unknown>, result: Record<string, unknown>) {
+  static async explain(
+    userId: string,
+    profile: StrategyProfile,
+    screen: ExplainScreen,
+    inputs: Record<string, unknown>,
+    result: Record<string, unknown>,
+    beforeCall: BeforeAiCall
+  ) {
     const key = sha256(JSON.stringify(['explain', userId, screen, inputs, result, profile]));
     const cached = cacheGet(key, aiExplainSchema);
     if (cached) return { ...cached, cached: true };
@@ -414,25 +580,25 @@ How the calculator works: ${SCREEN_DESCRIPTIONS[screen]}
 Their profile (JSON): ${JSON.stringify(profile)}
 Calculator inputs (JSON): ${JSON.stringify(inputs)}
 Calculator result (JSON): ${JSON.stringify(result)}`;
-    const { data, provider } = await generateJson({ prompt, schema: explainJsonSchema, schemaName: 'explanation' }, aiExplainSchema);
+    const { data, provider } = await generateJson({ prompt, schema: explainJsonSchema, schemaName: 'explanation' }, aiExplainSchema, beforeCall);
     cachePut(key, provider, data);
     return { data, provider, cached: false };
   }
 
   /** Turns a free-text self-description into onboarding fields; the user reviews before anything is saved. */
-  static async parseProfile(description: string) {
+  static async parseProfile(description: string, beforeCall: BeforeAiCall) {
     const prompt = `${SHARED_RULES}
 Extract onboarding details from the person's own description below. Fill only what they state or clearly imply; use null for anything missing.
 Convert Indian notation: "18L" or "18 lakh" = 1800000, "1.5 Cr" = 15000000, "50k" = 50000.
 
 Description:
 """${description}"""`;
-    return generateJson({ prompt, schema: profileJsonSchema, schemaName: 'profile_draft' }, aiProfileSchema);
+    return generateJson({ prompt, schema: profileJsonSchema, schemaName: 'profile_draft' }, aiProfileSchema, beforeCall);
   }
 
   /** Extracts a policy's key terms from a PDF, then measures it against the user's gaps in code. */
-  static async analyzePolicy(pdf: { base64: string; filename: string }, strategy: StrategyResult | null) {
-    const { data, provider } = await generateJson({ prompt: POLICY_PROMPT, schema: policyJsonSchema, schemaName: 'policy_analysis', pdf }, aiPolicySchema);
+  static async analyzePolicy(pdf: { base64: string; filename: string }, strategy: StrategyResult | null, beforeCall: BeforeAiCall) {
+    const { data, provider } = await generateJson({ prompt: POLICY_PROMPT, schema: policyJsonSchema, schemaName: 'policy_analysis', pdf }, aiPolicySchema, beforeCall);
 
     // Fit against the user's own gap is arithmetic, so it is computed here rather than by the model.
     const category = data.policyType === 'term_life' ? 'life' : data.policyType === 'health' ? 'health' : null;

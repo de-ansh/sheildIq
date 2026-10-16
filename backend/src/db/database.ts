@@ -2,11 +2,21 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { promisify } from 'node:util';
+import { shouldSeedDemo } from '../config.js';
 
 let dbInstance: DatabaseSync | null = null;
 
+const scrypt = promisify(crypto.scrypt) as (password: string, salt: string, keylen: number) => Promise<Buffer>;
+
+/** Sync form, for one-off startup work only (demo seed). Request handlers use hashPasswordAsync. */
 export function hashPassword(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64).toString('hex');
+}
+
+/** Same algorithm and output as hashPassword, computed off the event loop so other requests keep flowing. */
+export async function hashPasswordAsync(password: string, salt: string): Promise<string> {
+  return (await scrypt(password, salt, 64)).toString('hex');
 }
 
 export function generateSalt(): string {
@@ -109,6 +119,16 @@ export function initDatabase(dbPath?: string): DatabaseSync {
     ['monthly_expenses', 'REAL NOT NULL DEFAULT 0'],
     ['existing_life_cover', 'REAL NOT NULL DEFAULT 0'],
     ['existing_health_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['liquid_savings', 'REAL NOT NULL DEFAULT 0'],
+    ['spouse_income', 'REAL NOT NULL DEFAULT 0'],
+    ['dependent_details', "TEXT NOT NULL DEFAULT '[]'"],
+    ['parents_health_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['loan_emi', 'REAL NOT NULL DEFAULT 0'],
+    ['home_loan_years_left', 'INTEGER NOT NULL DEFAULT 0'],
+    ['existing_ci_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['existing_pa_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['profile_reviewed_at', 'TEXT'],
+    ['disclaimer_acknowledged_at', 'TEXT'],
     ['employer_benefits', "TEXT NOT NULL DEFAULT '[]'"],
     ['lifestyle_risks', "TEXT NOT NULL DEFAULT '[]'"],
     ['onboarding_completed', 'INTEGER NOT NULL DEFAULT 0'],
@@ -119,9 +139,12 @@ export function initDatabase(dbPath?: string): DatabaseSync {
   for (const [column, definition] of profileColumns) {
     if (!existingColumns.has(column)) db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
   }
+  // Strategy metrics at save time (JSON), so saved plans can be compared over time; NULL for older plans.
+  const planColumns = new Set((db.prepare('PRAGMA table_info(saved_plans)').all() as { name: string }[]).map(c => c.name));
+  if (!planColumns.has('snapshot')) db.exec('ALTER TABLE saved_plans ADD COLUMN snapshot TEXT');
 
   // Databases created before the financial profile existed hold the old USD-era demo persona; upgrade it once.
-  if (process.env.NODE_ENV !== 'production') {
+  if (shouldSeedDemo()) {
     db.prepare(
       `UPDATE users SET income = 2400000, city = 'Bengaluru, KA', city_tier = 'Tier 1 (Metro)', home_loan = 4500000,
          other_loans = 500000, monthly_expenses = 85000, existing_life_cover = 15000000, existing_health_cover = 500000,
@@ -146,14 +169,23 @@ export function initDatabase(dbPath?: string): DatabaseSync {
       created_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, id);
   `);
 
   // Seed default demo user if not present
   const checkUserStmt = db.prepare('SELECT id FROM users WHERE email = ?');
   const existingUser = checkUserStmt.get('alex.vance@shieldiq.internal');
 
-  // Demo account has a published password, so never create it in production.
-  if (!existingUser && process.env.NODE_ENV !== 'production') {
+  if (!existingUser && shouldSeedDemo()) {
     const salt = generateSalt();
     const passwordHash = hashPassword('Password123!', salt);
     const now = new Date().toISOString();
@@ -162,8 +194,8 @@ export function initDatabase(dbPath?: string): DatabaseSync {
       INSERT INTO users (
         id, email, name, password_hash, salt, age, income, dependents, marital_status, occupation, city, created_at, updated_at,
         city_tier, home_loan, other_loans, monthly_expenses, existing_life_cover, existing_health_cover,
-        employer_benefits, lifestyle_risks, onboarding_completed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        employer_benefits, lifestyle_risks, liquid_savings, loan_emi, home_loan_years_left, onboarding_completed
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1000000, 45000, 15, 1)
     `);
 
     insertUserStmt.run(

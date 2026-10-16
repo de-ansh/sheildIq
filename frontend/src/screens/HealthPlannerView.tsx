@@ -18,6 +18,7 @@ import {
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, CITY_TIERS, type CityTier, type HealthPlanResult } from '@/lib/api';
 import { formatINR } from '@/lib/utils';
+import { householdOf } from '@/lib/household';
 import { ExplainResult } from '@/components/ExplainResult';
 
 const RISK_OPTIONS = [
@@ -31,7 +32,8 @@ export const HealthPlannerView: React.FC = () => {
 
     // Seeded from the profile; editable for what-if planning.
     const [adults, setAdults] = useState(user.maritalStatus === 'Married' ? 2 : 1);
-    const [kids, setKids] = useState(user.maritalStatus === 'Married' ? Math.max(0, user.dependents - 1) : user.dependents);
+    // Children up to 25 share the family floater; parents get their own senior policy (see Coverage Analysis).
+    const [kids, setKids] = useState(householdOf(user).children.filter(age => age === null || age < 25).length);
     const [cityTier, setCityTier] = useState<CityTier>(user.cityTier);
     const [employerCover, setEmployerCover] = useState(0);
     const [existingCover, setExistingCover] = useState(user.existingHealthCover);

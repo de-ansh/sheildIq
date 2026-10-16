@@ -5,7 +5,7 @@ import { AppContextProvider } from '@/lib/AppContext';
 import { mockApi } from '@/test/mockApi';
 
 const policy = (id: string, title: string, category: string) => ({
-  id, title, provider: 'Sample Insurer (sample)', category, coverageAmount: 1500000, monthlyPremium: 1200, claimRatio: 98.5,
+  id, title, provider: 'Most life insurers', category, coverageAmount: 1500000, monthlyPremium: 1200,
   clarityScore: 90, status: 'Available', features: [`${title} feature`], exclusions: [`${title} exclusion`],
   structure: `${title} structure`, waitingPeriod: '30 days', bestFor: 'Families',
 });

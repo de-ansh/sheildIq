@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ShieldIQApi, type AiStrategy, type CityTier, type Strategy } from './api';
+import type { Dependent } from './household';
 
 export type ScreenId =
   | 'login'
@@ -34,13 +35,24 @@ export interface UserProfile {
   monthlyExpenses: number;
   existingLifeCover: number;
   existingHealthCover: number;
+  liquidSavings: number;
+  spouseIncome: number;
+  dependentDetails: Dependent[];
+  parentsHealthCover: number;
+  loanEmi: number;
+  homeLoanYearsLeft: number;
+  existingCiCover: number;
+  existingPaCover: number;
   employerBenefits: string[];
   lifestyleRisks: string[];
   onboardingCompleted: boolean;
+  /** ISO time the financial profile was last saved; '' when unknown. */
+  profileReviewedAt: string;
+  disclaimerAcknowledgedAt: string | null;
   isLoggedIn: boolean;
 }
 
-export type ProfileUpdate = Partial<Omit<UserProfile, 'email' | 'isLoggedIn' | 'onboardingCompleted'>>;
+export type ProfileUpdate = Partial<Omit<UserProfile, 'email' | 'isLoggedIn' | 'onboardingCompleted' | 'profileReviewedAt' | 'disclaimerAcknowledgedAt'>>;
 
 export interface Policy {
   id: string;
@@ -50,7 +62,6 @@ export interface Policy {
   coverageAmount: number;
   monthlyPremium: number;
   status: 'Available';
-  claimRatio?: number;
   clarityScore?: number;
   features?: string[];
   exclusions?: string[];
@@ -101,9 +112,19 @@ const defaultUser: UserProfile = {
   monthlyExpenses: 85000,
   existingLifeCover: 15000000,
   existingHealthCover: 500000,
+  liquidSavings: 1000000,
+  spouseIncome: 0,
+  dependentDetails: [],
+  parentsHealthCover: 0,
+  loanEmi: 45000,
+  homeLoanYearsLeft: 15,
+  existingCiCover: 0,
+  existingPaCover: 0,
   employerBenefits: ['Group Term Life', 'OPD Benefits'],
   lifestyleRisks: [],
   onboardingCompleted: true,
+  profileReviewedAt: '',
+  disclaimerAcknowledgedAt: null,
   isLoggedIn: false,
 };
 

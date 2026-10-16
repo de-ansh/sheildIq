@@ -4,7 +4,7 @@ import { PlansService, PLAN_PRODUCTS } from '../services/plans.service.js';
 
 const family: StrategyProfile = {
   age: 34, income: 2400000, dependents: 2, maritalStatus: 'Married', occupation: 'Engineer', cityTier: 'Tier 1 (Metro)',
-  homeLoan: 4500000, otherLoans: 500000, monthlyExpenses: 85000, existingLifeCover: 15000000, existingHealthCover: 0,
+  homeLoan: 4500000, otherLoans: 500000, monthlyExpenses: 85000, existingLifeCover: 15000000, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0,
   employerBenefits: [], lifestyleRisks: [],
 };
 const options = (p: StrategyProfile) => PlansService.optionsFor(p, ActuarialService.buildStrategy(p));
@@ -27,8 +27,11 @@ describe('Plan options', () => {
     }
   });
 
-  it('labels every insurer as a sample', () => {
-    for (const p of PLAN_PRODUCTS) expect(p.insurer).toMatch(/\(sample\)$/);
+  it('describes plan types without fictional insurers or invented claim ratios', () => {
+    for (const p of PLAN_PRODUCTS) {
+      expect(p.insurer).toMatch(/insurers/);
+      expect(p).not.toHaveProperty('claimSettlementRatio');
+    }
   });
 
   it('sizes term cover to the life gap and prices options by structure', () => {
@@ -87,5 +90,42 @@ describe('Plan options', () => {
       expect(pa).toBeGreaterThanOrEqual(2500000);
       expect(pa).toBeLessThanOrEqual(20000000);
     }
+  });
+});
+
+describe('Affordability and Plan Options price the gaps identically', () => {
+  it('recommended options cost exactly what the strategy says, for every household', () => {
+    let checked = 0;
+    for (const age of [22, 34, 45, 58])
+      for (const income of [400000, 1500000, 2400000, 9000000])
+        for (const dependents of [0, 1, 3])
+          for (const existingHealthCover of [0, 200000, 500000, 5000000])
+            for (const existingLifeCover of [0, 15000000, 1e9])
+              for (const cityTier of ['Tier 1 (Metro)', 'Tier 3 (Urban Center)'] as const)
+                for (const lifestyleRisks of [[], ['Tobacco/Smoking']]) {
+                  const p: StrategyProfile = { ...family, age, income, dependents, existingHealthCover, existingLifeCover, cityTier, lifestyleRisks };
+                  const s = ActuarialService.buildStrategy(p);
+                  const types = PlansService.optionsFor(p, s);
+                  const rec = (t: string) => types.find(x => x.type === t)!.options.find(o => o.recommended);
+                  const term = rec('term_life');
+                  const health = rec('health');
+
+                  expect(term?.annualPremium ?? 0).toBe(s.life.estimatedAnnualPremiumForGap);
+                  const parents = s.parentsHealth?.estimatedAnnualPremium ?? 0;
+                  expect(health?.annualPremium ?? 0).toBe(s.affordability.estimatedAnnualPremium - s.life.estimatedAnnualPremiumForGap - parents);
+                  expect(Boolean(term)).toBe(s.life.gap > 0);
+                  expect(Boolean(health)).toBe(s.health.gap > 0);
+                  checked++;
+                }
+    expect(checked).toBe(2304);
+  });
+
+  it('demo household: Affordability matches the recommended plans', () => {
+    const demo = { ...family, existingHealthCover: 500000, employerBenefits: ['Group Term Life'] };
+    const s = ActuarialService.buildStrategy(demo);
+    const types = PlansService.optionsFor(demo, s);
+    const term = types[0].options.find(o => o.recommended)!;
+    const health = types[1].options.find(o => o.recommended)!;
+    expect(s.affordability.estimatedAnnualPremium).toBe(term.annualPremium + health.annualPremium);
   });
 });

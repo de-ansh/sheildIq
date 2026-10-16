@@ -55,6 +55,15 @@ export const SavedPlansView: React.FC = () => {
         return matchesStatus && matchesSearch;
     });
 
+    // Oldest first, then today's live strategy, so changes read left to right in time.
+    const history = [
+        ...(plans ?? []).filter(p => p.snapshot).reverse().map(p => ({ key: p.id, date: p.lastModified, label: p.name, ...p.snapshot! })),
+        ...(strategy ? [{
+            key: 'now', date: 'Today', label: 'Current profile', score: strategy.score, lifeGap: strategy.life.gap,
+            healthGap: strategy.health.gap + (strategy.parentsHealth?.gap ?? 0), annualPremium: strategy.affordability.estimatedAnnualPremium,
+        }] : []),
+    ];
+
     const handleCreatePlan = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newPlanName.trim() || !strategy) return;
@@ -201,6 +210,51 @@ export const SavedPlansView: React.FC = () => {
                                 Compare Policies <ExternalLink className="w-4 h-4 ml-2" />
                             </Button>
                         </div>
+                    </div>
+                </Card>
+            )}
+
+            {history.length >= 2 && (
+                <Card className="border-border shadow-sm overflow-hidden">
+                    <div className="p-6 pb-2">
+                        <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Progress Over Time</h3>
+                        <p className="text-xs text-muted-foreground">How your score and gaps changed between saved plans.</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-left">
+                                    <th className="px-6 py-3">Saved</th>
+                                    <th className="px-6 py-3">Plan</th>
+                                    <th className="px-6 py-3 text-right">Score</th>
+                                    <th className="px-6 py-3 text-right">Life Gap</th>
+                                    <th className="px-6 py-3 text-right">Health Gap</th>
+                                    <th className="px-6 py-3 text-right">Premium / yr</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {history.map((h, i) => {
+                                    const change = i > 0 ? h.score - history[i - 1].score : 0;
+                                    return (
+                                        <tr key={h.key} className="border-t border-border font-mono">
+                                            <td className="px-6 py-3 font-sans text-muted-foreground">{h.date}</td>
+                                            <td className="px-6 py-3 font-sans font-bold">{h.label}</td>
+                                            <td className="px-6 py-3 text-right">
+                                                {h.score}
+                                                {change !== 0 && (
+                                                    <span className={`ml-2 text-xs ${change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                        {change > 0 ? `▲ ${change}` : `▼ ${-change}`}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-3 text-right">{formatINR(h.lifeGap)}</td>
+                                            <td className="px-6 py-3 text-right">{formatINR(h.healthGap)}</td>
+                                            <td className="px-6 py-3 text-right">{formatINR(h.annualPremium)}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </Card>
             )}

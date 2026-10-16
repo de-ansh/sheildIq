@@ -18,6 +18,7 @@ import {
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, CITY_TIERS, type CityTier } from '@/lib/api';
 import { providerLabel } from '@/lib/utils';
+import { householdOf } from '@/lib/household';
 
 export const SettingsView: React.FC = () => {
     const { user, updateUserProfile, setCurrentScreen, logout, aiProvider } = useApp();
@@ -28,12 +29,14 @@ export const SettingsView: React.FC = () => {
     // Form fields
     const [name, setName] = useState(user.name);
     const [income, setIncome] = useState(user.income);
-    const [dependents, setDependents] = useState(user.dependents);
     const [occupation, setOccupation] = useState(user.occupation);
     const [city, setCity] = useState(user.city);
     const [age, setAge] = useState(user.age);
     const [maritalStatus, setMaritalStatus] = useState(user.maritalStatus);
     const [cityTier, setCityTier] = useState<CityTier>(user.cityTier);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState('');
+    const [dataMessage, setDataMessage] = useState<{ ok: boolean; text: string } | null>(null);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordMessage, setPasswordMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -43,7 +46,6 @@ export const SettingsView: React.FC = () => {
         const error = await updateUserProfile({
             name,
             income: Number(income),
-            dependents: Number(dependents),
             occupation,
             city,
             age: Number(age),
@@ -53,10 +55,19 @@ export const SettingsView: React.FC = () => {
         setSaveResult(error ? { ok: false, text: error } : { ok: true, text: 'Profile saved. Your strategy has been recalculated.' });
     };
 
+    const household = householdOf(user);
+    const dependentSummary = household.count === 0
+        ? 'None'
+        : [
+            household.count - household.children.length - household.parents.length - household.siblings.length > 0 && 'spouse',
+            household.children.length && `${household.children.length} ${household.children.length === 1 ? 'child' : 'children'}`,
+            household.parents.length && `${household.parents.length} ${household.parents.length === 1 ? 'parent' : 'parents'}`,
+            household.siblings.length && `${household.siblings.length} ${household.siblings.length === 1 ? 'sibling' : 'siblings'}`,
+        ].filter(Boolean).join(', ');
+
     const resetForm = () => {
         setName(user.name);
         setIncome(user.income);
-        setDependents(user.dependents);
         setOccupation(user.occupation);
         setCity(user.city);
         setAge(user.age);
@@ -78,6 +89,30 @@ export const SettingsView: React.FC = () => {
         } else {
             setPasswordMessage({ ok: false, text: res?.error || 'Cannot reach the ShieldIQ server.' });
         }
+    };
+
+    const handleExport = async () => {
+        const blob = await ShieldIQApi.exportData();
+        if (!blob) {
+            setDataMessage({ ok: false, text: 'Could not prepare your data. Please try again.' });
+            return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `shieldiq-data-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setDataMessage({ ok: true, text: 'Your data has been downloaded.' });
+    };
+
+    const handleDeleteAccount = async () => {
+        const res = await ShieldIQApi.deleteAccount(deletePassword);
+        if (res && res.success) {
+            logout();
+            return;
+        }
+        setDataMessage({ ok: false, text: res?.error || 'Cannot reach the ShieldIQ server.' });
     };
 
     const handleLogoutAll = async () => {
@@ -208,17 +243,11 @@ export const SettingsView: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-dependents" className="text-xs font-bold">Immediate Dependents</Label>
-                                        <Input
-                                            id="settings-dependents"
-                                            type="number"
-                                            min={0}
-                                            max={10}
-                                            value={dependents}
-                                            onChange={(e) => setDependents(Number(e.target.value))}
-                                            className="bg-muted/30 border-border font-mono"
-                                            required
-                                        />
+                                        <Label className="text-xs font-bold">Dependents</Label>
+                                        <p className="h-10 flex items-center justify-between gap-2 px-3 rounded-md border border-border bg-muted/60 text-sm">
+                                            <span>{dependentSummary}</span>
+                                            <button type="button" onClick={() => setCurrentScreen('onboarding')} className="text-xs font-bold text-blue-600 hover:underline">Edit</button>
+                                        </p>
                                     </div>
 
                                     <div className="space-y-2">
@@ -386,6 +415,49 @@ export const SettingsView: React.FC = () => {
                                                     : 'AI strategy generation is not enabled on this server.'}
                                             </li>
                                         </ul>
+                                    </div>
+
+                                    <div className="p-4 rounded-xl border border-border space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div>
+                                                <h4 className="text-sm font-bold text-foreground">Your Data</h4>
+                                                <p className="text-xs text-muted-foreground">Download a copy of everything ShieldIQ stores about you.</p>
+                                            </div>
+                                            <Button type="button" variant="outline" size="sm" onClick={handleExport} className="text-xs font-bold shrink-0">
+                                                Download My Data
+                                            </Button>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-border space-y-3">
+                                            <div>
+                                                <h4 className="text-sm font-bold text-red-600">Delete My Account</h4>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Permanently erases your profile, saved plans and AI history. This cannot be undone.
+                                                </p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="delete-password" className="text-xs font-bold">Your Password</Label>
+                                                    <Input id="delete-password" type="password" autoComplete="current-password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="delete-confirm" className="text-xs font-bold">Type DELETE to confirm</Label>
+                                                    <Input id="delete-confirm" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} autoComplete="off" />
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={handleDeleteAccount}
+                                                disabled={!deletePassword || deleteConfirm !== 'DELETE'}
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
+                                            >
+                                                Delete My Account Permanently
+                                            </Button>
+                                        </div>
+                                        {dataMessage && (
+                                            <p role="status" className={`text-xs font-medium ${dataMessage.ok ? 'text-emerald-600' : 'text-red-600'}`}>{dataMessage.text}</p>
+                                        )}
                                     </div>
                                 </div>
                             </Card>

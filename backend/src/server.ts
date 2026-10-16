@@ -1,7 +1,6 @@
+// Must stay the first import: app.ts reads CORS_ORIGIN and TRUST_PROXY when it loads.
+import 'dotenv/config';
 import { app } from './app.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 

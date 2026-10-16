@@ -5,8 +5,8 @@ import { AppContextProvider } from '@/lib/AppContext';
 import { mockApi } from '@/test/mockApi';
 
 const option = (id: string, name: string, premium: number, recommended = false) => ({
-  id, type: 'x', name, insurer: 'Sample Life (sample)', structure: `${name} structure`, features: [`${name} feature`], tradeOffs: [`${name} trade-off`],
-  exclusions: [], waitingPeriod: 'None', claimSettlementRatio: 98, clarityScore: 90, bestFor: 'Families', cover: 27000000,
+  id, type: 'x', name, insurer: 'Most life insurers', structure: `${name} structure`, features: [`${name} feature`], tradeOffs: [`${name} trade-off`],
+  exclusions: [], waitingPeriod: 'None', clarityScore: 90, bestFor: 'Families', cover: 27000000,
   annualPremium: premium, monthlyPremium: Math.round(premium / 12), note: null, recommended,
 });
 const type = (t: string, label: string, names: string[], pick: number) => ({
@@ -25,7 +25,12 @@ describe('ComparisonView plan options', () => {
       '/strategy': { success: false },
       '/plan-options': {
         success: true,
-        disclaimer: 'Sample plans; insurer names are illustrative.',
+        disclaimer: 'Plan types with indicative premiums, not insurer quotes.',
+        insurerRecords: {
+          source: { period: 'FY 2024-25', publisher: 'IRDAI', documents: 'Handbook 2024-25', url: 'https://irdai.gov.in/handbook-of-indian-insurance' },
+          life: [{ insurer: 'Axis Max Life', claimsHandled: 20225, paidByNumberPct: 99.7, paidByAmountPct: 97.39 }, { insurer: 'Shriram Life', claimsHandled: 4852, paidByNumberPct: 98.31, paidByAmountPct: 81.71 }],
+          health: [{ insurer: 'Care Health', claimsHandled: 1508929, paidPct: 95.19, repudiatedPct: 3.1, incurredClaimsRatioPct: 64.53 }],
+        },
         data: [
           type('term_life', 'Term Life', ['Pure Level Term', 'Term + Riders', 'Increasing Cover', 'Return of Premium'], 1),
           type('health', 'Health', ['Family Floater', 'Base + Top-Up', 'Comprehensive', 'Top-Up Only'], 3),
@@ -38,15 +43,24 @@ describe('ComparisonView plan options', () => {
 
     expect(await screen.findByText('Term Life reason')).toBeInTheDocument();
     expect(screen.getAllByRole('tab', { name: /Term Life|Health|Critical Illness|Personal Accident/ })).toHaveLength(4);
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(4);
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(5); // 4 option cards + the claim records panel
     const recommendedCard = screen.getByText('Recommended for you').closest('div.p-5')!;
     expect(within(recommendedCard as HTMLElement).getByRole('heading', { name: 'Term + Riders' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /Term Life options compared/ })).toBeInTheDocument();
+    // Official claim records for life insurers; a low by-amount figure is highlighted.
+    const life = screen.getByRole('table', { name: /Life insurers' death claims paid, FY 2024-25/ });
+    expect(within(life).getByRole('row', { name: /Axis Max Life 99.70% 97.39%/ })).toBeInTheDocument();
+    expect(within(life).getByText('81.71%')).toHaveClass('text-amber-600');
+    expect(screen.getByRole('link', { name: 'irdai.gov.in' })).toHaveAttribute('href', 'https://irdai.gov.in/handbook-of-indian-insurance');
 
     fireEvent.click(screen.getByRole('tab', { name: /Health/ }));
     expect(screen.getByText('Health reason')).toBeInTheDocument();
     const healthPick = screen.getByText('Recommended for you').closest('div.p-5')!;
     expect(within(healthPick as HTMLElement).getByRole('heading', { name: 'Top-Up Only' })).toBeInTheDocument();
-    expect(screen.getByText(/insurer names are illustrative/)).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /Health insurers' claims paid and rejected/ })).toBeInTheDocument();
+    expect(screen.getByText(/not insurer quotes/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Critical Illness/ }));
+    expect(screen.getByText(/IRDAI does not publish insurer-wise claim figures for critical illness/)).toBeInTheDocument();
   });
 });

@@ -30,8 +30,13 @@ describe('OnboardingView Component', () => {
     expect(screen.getByText(/Family & Liabilities/i)).toBeInTheDocument();
 
     // Advance to step 3
+    // The default profile predates the dependents list: its child is pre-filled and needs an age before continuing.
     const step2ContinueBtn = screen.getByRole('button', { name: /Continue/i });
     fireEvent.click(step2ContinueBtn);
+    expect(screen.getByText(/Enter each dependent's age/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Relationship of dependent 1/i)).toHaveValue('child');
+    fireEvent.change(screen.getByLabelText(/Age of dependent 1/i), { target: { value: '6' } });
+    fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
     expect(screen.getByText(/Protection & Lifestyle/i)).toBeInTheDocument();
   });
 });

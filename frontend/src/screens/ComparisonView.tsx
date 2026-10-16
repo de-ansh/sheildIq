@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, ChevronRight, FileText, Star, Check, Minus, Info, ShieldCheck, HeartPulse, Activity, Accessibility } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
-import { ShieldIQApi, type InsuranceType, type PlanTypeOptions, type SavedPlan } from '@/lib/api';
+import { ShieldIQApi, type InsuranceType, type InsurerRecords, type PlanTypeOptions, type SavedPlan } from '@/lib/api';
 import { formatINR } from '@/lib/utils';
 
 const TYPE_ICON: Record<InsuranceType, React.ComponentType<{ className?: string }>> = {
@@ -20,6 +20,7 @@ export const ComparisonView: React.FC = () => {
     const [activeTab, setActiveTab] = useState("options");
     const [planTypes, setPlanTypes] = useState<PlanTypeOptions[] | null>(null);
     const [disclaimer, setDisclaimer] = useState('');
+    const [records, setRecords] = useState<InsurerRecords | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [activeType, setActiveType] = useState<InsuranceType>('term_life');
     const [plans, setPlans] = useState<SavedPlan[] | null>(null);
@@ -30,6 +31,7 @@ export const ComparisonView: React.FC = () => {
             if (res && res.success) {
                 setPlanTypes(res.data);
                 setDisclaimer(res.disclaimer);
+                setRecords(res.insurerRecords ?? null);
             } else {
                 setLoadError(res?.code === 'ONBOARDING_REQUIRED' ? 'ONBOARDING' : res?.error || 'Could not load plan options. Please try again.');
             }
@@ -160,7 +162,7 @@ export const ComparisonView: React.FC = () => {
                                     <caption className="sr-only">{current.label} options compared</caption>
                                     <thead className="bg-muted border-b border-border">
                                         <tr>
-                                            {['Plan', 'Cover', 'Premium / yr', 'Claim Settlement', 'Waiting Period', 'Clarity'].map(h => (
+                                            {['Plan', 'Cover', 'Premium / yr', 'Waiting Period', 'Clarity'].map(h => (
                                                 <th key={h} scope="col" className="px-4 py-4 text-[10px] font-black uppercase text-muted-foreground tracking-widest">{h}</th>
                                             ))}
                                         </tr>
@@ -171,7 +173,6 @@ export const ComparisonView: React.FC = () => {
                                                 <th scope="row" className="px-4 py-4 font-bold">{o.name}{o.recommended && <span className="sr-only"> (recommended)</span>}</th>
                                                 <td className="px-4 py-4 font-mono">{formatINR(o.cover)}</td>
                                                 <td className="px-4 py-4 font-mono font-bold">{formatINR(o.annualPremium)}</td>
-                                                <td className="px-4 py-4">{o.claimSettlementRatio}%</td>
                                                 <td className="px-4 py-4 text-xs text-muted-foreground max-w-[220px]">{o.waitingPeriod}</td>
                                                 <td className="px-4 py-4">{o.clarityScore}/100</td>
                                             </tr>
@@ -179,6 +180,8 @@ export const ComparisonView: React.FC = () => {
                                     </tbody>
                                 </table>
                             </Card>
+
+                            {records && <InsurerClaimRecords type={activeType} records={records} />}
 
                             <p className="text-[11px] text-muted-foreground">{disclaimer}</p>
                         </>
@@ -214,5 +217,81 @@ export const ComparisonView: React.FC = () => {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+};
+
+/** Official IRDAI claim records for insurers selling this type of cover, best first. */
+const InsurerClaimRecords: React.FC<{ type: InsuranceType; records: InsurerRecords }> = ({ type, records }) => {
+    const { source } = records;
+    const cite = (
+        <p className="text-[11px] text-muted-foreground">
+            Source: {source.publisher}, {source.documents}, {source.period}.{' '}
+            <a href={source.url} target="_blank" rel="noreferrer" className="underline">irdai.gov.in</a>
+        </p>
+    );
+    const th = "px-4 py-3 text-[10px] font-black uppercase text-muted-foreground tracking-widest";
+    if (type === 'term_life') {
+        return (
+            <Card className="overflow-x-auto border-border p-6 space-y-4">
+                <div className="space-y-1">
+                    <h3 className="text-lg font-black tracking-tight uppercase">Life Insurers' Claim Records</h3>
+                    <p className="text-xs text-muted-foreground">Share of individual death claims each insurer paid. "By amount" is lower when large claims are refused, so check both.</p>
+                </div>
+                <table className="w-full text-left text-sm">
+                    <caption className="sr-only">Life insurers' death claims paid, {source.period}</caption>
+                    <thead className="border-b border-border">
+                        <tr>{['Insurer', 'Claims Paid (by number)', 'Claims Paid (by amount)', 'Claims Handled'].map(h => <th key={h} scope="col" className={th}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                        {records.life.map(r => (
+                            <tr key={r.insurer}>
+                                <th scope="row" className="px-4 py-2 font-bold">{r.insurer}</th>
+                                <td className="px-4 py-2 font-mono">{r.paidByNumberPct.toFixed(2)}%</td>
+                                <td className={`px-4 py-2 font-mono ${r.paidByAmountPct < 90 ? 'text-amber-600 font-bold' : ''}`}>{r.paidByAmountPct.toFixed(2)}%</td>
+                                <td className="px-4 py-2 font-mono text-muted-foreground">{r.claimsHandled.toLocaleString('en-IN')}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {cite}
+            </Card>
+        );
+    }
+    if (type === 'health') {
+        return (
+            <Card className="overflow-x-auto border-border p-6 space-y-4">
+                <div className="space-y-1">
+                    <h3 className="text-lg font-black tracking-tight uppercase">Health Insurers' Claim Records</h3>
+                    <p className="text-xs text-muted-foreground">
+                        Standalone health insurers. Payout ratio is claims paid as a share of premiums earned. General insurers also sell health
+                        cover, but IRDAI reports their claims combined with motor and other lines.
+                    </p>
+                </div>
+                <table className="w-full text-left text-sm">
+                    <caption className="sr-only">Health insurers' claims paid and rejected, {source.period}</caption>
+                    <thead className="border-b border-border">
+                        <tr>{['Insurer', 'Claims Paid', 'Claims Rejected', 'Payout Ratio', 'Claims Handled'].map(h => <th key={h} scope="col" className={th}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                        {records.health.map(r => (
+                            <tr key={r.insurer}>
+                                <th scope="row" className="px-4 py-2 font-bold">{r.insurer}</th>
+                                <td className="px-4 py-2 font-mono">{r.paidPct.toFixed(2)}%</td>
+                                <td className={`px-4 py-2 font-mono ${r.repudiatedPct > 10 ? 'text-amber-600 font-bold' : ''}`}>{r.repudiatedPct.toFixed(2)}%</td>
+                                <td className="px-4 py-2 font-mono">{r.incurredClaimsRatioPct.toFixed(1)}%</td>
+                                <td className="px-4 py-2 font-mono text-muted-foreground">{r.claimsHandled.toLocaleString('en-IN')}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {cite}
+            </Card>
+        );
+    }
+    return (
+        <p className="text-xs text-muted-foreground">
+            IRDAI does not publish insurer-wise claim figures for {type === 'critical_illness' ? 'critical illness' : 'personal accident'} cover.
+            When choosing, look at the insurer's overall claim record under Term Life or Health.
+        </p>
     );
 };

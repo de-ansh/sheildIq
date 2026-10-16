@@ -39,8 +39,11 @@ export const RiskSimulatorView: React.FC = () => {
     const [simError, setSimError] = useState<string | null>(null);
 
     // Cover that actually pays out in each scenario, from the user's declared policies.
-    // No disability cover is collected at onboarding, so disability is stress-tested with none.
-    const existingCoverTotal = scenario === 'death' ? user.existingLifeCover : scenario === 'illness' ? user.existingHealthCover : 0;
+    // Illness: hospital bills plus any critical-illness lump sum. Disability: only accident cover pays
+    // (it covers accidental disability; disability from illness is not covered by it).
+    const existingCoverTotal = scenario === 'death' ? user.existingLifeCover
+        : scenario === 'illness' ? user.existingHealthCover + user.existingCiCover
+        : user.existingPaCover;
     const monthlyExpenses = Math.round(user.monthlyExpenses * LIFESTYLE_SCALES[lifestyleScale]);
 
     const runSimulation = useCallback(async () => {

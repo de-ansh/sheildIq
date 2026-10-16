@@ -31,3 +31,14 @@ export function toCsv(plans: SavedPlan[]): string {
 export function providerLabel(provider: string | null | undefined): string {
   return provider === "gemini" ? "Google Gemini" : provider === "openai" ? "OpenAI" : provider ?? ""
 }
+
+/** Cover should be reviewed at least yearly. Returns whole months since the last review once it is due, else null. */
+export function reviewOverdueMonths(reviewedAt: string, now = Date.now()): number | null {
+  const then = new Date(reviewedAt);
+  if (!reviewedAt || Number.isNaN(then.getTime())) return null;
+  const today = new Date(now);
+  // Calendar months, counting a month only once its day has come round.
+  const months = (today.getUTCFullYear() - then.getUTCFullYear()) * 12 + today.getUTCMonth() - then.getUTCMonth()
+    - (today.getUTCDate() < then.getUTCDate() ? 1 : 0);
+  return months >= 12 ? months : null;
+}

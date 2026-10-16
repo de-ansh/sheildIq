@@ -9,11 +9,21 @@ export const ASSUMPTIONS = {
   medicalInflationPremium: 3, // medical inflation runs ~3 points above CPI in India
   premiumBudgetShare: 0.1, // protection premiums should stay under ~10% of gross income
   emergencyFundMonths: 6,
+  maxEmiShare: 0.4, // Indian lenders' usual cap on EMIs as a share of gross income (FOIR)
   criticalIllnessIncomeMultiple: 3, // lump sum ≈ 3 years of income to cover treatment + recovery time off work
   personalAccidentIncomeMultiple: 5, // accidental death/disability cover ≈ 5 years of income
 };
 
 export const CITY_TIERS = ['Tier 1 (Metro)', 'Tier 2 (Emerging Metro)', 'Tier 3 (Urban Center)'] as const;
+
+export const DEPENDENT_RELATIONS = ['child', 'parent', 'sibling'] as const;
+export type DependentRelation = (typeof DEPENDENT_RELATIONS)[number];
+export interface Dependent {
+  relation: DependentRelation;
+  age: number;
+}
+/** Education funding stops once a dependent is past college age. */
+export const EDUCATION_AGE_LIMIT = 22;
 export type CityTier = (typeof CITY_TIERS)[number];
 
 export interface HLVInput {
@@ -21,6 +31,20 @@ export interface HLVInput {
   years: number;
   inflation: number;
   existingCover?: number;
+  /** Yearly amount to replace; defaults to the earner's contribution (70% of income). */
+  annualContribution?: number;
+}
+
+/**
+ * Yearly amount the family would lose if the earner died: their contribution, less a working partner's take-home.
+ * Single-income households are unaffected; household expenses above the earner's contribution set the bar instead.
+ */
+export function incomeToReplace(income: number, spouseIncome: number, annualExpenses: number): number {
+  const share = ASSUMPTIONS.incomeContributionShare;
+  const earnerContribution = income * share;
+  if (spouseIncome <= 0) return earnerContribution;
+  const householdNeed = Math.max(annualExpenses, earnerContribution);
+  return Math.min(earnerContribution, Math.max(0, householdNeed - spouseIncome * share));
 }
 
 export interface HLVResult {
@@ -63,6 +87,12 @@ export interface PortfolioHealthResult {
   recommendations: string[];
 }
 
+export interface SupplementaryCover {
+  recommended: number;
+  existing: number;
+  gap: number;
+}
+
 export interface HealthPlanInput {
   adults: number;
   children: number;
@@ -95,6 +125,22 @@ export interface StrategyProfile {
   monthlyExpenses: number;
   existingLifeCover: number;
   existingHealthCover: number;
+  /** Savings and investments the family could draw on (FDs, mutual funds, stocks; not the home or retirement-locked funds). */
+  liquidSavings: number;
+  /** Partner's annual gross income; 0 for single-income households. */
+  spouseIncome: number;
+  /** People who rely on the earner besides a non-earning spouse. Empty on profiles saved before this existed. */
+  dependentDetails: Dependent[];
+  /** Health cover the user's dependent parents already hold. */
+  parentsHealthCover: number;
+  /** Total monthly loan repayments (all loans). */
+  loanEmi: number;
+  /** Personal critical-illness lump-sum cover (standalone or rider), excluding employer cover. */
+  existingCiCover: number;
+  /** Personal accident / disability cover, excluding employer cover. */
+  existingPaCover: number;
+  /** Years left on the home loan; 0 when unknown or there is no home loan. */
+  homeLoanYearsLeft: number;
   employerBenefits: string[];
   lifestyleRisks: string[];
 }
@@ -105,22 +151,50 @@ export interface Insight {
   detail: string;
 }
 
+export type TermPlanId = 'TL-BASIC' | 'TL-RIDERS';
+export type HealthPlanId = 'HL-FLOATER' | 'HL-BASE-TOPUP' | 'HL-COMPREHENSIVE' | 'HL-TOPUP-ONLY';
+
+/** The recommended way to close each gap, priced exactly as the plan catalog prices it. */
+export interface PlanPicks {
+  termId: TermPlanId | null;
+  termCover: number;
+  termPremium: number;
+  healthId: HealthPlanId | null;
+  healthCover: number;
+  healthPremium: number;
+}
+
 export interface StrategyResult {
   life: {
     humanLifeValue: number;
+    /** Yearly income the family would need replaced (after any partner's take-home). */
+    annualIncomeReplaced: number;
     liabilities: number;
     educationCorpus: number;
+    /** Liquid savings deducted from the need (never more than the need). */
+    savings: number;
     totalNeed: number;
     existing: number;
     gap: number;
     estimatedAnnualPremiumForGap: number;
   };
   health: HealthPlanResult & { existing: number; gap: number };
+  /** Lump-sum covers sized from income: they pay when illness or an accident stops you earning. */
+  criticalIllness: SupplementaryCover;
+  personalAccident: SupplementaryCover;
+  /** Separate senior cover for dependent parents; null when no parents depend on the user. */
+  parentsHealth: { count: number; eldestAge: number; recommendedCover: number; existing: number; gap: number; estimatedAnnualPremium: number } | null;
+  household: { children: number; parents: number; siblings: number; spouseDependent: boolean; dependents: number };
   affordability: {
     annualIncome: number;
     annualExpenses: number;
     expenseRatio: number;
     liabilityToIncome: number;
+    annualEmi: number;
+    /** Monthly EMIs as a share of monthly gross income, in %. Lenders typically cap this near 40%. */
+    emiToIncomeRatio: number;
+    /** Income left after expenses, EMIs and the recommended premiums; negative means it doesn't add up. */
+    annualSurplus: number;
     premiumBudget: number;
     estimatedAnnualPremium: number;
     premiumToIncomeRatio: number;
@@ -129,10 +203,92 @@ export interface StrategyResult {
   score: number;
   rating: PortfolioHealthResult['rating'];
   insights: Insight[];
+  picks: PlanPicks;
   assumptions: typeof ASSUMPTIONS;
 }
 
 const round = (n: number, step = 1) => Math.round(n / step) * step;
+export const roundUpTo = (n: number, step: number) => Math.ceil(n / step) * step;
+
+/** Price multipliers of plan structures; plans.service's catalog uses these same values. */
+export const STRUCTURE = { termRiders: 1.15, healthComprehensive: 1.3, superTopUpShare: 0.25 };
+
+/**
+ * Picks and prices the term plan and health structure that close the gaps. Used by the strategy's
+ * affordability figures and by Plan Options' recommendations, so both always show the same price.
+ */
+export interface Household {
+  /** Children's ages; null when the profile predates the dependents list. */
+  children: (number | null)[];
+  parents: number[];
+  siblings: number[];
+  spouseDependent: boolean;
+  /** Everyone who relies on the earner's income. */
+  count: number;
+}
+
+/** Who relies on the earner. Profiles saved before the dependents list keep the old guess (spouse + children). */
+export function householdOf(p: Pick<StrategyProfile, 'maritalStatus' | 'spouseIncome' | 'dependents' | 'dependentDetails'>): Household {
+  const married = p.maritalStatus === 'Married';
+  if (p.dependentDetails.length === 0) {
+    const children = married ? Math.max(0, p.dependents - 1) : p.dependents;
+    return { children: Array(children).fill(null), parents: [], siblings: [], spouseDependent: married && p.dependents > 0, count: p.dependents };
+  }
+  const ages = (relation: DependentRelation) => p.dependentDetails.filter(d => d.relation === relation).map(d => d.age);
+  const spouseDependent = married && p.spouseIncome === 0;
+  return {
+    children: ages('child'),
+    parents: ages('parent'),
+    siblings: ages('sibling'),
+    spouseDependent,
+    count: p.dependentDetails.length + (spouseDependent ? 1 : 0),
+  };
+}
+
+export function pickPlans(
+  p: StrategyProfile,
+  lifeGap: number,
+  health: HealthPlanResult,
+  premiumBudget: number,
+  otherPremiums = 0
+): PlanPicks {
+  // Health first: the term choice depends on what is left of the budget.
+  const healthRate = healthRatePerLakh(p.age, p.cityTier);
+  const healthGap = health.personalCoverNeeded;
+  let healthId: HealthPlanId | null = null;
+  let healthCover = 0;
+  let healthPremium = 0;
+  if (healthGap > 0) {
+    if (p.existingHealthCover >= 300000) {
+      healthId = 'HL-TOPUP-ONLY';
+      healthCover = Math.max(500000, roundUpTo(healthGap, 500000));
+      healthPremium = (healthCover / 100000) * healthRate * STRUCTURE.superTopUpShare;
+    } else if (health.recommendedCover > health.basePolicy) {
+      healthId = 'HL-BASE-TOPUP';
+      healthCover = health.recommendedCover;
+      healthPremium = (health.basePolicy / 100000) * healthRate + (health.superTopUp / 100000) * healthRate * STRUCTURE.superTopUpShare;
+    } else {
+      const metro = p.cityTier === 'Tier 1 (Metro)';
+      healthId = metro ? 'HL-COMPREHENSIVE' : 'HL-FLOATER';
+      healthCover = health.recommendedCover;
+      healthPremium = (healthCover / 100000) * healthRate * (metro ? STRUCTURE.healthComprehensive : 1);
+    }
+  }
+  healthPremium = round(healthPremium, 100);
+
+  let termId: TermPlanId | null = null;
+  let termCover = 0;
+  let termPremium = 0;
+  if (lifeGap > 0) {
+    termCover = roundUpTo(lifeGap, 500000);
+    const basic = (termCover / 100000) * termRatePerLakh(p.age, isTobacco(p.lifestyleRisks));
+    // Riders protect dependents if illness stops premium payments; worth it only within budget.
+    const ridersFit = householdOf(p).count > 0 && basic * STRUCTURE.termRiders + healthPremium + otherPremiums <= premiumBudget;
+    termId = ridersFit ? 'TL-RIDERS' : 'TL-BASIC';
+    termPremium = round(ridersFit ? basic * STRUCTURE.termRiders : basic, 100);
+  }
+  return { termId, termCover, termPremium, healthId, healthCover, healthPremium };
+}
 
 /** ₹ in Lakh/Crore, matching the frontend's formatINR, e.g. ₹2.68 Cr, ₹45.0L, ₹42,800. */
 export function formatINR(value: number): string {
@@ -159,7 +315,7 @@ export function termRatePerLakh(age: number, tobacco: boolean): number {
 
 /** Indicative annual family floater premium per ₹1L of cover, by eldest member age and city tier. */
 export function healthRatePerLakh(age: number, tier: CityTier): number {
-  const base = age < 35 ? 1100 : age < 45 ? 1500 : age < 55 ? 2300 : 3500;
+  const base = age < 35 ? 1100 : age < 45 ? 1500 : age < 55 ? 2300 : age < 65 ? 3500 : 5000;
   return base * (tier === 'Tier 1 (Metro)' ? 1.15 : tier === 'Tier 2 (Emerging Metro)' ? 1.0 : 0.9);
 }
 
@@ -188,12 +344,12 @@ export class ActuarialService {
    * growing with salary inflation and discounted at a nominal rate of return.
    */
   static calculateHLV(input: HLVInput): HLVResult {
-    const { income, years, inflation, existingCover = 0 } = input;
+    const { income, years, inflation, existingCover = 0, annualContribution: contribution } = input;
     const growth = inflation / 100;
     const discount = ASSUMPTIONS.discountRate / 100;
 
     let totalPV = 0;
-    let annualContribution = income * ASSUMPTIONS.incomeContributionShare;
+    let annualContribution = contribution ?? income * ASSUMPTIONS.incomeContributionShare;
     for (let t = 1; t <= years; t++) {
       annualContribution *= 1 + growth;
       totalPV += annualContribution / Math.pow(1 + discount, t);
@@ -232,7 +388,7 @@ export class ActuarialService {
     const lostYears = scenario === 'illness' ? Math.min(years, workingYearsLeft) : workingYearsLeft;
     const lostShare = scenario === 'illness' ? 0.5 : scenario === 'disability' ? 1 : ASSUMPTIONS.incomeContributionShare;
     const earningCapacityLoss = Math.round(
-      income > 0 ? ActuarialService.calculateHLV({ income: income * lostShare / ASSUMPTIONS.incomeContributionShare, years: Math.max(1, lostYears), inflation }).capitalRequirement : 0
+      income > 0 ? ActuarialService.calculateHLV({ income, annualContribution: income * lostShare, years: Math.max(1, lostYears), inflation }).capitalRequirement : 0
     );
 
     const totalFinancialImpact = treatmentCostTotal + earningCapacityLoss;
@@ -312,52 +468,94 @@ export class ActuarialService {
   static buildStrategy(p: StrategyProfile): StrategyResult {
     const tobacco = isTobacco(p.lifestyleRisks);
     const workingYears = Math.max(1, ASSUMPTIONS.retirementAge - p.age);
-    const children = p.maritalStatus === 'Married' ? Math.max(0, p.dependents - 1) : p.dependents;
+    const household = householdOf(p);
+    // Children and siblings under college age (or of unknown age) still need education funded.
+    const inEducation = [...household.children, ...household.siblings].filter(age => age === null || age < EDUCATION_AGE_LIMIT).length;
+    // Family floater covers the user, spouse and children up to 25; parents need their own senior policy.
+    const floaterChildren = household.children.filter(age => age === null || age < 25).length;
 
     // Life
-    const humanLifeValue = p.dependents > 0 || p.homeLoan + p.otherLoans > 0
-      ? ActuarialService.calculateHLV({ income: p.income, years: workingYears, inflation: ASSUMPTIONS.salaryGrowth }).recommendedCover
-      : 0; // nobody depends on this income and there are no debts to clear
+    const annualIncomeReplaced = incomeToReplace(p.income, p.spouseIncome, p.monthlyExpenses * 12);
+    const humanLifeValue = (household.count > 0 || p.homeLoan + p.otherLoans > 0) && annualIncomeReplaced > 0
+      ? ActuarialService.calculateHLV({ income: p.income, annualContribution: annualIncomeReplaced, years: workingYears, inflation: ASSUMPTIONS.salaryGrowth }).recommendedCover
+      : 0; // nobody depends on this income (or a partner's income covers it) and there are no debts to clear
     const liabilities = p.homeLoan + p.otherLoans;
-    const educationCorpus = children * ASSUMPTIONS.educationCorpusPerChild;
-    const lifeNeed = humanLifeValue + liabilities + educationCorpus;
+    const educationCorpus = inEducation * ASSUMPTIONS.educationCorpusPerChild;
+    // Money the family can already draw on reduces what insurance must provide.
+    const grossNeed = humanLifeValue + liabilities + educationCorpus;
+    const savingsApplied = Math.min(p.liquidSavings, grossNeed);
+    const lifeNeed = grossNeed - savingsApplied;
     const lifeGap = Math.max(0, lifeNeed - p.existingLifeCover);
-    const lifePremiumForGap = round((lifeGap / 100000) * termRatePerLakh(p.age, tobacco), 100);
 
     // Health
     const adults = p.maritalStatus === 'Married' ? 2 : 1;
     // Onboarding records employer benefit types but not amounts, so no employer health cover is assumed.
     const health = ActuarialService.planHealthCover(
-      { adults, children, cityTier: p.cityTier, employerCover: 0, existingCover: p.existingHealthCover, risks: p.lifestyleRisks },
+      { adults, children: floaterChildren, cityTier: p.cityTier, employerCover: 0, existingCover: p.existingHealthCover, risks: p.lifestyleRisks },
       p.age
     );
     const healthGap = health.personalCoverNeeded;
-    const healthPremiumForGap = healthGap > 0 ? health.estimatedAnnualPremium * (healthGap / health.recommendedCover) : 0;
 
-    // Affordability
+    // Dependent parents: priced as a standalone senior policy at the eldest parent's age.
+    let parentsHealth: StrategyResult['parentsHealth'] = null;
+    if (household.parents.length > 0) {
+      const eldestAge = Math.max(...household.parents);
+      const plan = ActuarialService.planHealthCover(
+        { adults: household.parents.length, children: 0, cityTier: p.cityTier, employerCover: 0, existingCover: p.parentsHealthCover, risks: [] },
+        eldestAge
+      );
+      const gap = plan.personalCoverNeeded;
+      parentsHealth = {
+        count: household.parents.length,
+        eldestAge,
+        recommendedCover: plan.recommendedCover,
+        existing: p.parentsHealthCover,
+        gap,
+        estimatedAnnualPremium: round((gap / 100000) * healthRatePerLakh(eldestAge, p.cityTier), 100),
+      };
+    }
+    const parentsPremium = parentsHealth?.estimatedAnnualPremium ?? 0;
+
+    // Affordability, priced from the same recommended plans Plan Options shows
     const annualExpenses = p.monthlyExpenses * 12;
-    const estimatedAnnualPremium = round(lifePremiumForGap + healthPremiumForGap, 100);
     const premiumBudget = round(p.income * ASSUMPTIONS.premiumBudgetShare, 100);
+    const picks = pickPlans(p, lifeGap, health, premiumBudget, parentsPremium);
+    const lifePremiumForGap = picks.termPremium;
+    const estimatedAnnualPremium = picks.termPremium + picks.healthPremium + parentsPremium;
     const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
+    const annualEmi = p.loanEmi * 12;
+    const annualSurplus = p.income - annualExpenses - annualEmi - estimatedAnnualPremium;
 
-    // Score: 60% life adequacy, 40% health adequacy
+    const supplementary = (type: 'critical_illness' | 'personal_accident', existing: number): SupplementaryCover => {
+      const recommended = suggestedCover(type, p.income);
+      return { recommended, existing, gap: Math.max(0, recommended - existing) };
+    };
+    const criticalIllness = supplementary('critical_illness', p.existingCiCover);
+    const personalAccident = supplementary('personal_accident', p.existingPaCover);
+    const ratio = (c: SupplementaryCover) => (c.recommended > 0 ? Math.min(1, c.existing / c.recommended) : 1);
+
+    // Score: 55% life, 35% health, 5% each critical illness and accident/disability
     const lifeRatio = lifeNeed > 0 ? Math.min(1, p.existingLifeCover / lifeNeed) : 1;
-    const healthRatio = Math.min(1, p.existingHealthCover / health.recommendedCover);
-    const score = Math.round((lifeRatio * 0.6 + healthRatio * 0.4) * 100);
+    // Health adequacy spans the family floater and, where relevant, the parents' policy.
+    const healthRatio = Math.min(
+      1,
+      (p.existingHealthCover + (parentsHealth?.existing ?? 0)) / (health.recommendedCover + (parentsHealth?.recommendedCover ?? 0))
+    );
+    const score = Math.round((lifeRatio * 0.55 + healthRatio * 0.35 + ratio(criticalIllness) * 0.05 + ratio(personalAccident) * 0.05) * 100);
 
     const insights: Insight[] = [];
     if (lifeGap > 0) {
       insights.push({
         severity: lifeRatio < 0.5 ? 'critical' : 'warning',
         title: `Life cover gap of ${formatINR(lifeGap)}`,
-        detail: `Your family would need about ${formatINR(lifeNeed)} (income replacement ${formatINR(humanLifeValue)}, loans ${formatINR(liabilities)}, education ${formatINR(educationCorpus)}) but you hold ${formatINR(p.existingLifeCover)}. A term plan for the gap costs roughly ${formatINR(lifePremiumForGap)} a year.`,
+        detail: `Your family would need about ${formatINR(lifeNeed)} (income replacement ${formatINR(humanLifeValue)}${p.spouseIncome > 0 ? ' after your partner\'s income' : ''}, loans ${formatINR(liabilities)}, education ${formatINR(educationCorpus)}${savingsApplied > 0 ? `, less ${formatINR(savingsApplied)} of savings` : ''}) but you hold ${formatINR(p.existingLifeCover)}. The recommended term plan for the gap costs about ${formatINR(lifePremiumForGap)} a year.`,
       });
     }
     if (healthGap > 0) {
       insights.push({
-        severity: healthRatio < 0.5 ? 'critical' : 'warning',
+        severity: p.existingHealthCover / health.recommendedCover < 0.5 ? 'critical' : 'warning',
         title: `Health cover gap of ${formatINR(healthGap)}`,
-        detail: `A ${adults + children}-member family in ${p.cityTier} needs about ${formatINR(health.recommendedCover)} of personal health cover; you hold ${formatINR(p.existingHealthCover)}.`,
+        detail: `A ${adults + floaterChildren}-member family in ${p.cityTier} needs about ${formatINR(health.recommendedCover)} of personal health cover; you hold ${formatINR(p.existingHealthCover)}.`,
       });
     }
     if (p.employerBenefits.includes('Group Term Life')) {
@@ -372,38 +570,96 @@ export class ActuarialService {
     if (p.lifestyleRisks.some(r => /hobb/i.test(r))) {
       insights.push({ severity: 'info', title: 'Declare high-risk hobbies', detail: 'Undeclared hazardous activities are a common reason for claim rejection; check exclusions before buying.' });
     }
+    const emergencyTarget = p.monthlyExpenses * ASSUMPTIONS.emergencyFundMonths;
+    if (emergencyTarget > 0 && p.liquidSavings < emergencyTarget) {
+      insights.push({
+        severity: 'warning',
+        title: 'Emergency fund below 6 months',
+        detail: `Savings of ${formatINR(p.liquidSavings)} cover ${(p.liquidSavings / p.monthlyExpenses).toFixed(1)} months of expenses. Aim for ${formatINR(emergencyTarget)} before long-term investing; it pays for waiting periods and deductibles insurance won't.`,
+      });
+    }
     if (pct(annualExpenses, p.income) > 60) {
       insights.push({ severity: 'warning', title: 'High expense ratio', detail: `Living expenses take ${pct(annualExpenses, p.income)}% of gross income, leaving little room for premiums and savings.` });
     }
     if (liabilities > p.income * 3) {
       insights.push({ severity: 'warning', title: 'High debt load', detail: `Outstanding loans are ${(liabilities / Math.max(1, p.income)).toFixed(1)}x annual income. Make sure life cover clears them in full.` });
     }
+    const missing = [
+      criticalIllness.gap > 0 && `critical illness cover (${formatINR(criticalIllness.gap)} short)`,
+      personalAccident.gap > 0 && `accident & disability cover (${formatINR(personalAccident.gap)} short)`,
+    ].filter(Boolean);
+    if (missing.length > 0 && p.income > 0) {
+      insights.push({
+        severity: 'info',
+        title: 'Income protection beyond death',
+        detail: `Term life pays only on death and health insurance only covers bills. Consider ${missing.join(' and ')}: lump sums that replace income if illness or an accident stops you working.`,
+      });
+    }
+    if (pct(annualEmi, p.income) > ASSUMPTIONS.maxEmiShare * 100) {
+      insights.push({
+        severity: 'warning',
+        title: `Loan repayments take ${pct(annualEmi, p.income)}% of income`,
+        detail: `EMIs of ${formatINR(p.loanEmi)} a month are above the ${ASSUMPTIONS.maxEmiShare * 100}% most lenders allow. Avoid new loans, and keep term cover at least equal to the outstanding ${formatINR(liabilities)}.`,
+      });
+    }
+    if (annualSurplus < 0 && p.income > 0) {
+      insights.push({
+        severity: 'critical',
+        title: 'Expenses, EMIs and premiums exceed income',
+        detail: `After ${formatINR(annualExpenses)} of expenses and ${formatINR(annualEmi)} of EMIs a year, the recommended ${formatINR(estimatedAnnualPremium)} of premiums leaves you ${formatINR(-annualSurplus)} short. Cover term life first and review expenses before adding more.`,
+      });
+    }
     if (estimatedAnnualPremium > premiumBudget && premiumBudget > 0) {
       insights.push({ severity: 'warning', title: 'Closing every gap exceeds a 10% premium budget', detail: `Estimated ${formatINR(estimatedAnnualPremium)} a year versus a ${formatINR(premiumBudget)} budget. Prioritise term life first, then health.` });
     }
-    if (p.dependents > 0 && p.maritalStatus === 'Single') {
+    if (parentsHealth && parentsHealth.gap > 0) {
+      insights.push({
+        severity: parentsHealth.existing === 0 ? 'critical' : 'warning',
+        title: `Parents need ${formatINR(parentsHealth.gap)} more health cover`,
+        detail: `${parentsHealth.count === 1 ? `Your parent (age ${parentsHealth.eldestAge})` : `Your ${parentsHealth.count} parents (eldest ${parentsHealth.eldestAge})`} should have their own senior health policy of about ${formatINR(parentsHealth.recommendedCover)}; they hold ${formatINR(parentsHealth.existing)}. Expect about ${formatINR(parentsHealth.estimatedAnnualPremium)} a year, and check pre-existing disease waiting periods carefully.`,
+      });
+    }
+    if (household.count > 0 && p.maritalStatus === 'Single') {
       insights.push({ severity: 'info', title: 'Sole provider for dependents', detail: 'With no partner income, nominate a guardian and consider a monthly-income payout option on the term plan.' });
     }
     if (insights.every(i => i.severity === 'info')) {
       insights.unshift({ severity: 'info', title: 'Protection is on track', detail: 'Your cover meets the estimated need. Review it yearly and after major life events.' });
     }
+    // Most important first, so short lists (the dashboard shows three) never hide a critical finding.
+    const rank = { critical: 0, warning: 1, info: 2 } as const;
+    insights.sort((a, b) => rank[a.severity] - rank[b.severity]);
 
     return {
       life: {
         humanLifeValue,
+        annualIncomeReplaced: Math.round(annualIncomeReplaced),
         liabilities,
         educationCorpus,
+        savings: savingsApplied,
         totalNeed: lifeNeed,
         existing: p.existingLifeCover,
         gap: lifeGap,
         estimatedAnnualPremiumForGap: lifePremiumForGap,
       },
       health: { ...health, existing: p.existingHealthCover, gap: healthGap },
+      criticalIllness,
+      personalAccident,
+      parentsHealth,
+      household: {
+        children: household.children.length,
+        parents: household.parents.length,
+        siblings: household.siblings.length,
+        spouseDependent: household.spouseDependent,
+        dependents: household.count,
+      },
       affordability: {
         annualIncome: p.income,
         annualExpenses,
         expenseRatio: pct(annualExpenses, p.income),
         liabilityToIncome: p.income > 0 ? Math.round((liabilities / p.income) * 10) / 10 : 0,
+        annualEmi,
+        emiToIncomeRatio: pct(annualEmi, p.income),
+        annualSurplus,
         premiumBudget,
         estimatedAnnualPremium,
         premiumToIncomeRatio: pct(estimatedAnnualPremium, p.income),
@@ -412,6 +668,7 @@ export class ActuarialService {
       score,
       rating: rate(score),
       insights,
+      picks,
       assumptions: ASSUMPTIONS,
     };
   }

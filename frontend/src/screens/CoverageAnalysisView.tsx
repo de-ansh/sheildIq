@@ -37,11 +37,12 @@ export const CoverageAnalysisView: React.FC = () => {
     const { life, health, affordability } = strategy;
     const ratio = (have: number, need: number) => (need > 0 ? Math.min(100, Math.round((have / need) * 100)) : 100);
     const budgetFit = affordability.estimatedAnnualPremium > 0 ? ratio(affordability.premiumBudget, affordability.estimatedAnnualPremium) : 100;
-    const waterfallMax = Math.max(life.totalNeed, life.existing, 1);
+    const waterfallMax = Math.max(life.humanLifeValue, life.totalNeed, life.existing, life.savings, 1);
     const bars = [
         { label: 'Income', value: life.humanLifeValue, color: 'bg-blue-300 dark:bg-blue-800' },
         { label: 'Loans', value: life.liabilities, color: 'bg-amber-400/70' },
         { label: 'Education', value: life.educationCorpus, color: 'bg-amber-400/40' },
+        ...(life.savings > 0 ? [{ label: '− Savings', value: life.savings, color: 'bg-emerald-500/60' }] : []),
         { label: 'Total Need', value: life.totalNeed, color: 'bg-blue-100 dark:bg-blue-900/30 border-t-2 border-blue-600' },
         { label: 'Existing', value: life.existing, color: 'bg-blue-600' },
         { label: 'Gap', value: life.gap, color: 'bg-red-500/80' },
@@ -137,7 +138,7 @@ export const CoverageAnalysisView: React.FC = () => {
                             <div className="flex justify-between items-center gap-4 bg-muted/30 p-4 rounded-xl border border-border">
                                 <div className="space-y-1">
                                     <CardTitle className="text-xl font-black uppercase tracking-tight">Life Gap Breakdown</CardTitle>
-                                    <CardDescription className="text-xs font-bold uppercase tracking-widest">Income replacement, debts and education vs existing cover.</CardDescription>
+                                    <CardDescription className="text-xs font-bold uppercase tracking-widest">Income replacement, debts and education, less savings, vs existing cover.</CardDescription>
                                 </div>
                                 <Badge className="bg-primary text-primary-foreground font-black shrink-0">{life.gap > 0 ? `${formatINR(life.gap)} Gap` : 'No Gap'}</Badge>
                             </div>
@@ -158,6 +159,57 @@ export const CoverageAnalysisView: React.FC = () => {
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card className="p-8 space-y-4 border-border">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Illness & Accident Cover</h3>
+                            <p className="text-sm text-muted-foreground font-medium">Lump sums that replace income if you can't work. Term life pays only on death.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {[
+                                { label: 'Critical Illness', c: strategy.criticalIllness },
+                                { label: 'Accident & Disability', c: strategy.personalAccident },
+                            ].map(({ label, c }) => (
+                                <div key={label} className="p-4 bg-muted/30 border border-border rounded-xl space-y-2">
+                                    <div className="flex justify-between items-center gap-2">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+                                        <Badge className={`${c.gap > 0 ? 'bg-amber-500' : 'bg-emerald-500'} text-white border-none font-black`}>
+                                            {c.gap > 0 ? `${formatINR(c.gap)} Gap` : 'Covered'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm font-mono">Suggested {formatINR(c.recommended)} · You hold {formatINR(c.existing)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+
+                    {strategy.parentsHealth && (
+                        <Card className="p-8 space-y-4 border-border">
+                            <div className="flex justify-between items-center gap-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Parents' Health Cover</h3>
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                        A separate senior policy for {strategy.parentsHealth.count === 1 ? `your parent (age ${strategy.parentsHealth.eldestAge})` : `your ${strategy.parentsHealth.count} parents (eldest ${strategy.parentsHealth.eldestAge})`}.
+                                    </p>
+                                </div>
+                                <Badge className={`${strategy.parentsHealth.gap > 0 ? 'bg-amber-500' : 'bg-emerald-500'} text-white border-none font-black shrink-0`}>
+                                    {strategy.parentsHealth.gap > 0 ? `${formatINR(strategy.parentsHealth.gap)} Gap` : 'Covered'}
+                                </Badge>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {[
+                                    { label: 'Recommended', val: formatINR(strategy.parentsHealth.recommendedCover) },
+                                    { label: 'They Hold', val: formatINR(strategy.parentsHealth.existing) },
+                                    { label: 'Premium to Close Gap', val: `${formatINR(strategy.parentsHealth.estimatedAnnualPremium)}/yr` },
+                                ].map(stat => (
+                                    <div key={stat.label} className="p-4 bg-muted/30 border border-border rounded-xl">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                                        <p className="text-lg font-black font-mono">{stat.val}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
 
                     {/* Affordability */}
                     <Card className="p-8 space-y-8">
