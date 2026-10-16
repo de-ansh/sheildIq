@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,57 +9,102 @@ import {
     GraduationCap,
     Home,
     Users,
-    TrendingUp,
     CheckCircle2,
     Settings2,
     Download,
     ArrowRight
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi } from '@/lib/api';
+import { formatINR } from '@/lib/utils';
+
+const RETIREMENT_AGE = 60;
+const EDUCATION_PER_CHILD = 2500000;
+// Child ages aren't collected, so education spending is spread over the next 15 years.
+const EDUCATION_WINDOW_YEARS = 15;
+// Loan tenure isn't collected; outstanding loans are amortised over a typical 20-year home loan.
+const LOAN_TENURE_YEARS = 20;
+
+type Status = 'critical' | 'moderate' | 'normal' | 'surplus';
 
 export const DependencyModelingView: React.FC = () => {
     const { user, setCurrentScreen } = useApp();
 
-    const [inflationRate, setInflationRate] = useState<number[]>([3.2]);
-    const [interestRate, setInterestRate] = useState<number[]>([5.5]);
-    const [educationMultiplier, setEducationMultiplier] = useState<number[]>([1.4]);
+    const [inflationRate, setInflationRate] = useState<number[]>([6]);
+    const [interestRate, setInterestRate] = useState<number[]>([8.5]);
+    const [educationMultiplier, setEducationMultiplier] = useState<number[]>([1.0]);
+    const [incomeReplacement, setIncomeReplacement] = useState<number | null>(null);
 
-    const dependentsCount = user?.dependents ?? 2;
-    const baseIncome = user?.income || 145000;
+    const children = user.maritalStatus === 'Married' ? Math.max(0, user.dependents - 1) : user.dependents;
+    const workingYears = Math.max(1, RETIREMENT_AGE - user.age);
+    const loans = user.homeLoan + user.otherLoans;
+    const cover = user.existingLifeCover;
+    const startYear = new Date().getFullYear();
+
+    // Income replacement comes from the same engine as every other screen.
+    useEffect(() => {
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            if (user.income <= 0) {
+                setIncomeReplacement(0);
+                return;
+            }
+            const res = await ShieldIQApi.calculateHLV({ income: user.income, years: workingYears, inflation: inflationRate[0] });
+            if (!cancelled && res && res.success && res.data) setIncomeReplacement(res.data.recommendedCover);
+        }, 150);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [user.income, workingYears, inflationRate]);
 
     const projections = useMemo(() => {
         const inf = inflationRate[0] / 100;
-        const eduMult = educationMultiplier[0];
+        const r = interestRate[0] / 100;
+        const hlv = incomeReplacement ?? 0;
+        const educationToday = children * EDUCATION_PER_CHILD * educationMultiplier[0];
 
-        const baseEducation = dependentsCount * 425000 * eduMult;
-        const baseSpouseIncome = baseIncome * 18 * (1 + inf);
-        const baseMortgage = 1000000;
+        // Remaining loan principal after t years of a level EMI.
+        const loanBalance = (t: number) => {
+            if (loans <= 0 || t >= LOAN_TENURE_YEARS) return 0;
+            if (r === 0) return loans * (1 - t / LOAN_TENURE_YEARS);
+            const n = LOAN_TENURE_YEARS;
+            return loans * (Math.pow(1 + r, n) - Math.pow(1 + r, t)) / (Math.pow(1 + r, n) - 1);
+        };
+        // Education still to be paid in year t, in that year's money.
+        const educationRemaining = (t: number) =>
+            t >= EDUCATION_WINDOW_YEARS ? 0 : educationToday * (1 - t / EDUCATION_WINDOW_YEARS) * Math.pow(1 + inf, t);
+        // Income replacement still needed: shrinks linearly as working years run out.
+        const incomeRemaining = (t: number) => (t >= workingYears ? 0 : hlv * (1 - t / workingYears));
 
-        const totalLifetimeLiability = Math.round(baseEducation + baseSpouseIncome + baseMortgage);
-        const peakYear = 2036;
+        const span = Math.min(30, Math.max(workingYears, 10));
+        const step = Math.max(1, Math.round(span / 6));
+        const timeline = Array.from({ length: 7 }, (_, i) => {
+            const t = Math.min(span, i * step);
+            const obligation = incomeRemaining(t) + loanBalance(t) + educationRemaining(t);
+            const coverRatio = obligation > 0 ? cover / obligation : Infinity;
+            const status: Status = coverRatio < 0.5 ? 'critical' : coverRatio < 0.9 ? 'moderate' : coverRatio < 1.5 ? 'normal' : 'surplus';
+            return { t, year: startYear + t, age: user.age + t, obligation, gap: Math.max(0, obligation - cover), status };
+        });
+        const peak = timeline.reduce((max, m) => (m.gap > max.gap ? m : max), timeline[0]);
 
         return {
-            totalLifetimeLiability,
-            baseEducation: Math.round(baseEducation),
-            baseSpouseIncome: Math.round(baseSpouseIncome),
-            baseMortgage,
-            peakYear,
+            timeline,
+            peak,
+            totalLifetimeLiability: Math.round(timeline[0].obligation),
+            baseEducation: Math.round(educationToday),
+            baseIncome: Math.round(hlv),
+            baseLoans: loans,
+            maxObligation: Math.max(1, ...timeline.map(m => m.obligation)),
         };
-    }, [inflationRate, educationMultiplier, dependentsCount, baseIncome]);
+    }, [inflationRate, interestRate, educationMultiplier, incomeReplacement, children, loans, cover, workingYears, startYear, user.age]);
 
-    const formatCurrency = (val: number) => {
-        return `$${val.toLocaleString()}`;
-    };
-
-    const timelineMilestones = [
-        { year: 2026, label: 'Baseline Start', status: 'normal', pressure: 40 },
-        { year: 2031, label: 'Primary Schooling', status: 'moderate', pressure: 55 },
-        { year: 2036, label: 'College + Mortgage Peak', status: 'critical', pressure: 95 },
-        { year: 2041, label: 'Higher Ed Completion', status: 'moderate', pressure: 70 },
-        { year: 2046, label: 'Mortgage Payoff Node', status: 'low', pressure: 45 },
-        { year: 2051, label: 'Retirement Horizon', status: 'low', pressure: 30 },
-        { year: 2056, label: 'Surplus Phase', status: 'surplus', pressure: 15 },
-    ];
+    const coveredBadge = (amount: number) =>
+        amount === 0
+            ? { text: 'Not needed', cls: 'bg-muted text-muted-foreground' }
+            : cover >= projections.totalLifetimeLiability
+                ? { text: 'Covered by existing life cover', cls: 'bg-emerald-500/10 text-emerald-600' }
+                : { text: `Part of ${formatINR(projections.totalLifetimeLiability - cover)} total gap`, cls: 'bg-amber-500/10 text-amber-600' };
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
@@ -67,26 +112,24 @@ export const DependencyModelingView: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                        <span>ACTUARIAL MODEL: DEP-V2.4</span>
-                        <span>•</span>
                         <Badge variant="outline" className="text-[10px] font-mono border-blue-500/30 text-blue-600 bg-blue-50 dark:bg-blue-950/30">
-                            Monte Carlo Verified
+                            Based on your profile
                         </Badge>
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-foreground">Dependency Modeling</h1>
                     <p className="text-muted-foreground text-sm font-medium">
-                        Long-term liability projection and financial pressure timeline for {user?.name || 'Alex Vance'}'s dependents across a 30-year horizon.
+                        How {user.name}'s family obligations change from age {user.age} to retirement, against {formatINR(cover)} of existing life cover.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <Button
                         variant="outline"
-                        onClick={() => setCurrentScreen('dashboard')}
+                        onClick={() => window.print()}
                         className="font-bold border-border"
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export Audit
+                        Print Report
                     </Button>
                     <Button
                         onClick={() => setCurrentScreen('calculator')}
@@ -105,28 +148,29 @@ export const DependencyModelingView: React.FC = () => {
                         Total Lifetime Liability
                     </span>
                     <div className="text-3xl font-black font-mono tracking-tight text-foreground mt-2">
-                        {formatCurrency(projections.totalLifetimeLiability)}
+                        {incomeReplacement === null ? '—' : formatINR(projections.totalLifetimeLiability)}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[10px] text-emerald-600 font-bold flex items-center">
-                            <TrendingUp className="w-3 h-3 mr-0.5" /> +2.1%
-                        </span>
-                        <span className="text-[10px] text-muted-foreground font-medium">adjusted for {inflationRate[0]}% inflation</span>
-                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mt-2">
+                        If you died today: income replacement + loans + education
+                    </p>
                 </Card>
 
                 <Card className="border-border shadow-sm p-6">
                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                         Peak Pressure Year
                     </span>
-                    <div className="text-3xl font-black font-mono tracking-tight text-red-500 mt-2 flex items-baseline gap-2">
-                        {projections.peakYear}
-                        <Badge className="bg-red-500/10 text-red-500 border-none text-[9px] font-bold uppercase tracking-wider">
-                            CRITICAL CONVERGENCE
-                        </Badge>
+                    <div className={`text-3xl font-black font-mono tracking-tight mt-2 flex items-baseline gap-2 ${projections.peak.gap > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                        {projections.peak.gap > 0 ? projections.peak.year : 'None'}
+                        {projections.peak.gap > 0 && (
+                            <Badge className="bg-red-500/10 text-red-500 border-none text-[9px] font-bold uppercase tracking-wider">
+                                Age {projections.peak.age}
+                            </Badge>
+                        )}
                     </div>
                     <p className="text-[10px] text-muted-foreground font-medium mt-2">
-                        Dependent university matriculation coincides with terminal mortgage balance.
+                        {projections.peak.gap > 0
+                            ? `Largest shortfall: ${formatINR(projections.peak.gap)} more than your current cover.`
+                            : 'Your existing life cover exceeds obligations in every year.'}
                     </p>
                 </Card>
 
@@ -137,11 +181,7 @@ export const DependencyModelingView: React.FC = () => {
                     <div className="text-3xl font-black font-mono tracking-tight text-blue-600 mt-2">
                         {inflationRate[0].toFixed(1)}% <span className="text-sm font-sans font-bold text-muted-foreground">AVG</span>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2">
-                        <Badge variant="outline" className="text-[9px] font-mono">
-                            1,000 Monte Carlo Iterations
-                        </Badge>
-                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mt-2">Applied to salary growth and education costs</p>
                 </Card>
             </div>
 
@@ -151,7 +191,7 @@ export const DependencyModelingView: React.FC = () => {
                     <div>
                         <CardTitle className="text-lg font-black uppercase tracking-tight">Dependency Heatmap</CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">
-                            Intensity of cumulative financial pressure nodes across the 30-year lifecycle.
+                            Obligations your family would face each year vs your {formatINR(cover)} life cover.
                         </CardDescription>
                     </div>
 
@@ -176,8 +216,9 @@ export const DependencyModelingView: React.FC = () => {
                 {/* Visual Bar Timeline */}
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                        {timelineMilestones.map((ms) => {
-                            const isPeak = ms.year === projections.peakYear;
+                        {projections.timeline.map((ms) => {
+                            const isPeak = ms.gap > 0 && ms.year === projections.peak.year;
+                            const load = Math.round((ms.obligation / projections.maxObligation) * 100);
                             let barColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
                             if (ms.status === 'critical') barColor = 'bg-red-500/20 text-red-400 border-red-500/50';
                             else if (ms.status === 'moderate') barColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
@@ -196,7 +237,7 @@ export const DependencyModelingView: React.FC = () => {
                                             )}
                                         </div>
                                         <p className="text-[11px] font-bold leading-tight line-clamp-2">
-                                            {ms.label}
+                                            Age {ms.age} · {formatINR(ms.obligation)}
                                         </p>
                                     </div>
 
@@ -204,11 +245,11 @@ export const DependencyModelingView: React.FC = () => {
                                         <div className="w-full bg-black/20 h-2 rounded-full overflow-hidden">
                                             <div
                                                 className={`h-full ${ms.status === 'critical' ? 'bg-red-500' : ms.status === 'moderate' ? 'bg-amber-500' : ms.status === 'surplus' ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                                                style={{ width: `${ms.pressure}%` }}
+                                                style={{ width: `${load}%` }}
                                             />
                                         </div>
                                         <span className="text-[9px] font-mono font-bold block text-right">
-                                            {ms.pressure}% Load
+                                            {ms.gap > 0 ? `Gap ${formatINR(ms.gap)}` : 'Covered'}
                                         </span>
                                     </div>
                                 </div>
@@ -240,21 +281,21 @@ export const DependencyModelingView: React.FC = () => {
                                 <div className="space-y-1">
                                     <h4 className="font-bold text-base text-foreground">Higher Education Fund</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        Dependents: {dependentsCount} Children • Targeted University Window (2034–2042)
+                                        {children} {children === 1 ? 'child' : 'children'} • {formatINR(EDUCATION_PER_CHILD * educationMultiplier[0])} each at today's cost, over {EDUCATION_WINDOW_YEARS} years
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold">
-                                            Fully Funded via Term Rider
+                                        <Badge className={`${coveredBadge(projections.baseEducation).cls} border-none text-[10px] font-bold`}>
+                                            {coveredBadge(projections.baseEducation).text}
                                         </Badge>
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right font-mono">
                                 <span className="text-2xl font-black text-foreground">
-                                    {formatCurrency(projections.baseEducation)}
+                                    {formatINR(projections.baseEducation)}
                                 </span>
                                 <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
-                                    Escalated Target
+                                    Today's Cost
                                 </p>
                             </div>
                         </div>
@@ -269,18 +310,18 @@ export const DependencyModelingView: React.FC = () => {
                                 <div className="space-y-1">
                                     <h4 className="font-bold text-base text-foreground">Spouse Income Replacement</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        Horizon: 2026–2056 (30 Years) • 70% Net Household Continuity
+                                        {startYear}–{startYear + workingYears} ({workingYears} years) • 70% of income replaced
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className="bg-blue-500/10 text-blue-600 border-none text-[10px] font-bold">
-                                            Active Term Protection
+                                        <Badge className={`${coveredBadge(projections.baseIncome).cls} border-none text-[10px] font-bold`}>
+                                            {coveredBadge(projections.baseIncome).text}
                                         </Badge>
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right font-mono">
                                 <span className="text-2xl font-black text-foreground">
-                                    {formatCurrency(projections.baseSpouseIncome)}
+                                    {incomeReplacement === null ? '—' : formatINR(projections.baseIncome)}
                                 </span>
                                 <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
                                     Net Present Value
@@ -298,18 +339,18 @@ export const DependencyModelingView: React.FC = () => {
                                 <div className="space-y-1">
                                     <h4 className="font-bold text-base text-foreground">Debt & Mortgage Clearance</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        Primary Residence • Fixed Rate Term Loan Payoff Buffer
+                                        Home {formatINR(user.homeLoan)} + other {formatINR(user.otherLoans)} • amortised over {LOAN_TENURE_YEARS} years at {interestRate[0].toFixed(1)}%
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className="bg-amber-500/10 text-amber-600 border-none text-[10px] font-bold">
-                                            Decreasing Term Structure
+                                        <Badge className={`${coveredBadge(projections.baseLoans).cls} border-none text-[10px] font-bold`}>
+                                            {coveredBadge(projections.baseLoans).text}
                                         </Badge>
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right font-mono">
                                 <span className="text-2xl font-black text-foreground">
-                                    {formatCurrency(projections.baseMortgage)}
+                                    {formatINR(projections.baseLoans)}
                                 </span>
                                 <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
                                     Principal Outstanding
@@ -353,7 +394,7 @@ export const DependencyModelingView: React.FC = () => {
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-xs font-bold">
-                                <Label>Liability Interest Rate</Label>
+                                <Label>Loan Interest Rate</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{interestRate[0].toFixed(1)}%</span>
                             </div>
                             <Slider
@@ -393,10 +434,11 @@ export const DependencyModelingView: React.FC = () => {
                     <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 space-y-2">
                         <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
                             <CheckCircle2 className="w-4 h-4" />
-                            Model Dynamic Update Active
+                            Updates as you move the sliders
                         </div>
                         <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            Adjusting these sliders updates the timeline load curve and goal-based coverage targets in real time.
+                            Inflation drives salary growth and education costs; the interest rate sets how fast loans pay down. Child ages and loan tenure
+                            are not collected, so education is spread over {EDUCATION_WINDOW_YEARS} years and loans over {LOAN_TENURE_YEARS} years.
                         </p>
                     </div>
 
@@ -404,7 +446,7 @@ export const DependencyModelingView: React.FC = () => {
                         onClick={() => setCurrentScreen('calculator')}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 group"
                     >
-                        Apply to Life Insurance Calculator
+                        Open Life Insurance Calculator
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </Card>

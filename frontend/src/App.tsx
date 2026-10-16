@@ -16,9 +16,11 @@ import { SavedPlansView } from "./screens/SavedPlansView";
 import { SettingsView } from "./screens/SettingsView";
 import { ComplianceView } from "./screens/ComplianceView";
 import { SystemStatesView } from "./screens/SystemStatesView";
+import { PolicyAnalyzerView } from "./screens/PolicyAnalyzerView";
+import { AskShieldIQ } from "./components/AskShieldIQ";
 
 function MainContent() {
-  const { currentScreen } = useApp();
+  const { currentScreen, user, aiProvider } = useApp();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-blue-500 selection:text-white">
@@ -40,7 +42,11 @@ function MainContent() {
         {currentScreen === "settings" && <SettingsView />}
         {currentScreen === "compliance" && <ComplianceView />}
         {currentScreen === "systemstates" && <SystemStatesView />}
+        {currentScreen === "policyscan" && <PolicyAnalyzerView />}
       </main>
+
+      {/* Keyed by user so one account never sees another's conversation */}
+      {aiProvider && user.isLoggedIn && user.onboardingCompleted && currentScreen !== "onboarding" && <AskShieldIQ key={user.email} />}
     </div>
   );
 }

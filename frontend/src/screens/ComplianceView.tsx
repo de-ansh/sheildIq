@@ -26,7 +26,7 @@ export const ComplianceView: React.FC = () => {
         { id: 'intro', title: '01 Introduction & Scope', icon: FileText },
         { id: 'sourcing', title: '02 Data Sourcing & Formulae', icon: Database },
         { id: 'limits', title: '03 Accuracy Limits & Variance', icon: AlertTriangle },
-        { id: 'standards', title: '04 Statutory Regulatory Standards', icon: Shield },
+        { id: 'standards', title: '04 Data Protection & Security', icon: Shield },
         { id: 'liability', title: '05 Limitation of Liability', icon: Gavel },
         { id: 'law', title: '06 Governing Law & Jurisdiction', icon: Lock },
     ];
@@ -73,7 +73,7 @@ export const ComplianceView: React.FC = () => {
             <div className="p-4 rounded-2xl bg-muted/30 border border-border flex flex-wrap items-center justify-between gap-4 font-mono text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Official Verified Compliance Document</span>
+                    <span>Terms of Use & Methodology</span>
                 </div>
                 <div className="flex items-center gap-6">
                     <span className="flex items-center gap-1.5">
@@ -150,13 +150,12 @@ export const ComplianceView: React.FC = () => {
                         </div>
                         <h2 className="text-2xl font-black text-foreground tracking-tight">Actuarial Data Sourcing & Formulae</h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Our core computational engines synthesize verified actuarial sources, including accredited mortality tables, published IRDAI claim settlement data, and standard compounding inflation equations:
-                        </p>
+                            Calculations use transparent, rule-based formulas applied to the information you provide. They do not use mortality tables or medical underwriting. Premium figures are indicative market averages, and policy data in the catalog is illustrative.</p>
                         <ul className="space-y-2 text-xs text-muted-foreground font-mono bg-muted/30 p-4 rounded-xl border border-border">
-                            <li>• Net Real Discount Equation: RealRate = max(0.02, 0.08 - CPI_Inflation)</li>
-                            <li>• Human Life Value PV Integral: Sum(t=1..N) [ (Income * 0.70) * (1+inf)^t / (1+r)^t ]</li>
+                            <li>• Discounting: future income is discounted at a nominal 8% return on the insurance payout</li>
+                            <li>• Human Life Value: Σ(t=1..N) [ Income × 0.70 × (1+g)^t / 1.08^t ], N = years to age 60, g = salary growth</li>
                             <li>• Medical Inflation Vector: Baseline CPI + 300bps medical escalation spread</li>
-                            <li>• Claim Settlement Benchmark: Filtered by IRDAI Annual Handbook Published Statistics</li>
+                            <li>• Life need = Human Life Value + outstanding loans + ₹25L education per child; health need by city tier and family size</li>
                         </ul>
                     </Card>
 
@@ -167,7 +166,7 @@ export const ComplianceView: React.FC = () => {
                         </div>
                         <h2 className="text-2xl font-black text-foreground tracking-tight">Accuracy Limits & Statistical Deviation</h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            While simulations utilize validated actuarial parameters, economic variables (market volatility, unexpected legislative changes, individual health underwriting classifications) can result in variances.
+                            Results depend on the assumptions shown on each screen; economic variables (market volatility, unexpected legislative changes, individual health underwriting classifications) can result in variances.
                         </p>
                         <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 space-y-1 text-xs">
                             <span className="font-bold text-foreground">Underwriting Caveat:</span>
@@ -182,22 +181,22 @@ export const ComplianceView: React.FC = () => {
                         <div className="flex items-center gap-2 text-blue-600 font-mono text-xs font-bold">
                             <span>SECTION 04</span>
                         </div>
-                        <h2 className="text-2xl font-black text-foreground tracking-tight">Statutory Regulatory Standards</h2>
+                        <h2 className="text-2xl font-black text-foreground tracking-tight">Data Protection & Security</h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            ShieldIQ enforces strict technical adherence to global data privacy and consumer protection directives:
+                            How ShieldIQ protects your data. ShieldIQ does not currently hold any third-party security certification.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                             <div className="p-4 rounded-xl border border-border bg-card text-center space-y-1">
-                                <span className="font-black text-foreground text-sm">GDPR / CCPA</span>
-                                <p className="text-[10px] text-muted-foreground">Complete zero-knowledge telemetry encryption</p>
+                                <span className="font-black text-foreground text-sm">Your Data</span>
+                                <p className="text-[10px] text-muted-foreground">Used only to compute your strategy and never sold.</p>
                             </div>
                             <div className="p-4 rounded-xl border border-border bg-card text-center space-y-1">
-                                <span className="font-black text-foreground text-sm">IRDAI Guidelines</span>
-                                <p className="text-[10px] text-muted-foreground">Clause transparency & CSR reporting parity</p>
+                                <span className="font-black text-foreground text-sm">AI Strategy</span>
+                                <p className="text-[10px] text-muted-foreground">Only anonymised figures are sent to the AI provider, with provider-side storage disabled.</p>
                             </div>
                             <div className="p-4 rounded-xl border border-border bg-card text-center space-y-1">
-                                <span className="font-black text-foreground text-sm">SOC 2 Type II</span>
-                                <p className="text-[10px] text-muted-foreground">End-to-end encrypted session persistence</p>
+                                <span className="font-black text-foreground text-sm">Account Security</span>
+                                <p className="text-[10px] text-muted-foreground">Passwords hashed with scrypt; sessions in httpOnly, same-site cookies.</p>
                             </div>
                         </div>
                     </Card>
@@ -234,7 +233,7 @@ export const ComplianceView: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono font-bold text-muted-foreground">
                                     Status: {hasAcknowledged ? (
-                                        <span className="text-emerald-500 font-black">Acknowledged & Verified</span>
+                                        <span className="text-emerald-500 font-black">Acknowledged</span>
                                     ) : (
                                         <span className="text-amber-500 font-black">Pending Acknowledgement</span>
                                     )}

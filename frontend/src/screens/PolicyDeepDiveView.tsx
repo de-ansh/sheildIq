@@ -11,50 +11,20 @@ import {
     Zap
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { formatINR } from '@/lib/utils';
 
 export const PolicyDeepDiveView: React.FC = () => {
     const { policies, selectedPolicyId, setSelectedPolicyId, setCurrentScreen } = useApp();
 
-    const activePolicy = policies.find(p => p.id === selectedPolicyId) || policies[0] || {
-        id: 'POL-8821',
-        title: 'OmniShield Premium Life',
-        provider: 'Prudential Global',
-        category: 'Life',
-        coverageAmount: 1500000,
-        monthlyPremium: 145,
-        claimRatio: 99.2,
-        clarityScore: 94,
-        status: 'Active',
-        features: ['Terminal Illness Payout', 'Accidental Death Benefit 2x', 'Waiver of Premium Rider'],
-        exclusions: ['Self-inflicted injuries within 12 months', 'Hazardous aviation sports without rider']
-    };
+    const activePolicy = policies.find(p => p.id === selectedPolicyId) || policies[0];
+    if (!activePolicy) {
+        return <div className="max-w-6xl mx-auto px-6 py-24 text-center text-muted-foreground">Loading the plan catalog…</div>;
+    }
+    const categories = [...new Set(policies.map(p => p.category))];
+    const inclusions = activePolicy.features ?? [];
+    const exclusions = activePolicy.exclusions ?? [];
 
-    const inclusions = activePolicy.features || [
-        'Death Benefit (Accelerated)',
-        'Terminal Illness Waiver',
-        'Permanent Disability Support',
-        'Accidental Death (+₹50L)'
-    ];
-
-    const exclusions = activePolicy.exclusions || [
-        'Self-injury within 12 months',
-        'Hazardous sporting accidents',
-        'Pre-existing hidden conditions',
-        'Military operations (War)'
-    ];
-
-    const formatCurrency = (amount: number) => {
-        if (amount >= 10000000) {
-            return `₹ ${(amount / 10000000).toFixed(2)} Cr`;
-        }
-        if (amount >= 1000000) {
-            return `$${(amount / 1000000).toFixed(2)}M`;
-        }
-        if (amount >= 100000) {
-            return `₹ ${(amount / 100000).toFixed(1)} L`;
-        }
-        return `$${amount.toLocaleString()}`;
-    };
+    const formatCurrency = formatINR;
 
     const annualCost = activePolicy.monthlyPremium * 12;
 
@@ -62,10 +32,21 @@ export const PolicyDeepDiveView: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 bg-background text-foreground font-sans">
             {/* Policy Switcher Bar */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mr-2 shrink-0">
-                    Switch Policy:
-                </span>
-                {policies.map(p => {
+                {categories.map(category => (
+                    <button
+                        key={category}
+                        onClick={() => setSelectedPolicyId(policies.find(p => p.category === category)!.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0 border ${activePolicy.category === category
+                            ? 'bg-foreground text-background border-foreground'
+                            : 'bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    >
+                        {category}
+                    </button>
+                ))}
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 -mt-4">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mr-2 shrink-0">Plan:</span>
+                {policies.filter(p => p.category === activePolicy.category).map(p => {
                     const isSelected = p.id === activePolicy.id;
                     return (
                         <button
@@ -87,16 +68,22 @@ export const PolicyDeepDiveView: React.FC = () => {
                 <header className="space-y-2">
                     <div className="flex items-center gap-2">
                         <Badge variant="outline" className="border-blue-200 dark:border-blue-800 text-blue-600 bg-blue-50 dark:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]">
-                            {activePolicy.status} Policy Analysis
+                            {activePolicy.category} · Sample Plan
                         </Badge>
                         <Badge className="bg-emerald-500 text-white border-none font-bold text-[10px] tracking-widest uppercase">
-                            Clarity Score {activePolicy.clarityScore || 94}/100
+                            Clarity Score {activePolicy.clarityScore ?? '—'}/100
                         </Badge>
                     </div>
                     <h1 className="text-4xl font-black tracking-tight">{activePolicy.title}</h1>
                     <p className="text-muted-foreground font-medium">
                         Policy ID: {activePolicy.id} • {activePolicy.provider} • {activePolicy.category} Protection
                     </p>
+                    {activePolicy.structure && <p className="text-sm text-foreground font-medium">{activePolicy.structure}</p>}
+                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                        {activePolicy.bestFor && <span><span className="font-bold text-foreground">Best for:</span> {activePolicy.bestFor}</span>}
+                        {activePolicy.waitingPeriod && <span><span className="font-bold text-foreground">Waiting period:</span> {activePolicy.waitingPeriod}</span>}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Sample plan; premium quoted for a reference 35-year-old. See Compare for your personal quotes.</p>
                 </header>
                 <div className="flex gap-3">
                     <Button
@@ -130,7 +117,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                         <Card className="shadow-sm border-border">
                             <CardContent className="p-6">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Premium / Yr</p>
-                                <p className="text-xl font-black text-foreground">${annualCost.toLocaleString()}</p>
+                                <p className="text-xl font-black text-foreground">{formatINR(annualCost)}</p>
                             </CardContent>
                         </Card>
 
@@ -202,16 +189,16 @@ export const PolicyDeepDiveView: React.FC = () => {
                         </CardHeader>
                         <CardContent className="p-0 space-y-6">
                             <div className="flex items-center gap-6">
-                                <div className="text-5xl font-black font-mono">{activePolicy.clarityScore || 94}</div>
+                                <div className="text-5xl font-black font-mono">{activePolicy.clarityScore ?? '—'}</div>
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold text-primary-foreground/70 uppercase">Tier: Institutional</p>
+                                    <p className="text-xs font-bold text-primary-foreground/70 uppercase">Tier: {(activePolicy.clarityScore ?? 0) >= 90 ? 'High clarity' : (activePolicy.clarityScore ?? 0) >= 80 ? 'Good clarity' : 'Read carefully'}</p>
                                     <div className="flex gap-1">
                                         {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-3 h-1 bg-blue-600 rounded-full" />)}
                                     </div>
                                 </div>
                             </div>
                             <p className="text-xs text-primary-foreground/70 leading-relaxed font-mono">
-                                Validated against accredited claim settlement ratio guidelines ({activePolicy.claimRatio || 99.2}%).
+                                Clarity reflects how plainly the wording states benefits and exclusions. Claim settlement ratio: {activePolicy.claimRatio ?? '—'}%.
                             </p>
                             <Button
                                 onClick={() => setCurrentScreen('comparison')}
@@ -223,18 +210,18 @@ export const PolicyDeepDiveView: React.FC = () => {
                     </Card>
 
                     <Card className="p-8 space-y-6 border-border shadow-sm">
-                        <h4 className="text-sm font-bold">Actuarial Validation System</h4>
+                        <h4 className="text-sm font-bold">Before You Buy</h4>
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-muted border border-border flex items-center justify-center">
                                 <CheckCircle2 className="w-6 h-6 text-blue-600" />
                             </div>
                             <div>
-                                <h5 className="text-sm font-bold">ShieldIQ Protocol</h5>
-                                <p className="text-xs text-muted-foreground">Automated Clause Parser</p>
+                                <h5 className="text-sm font-bold">Check the policy wording</h5>
+                                <p className="text-xs text-muted-foreground">{exclusions.length} exclusions to review above</p>
                             </div>
                         </div>
                         <div className="space-y-3 pt-2">
-                            <p className="text-xs text-muted-foreground italic">"No critical underwriting ambiguities detected in the active policy schedule."</p>
+                            <p className="text-xs text-muted-foreground italic">Confirm waiting periods, sub-limits and exclusions in the insurer's policy document; this summary is not the contract.</p>
                             <Button
                                 variant="ghost"
                                 onClick={() => setCurrentScreen('affordability')}

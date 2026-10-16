@@ -21,3 +21,6 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: () => false,
   }),
 });
+
+// jsdom has no scrollIntoView; chat auto-scroll calls it.
+Element.prototype.scrollIntoView = () => {};

@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {  } from "@/components/ui/badge";
 import {
     Loader2,
     AlertCircle,
     SearchX,
     Settings2,
-    ShieldAlert
+    ShieldAlert,
+    CheckCircle2
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import { ShieldIQApi } from '@/lib/api';
+
+type StateType = "live" | "loading" | "error" | "empty" | "maintenance";
 
 export interface SystemStateProps {
-    type?: "loading" | "error" | "empty" | "maintenance";
+    type?: Exclude<StateType, "live">;
     title?: string;
     description?: string;
     onAction?: () => void;
@@ -25,24 +28,41 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
     onAction
 }) => {
     const { setCurrentScreen } = useApp();
-    const [selectedType, setSelectedType] = useState<"loading" | "error" | "empty" | "maintenance">(
-        propType || "maintenance"
-    );
+    // Standalone, this page reports the backend's real health; the other states are design previews.
+    const [selectedType, setSelectedType] = useState<StateType>(propType || "loading");
+    const [health, setHealth] = useState<{ status: string; version?: string; timestamp?: string } | null>(null);
+
+    useEffect(() => {
+        if (propType) return;
+        ShieldIQApi.getHealth().then(res => {
+            setHealth(res);
+            setSelectedType(res?.status === 'UP' ? 'live' : 'error');
+        });
+    }, [propType]);
 
     const activeType = propType || selectedType;
 
     const states = {
+        live: {
+            icon: CheckCircle2,
+            title: title || "All Systems Operational",
+            description: description || `ShieldIQ API ${health?.version ?? ''} is up. Last checked ${health?.timestamp ? new Date(health.timestamp).toLocaleString('en-IN') : 'just now'}.`,
+            actionLabel: "Back to Dashboard",
+            iconColor: "text-emerald-500"
+        },
         loading: {
             icon: Loader2,
             title: title || "Processing Actuarial Data",
-            description: description || "Initializing neural risk simulation models. This usually takes a few seconds.",
+            description: description || "Running your calculations. This usually takes a few seconds.",
             actionLabel: "Cancel Operation",
             iconColor: "text-blue-600 animate-spin"
         },
         error: {
             icon: AlertCircle,
-            title: title || "Model Calculation Failure",
-            description: description || "We encountered an inconsistency in the provided data logs. Our team has been notified.",
+            title: title || (health && health.status !== 'UP' ? "Service Unreachable" : "Model Calculation Failure"),
+            description: description || (health && health.status !== 'UP'
+                ? "The ShieldIQ server isn't responding. Check your connection and try again in a moment."
+                : "Something went wrong while calculating. Please try again."),
             actionLabel: "Try Again",
             iconColor: "text-red-500"
         },
@@ -56,7 +76,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
         maintenance: {
             icon: Settings2,
             title: title || "Periodic Model Calibration",
-            description: description || "The ShieldIQ engine is currently undergoing regulatory compliance updates. Expected uptime: 2 hours.",
+            description: description || "ShieldIQ is being updated and will be back shortly.",
             actionLabel: "Check Health Status",
             iconColor: "text-amber-500"
         }
@@ -80,7 +100,8 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
             {/* Interactive State Switcher (when rendered standalone) */}
             {!propType && (
                 <div className="mb-8 p-1.5 rounded-2xl bg-muted border border-border flex items-center gap-1 shadow-sm">
-                    {(['loading', 'error', 'empty', 'maintenance'] as const).map(t => (
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground self-center mr-1">Preview states:</span>
+                    {(['live', 'loading', 'error', 'empty', 'maintenance'] as const).map(t => (
                         <button
                             key={t}
                             onClick={() => setSelectedType(t)}

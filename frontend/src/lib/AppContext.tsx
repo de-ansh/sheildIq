@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ShieldIQApi } from './api';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { ShieldIQApi, type AiStrategy, type CityTier, type Strategy } from './api';
 
 export type ScreenId =
   | 'login'
@@ -16,7 +16,8 @@ export type ScreenId =
   | 'savedplans'
   | 'settings'
   | 'compliance'
-  | 'systemstates';
+  | 'systemstates'
+  | 'policyscan';
 
 export interface UserProfile {
   name: string;
@@ -24,23 +25,38 @@ export interface UserProfile {
   age: number;
   income: number;
   dependents: number;
-  city?: string;
-  occupation?: string;
+  maritalStatus: 'Single' | 'Married';
+  city: string;
+  cityTier: CityTier;
+  occupation: string;
+  homeLoan: number;
+  otherLoans: number;
+  monthlyExpenses: number;
+  existingLifeCover: number;
+  existingHealthCover: number;
+  employerBenefits: string[];
+  lifestyleRisks: string[];
+  onboardingCompleted: boolean;
   isLoggedIn: boolean;
 }
+
+export type ProfileUpdate = Partial<Omit<UserProfile, 'email' | 'isLoggedIn' | 'onboardingCompleted'>>;
 
 export interface Policy {
   id: string;
   title: string;
   provider: string;
-  category: 'Life' | 'Health' | 'Property' | 'Critical Illness';
+  category: 'Life' | 'Health' | 'Critical Illness' | 'Personal Accident';
   coverageAmount: number;
   monthlyPremium: number;
-  status: 'Active' | 'Under Review' | 'Recommended';
+  status: 'Available';
   claimRatio?: number;
   clarityScore?: number;
   features?: string[];
   exclusions?: string[];
+  structure?: string;
+  waitingPeriod?: string;
+  bestFor?: string;
 }
 
 interface AppContextType {
@@ -56,81 +72,100 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<string | null>;
   register: (name: string, email: string, password: string) => Promise<string | null>;
   logout: () => void;
-  submitOnboarding: (data: Record<string, unknown>) => Promise<boolean>;
-  updateUserProfile: (data: Partial<UserProfile>) => void;
+  /** Resolves to an error message, or null on success. */
+  submitOnboarding: (data: ProfileUpdate) => Promise<string | null>;
+  /** Resolves to an error message, or null on success. */
+  updateUserProfile: (data: ProfileUpdate) => Promise<string | null>;
+  /** Computed from the stored profile by the backend; null until loaded or before onboarding. */
+  strategy: Strategy | null;
+  aiStrategy: AiStrategy | null;
+  aiProvider: string | null;
+  isGeneratingAi: boolean;
+  aiError: string | null;
+  generateAiStrategy: (refresh?: boolean) => Promise<void>;
 }
 
+// Mirrors the seeded demo account; replaced by the real profile as soon as a session loads.
 const defaultUser: UserProfile = {
   name: 'Alex Vance',
   email: 'alex.vance@shieldiq.internal',
   age: 34,
-  income: 145000,
+  income: 2400000,
   dependents: 2,
-  city: 'San Francisco, CA',
+  maritalStatus: 'Married',
+  city: 'Bengaluru, KA',
+  cityTier: 'Tier 1 (Metro)',
   occupation: 'Senior Systems Architect',
-  isLoggedIn: true,
+  homeLoan: 4500000,
+  otherLoans: 500000,
+  monthlyExpenses: 85000,
+  existingLifeCover: 15000000,
+  existingHealthCover: 500000,
+  employerBenefits: ['Group Term Life', 'OPD Benefits'],
+  lifestyleRisks: [],
+  onboardingCompleted: true,
+  isLoggedIn: false,
 };
 
-const initialPolicies: Policy[] = [
-  {
-    id: 'POL-8821',
-    title: 'OmniShield Premium Life',
-    provider: 'Prudential Global',
-    category: 'Life',
-    coverageAmount: 1500000,
-    monthlyPremium: 145,
-    claimRatio: 99.2,
-    clarityScore: 94,
-    status: 'Active',
-    features: ['Terminal Illness Payout', 'Accidental Death Benefit 2x', 'Waiver of Premium Rider'],
-    exclusions: ['Self-inflicted injuries within 12 months', 'Hazardous aviation sports without rider'],
-  },
-  {
-    id: 'POL-4410',
-    title: 'Executive Health Safeguard',
-    provider: 'Bupa International',
-    category: 'Health',
-    coverageAmount: 500000,
-    monthlyPremium: 210,
-    claimRatio: 97.8,
-    clarityScore: 88,
-    status: 'Active',
-    features: ['Zero Room Rent Capping', 'Global Emergency Care', '100% Restore Benefit'],
-    exclusions: ['Cosmetic surgeries', 'Pre-existing conditions waiting window (24 months)'],
-  },
-  {
-    id: 'POL-9012',
-    title: 'Disability Income Continuity',
-    provider: 'MetLife Actuarial',
-    category: 'Critical Illness',
-    coverageAmount: 750000,
-    monthlyPremium: 95,
-    claimRatio: 98.4,
-    clarityScore: 91,
-    status: 'Recommended',
-    features: ['Monthly Income Replacement', 'Inflation Adjustment Indexing', 'Partial Disability Coverage'],
-    exclusions: ['Pre-existing mental health exclusions', 'Undeclared hazardous occupations'],
-  },
-];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState<ScreenId>('login');
   const [user, setUser] = useState<UserProfile>(defaultUser);
-  const [policies, setPolicies] = useState<Policy[]>(initialPolicies);
+  const [policies, setPolicies] = useState<Policy[]>([]);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>('POL-8821');
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  // Tagged with the owner's email so a previous user's strategy is never shown after switching accounts.
+  const [strategyState, setStrategyState] = useState<{ email: string; data: Strategy; ai: AiStrategy | null } | null>(null);
+  const isOwnStrategy = strategyState !== null && strategyState.email === user.email && user.isLoggedIn && user.onboardingCompleted;
+  const strategy = isOwnStrategy ? strategyState.data : null;
+  const aiStrategy = isOwnStrategy ? strategyState.ai : null;
+  const [aiProvider, setAiProvider] = useState<string | null>(null);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const homeScreen = (u: UserProfile): ScreenId => (u.onboardingCompleted ? 'dashboard' : 'onboarding');
+
+  // The strategy depends on every profile field, so it is reloaded whenever the profile changes.
+  useEffect(() => {
+    if (!user.isLoggedIn || !user.onboardingCompleted) return;
+    let cancelled = false;
+    ShieldIQApi.getStrategy().then(res => {
+      if (cancelled || !res || !res.success || !res.data) return;
+      setStrategyState({ email: user.email, data: res.data, ai: res.ai ?? null });
+      setAiProvider(res.aiProvider ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const generateAiStrategy = useCallback(async (refresh = false) => {
+    setIsGeneratingAi(true);
+    setAiError(null);
+    try {
+      const res = await ShieldIQApi.generateAiStrategy(refresh);
+      if (res && res.success && res.ai) {
+        const ai = res.ai;
+        setStrategyState(prev => (prev ? { ...prev, ai } : prev));
+      }
+      else setAiError(res?.error || 'Cannot reach the ShieldIQ server. Please try again.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  }, []);
 
   useEffect(() => {
     ShieldIQApi.getHealth().then(res => {
       if (res && res.status === 'UP') {
         setIsBackendConnected(true);
+        setAiProvider(res.ai ?? null);
         // Restores the session if the httpOnly cookie is still valid; a 401 just leaves us on login.
         ShieldIQApi.getUserProfile().then(userRes => {
           if (userRes && userRes.success && userRes.user) {
             setUser({ ...userRes.user, isLoggedIn: true });
-            setCurrentScreen(screen => (screen === 'login' ? 'dashboard' : screen));
+            setCurrentScreen(screen => (screen === 'login' ? homeScreen(userRes.user) : screen));
           }
         });
         ShieldIQApi.getPolicies().then(policyRes => {
@@ -142,19 +177,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
   }, []);
 
-  const startSession = (res: { success?: boolean; user?: UserProfile; error?: string } | null, next: ScreenId) => {
+  const startSession = (res: { success?: boolean; user?: UserProfile; error?: string } | null) => {
     if (!res) return 'Cannot reach the ShieldIQ server. Please try again.';
     if (!res.success || !res.user) return res.error || 'Authentication failed. Please check credentials.';
     setUser({ ...res.user, isLoggedIn: true });
-    setCurrentScreen(next);
+    setCurrentScreen(homeScreen(res.user));
     return null;
   };
 
-  const login = async (email: string, password: string) =>
-    startSession(await ShieldIQApi.login(email, password), 'dashboard');
+  const login = async (email: string, password: string) => startSession(await ShieldIQApi.login(email, password));
 
   const register = async (name: string, email: string, password: string) =>
-    startSession(await ShieldIQApi.register(email, password, name), 'onboarding');
+    startSession(await ShieldIQApi.register(email, password, name));
 
   const logout = () => {
     ShieldIQApi.logout();
@@ -162,49 +196,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setCurrentScreen('login');
   };
 
-  const submitOnboarding = async (data: Record<string, unknown>): Promise<boolean> => {
-    try {
-      const res = await ShieldIQApi.submitOnboarding(data);
-      if (res && res.success && res.user) {
-        setUser(prev => ({
-          ...prev,
-          ...res.user,
-          isLoggedIn: true,
-        }));
-      } else {
-        setUser(prev => ({
-          ...prev,
-          age: typeof data.age === 'number' ? data.age : prev.age,
-          income: typeof data.income === 'number' ? data.income : prev.income,
-          dependents: typeof data.dependents === 'number' ? data.dependents : prev.dependents,
-          city: typeof data.city === 'string' ? data.city : prev.city,
-          occupation: typeof data.occupation === 'string' ? data.occupation : prev.occupation,
-        }));
-      }
-      setCurrentScreen('dashboard');
-      return true;
-    } catch {
-      setUser(prev => ({
-        ...prev,
-        age: typeof data.age === 'number' ? data.age : prev.age,
-        income: typeof data.income === 'number' ? data.income : prev.income,
-        dependents: typeof data.dependents === 'number' ? data.dependents : prev.dependents,
-        city: typeof data.city === 'string' ? data.city : prev.city,
-        occupation: typeof data.occupation === 'string' ? data.occupation : prev.occupation,
-      }));
-      setCurrentScreen('dashboard');
-      return true;
-    }
+  const saveProfile = async (res: { success?: boolean; user?: UserProfile; error?: string } | null) => {
+    if (!res) return 'Cannot reach the ShieldIQ server. Please try again.';
+    if (!res.success || !res.user) return res.error || 'Some details were invalid. Please check the form.';
+    setUser({ ...res.user, isLoggedIn: true });
+    return null;
   };
 
-  const updateUserProfile = (data: Partial<UserProfile>) => {
-    setUser(prev => ({ ...prev, ...data }));
-    // email is the login identity and not editable via the profile endpoint
-    const { name, age, income, dependents, city, occupation } = data;
-    ShieldIQApi.updateUserProfile({ name, age, income, dependents, city, occupation }).then(res => {
-      if (res && res.success && res.user) setUser({ ...res.user, isLoggedIn: true });
-    });
+  const submitOnboarding = async (data: ProfileUpdate) => {
+    const error = await saveProfile(await ShieldIQApi.submitOnboarding(data));
+    if (!error) setCurrentScreen('dashboard');
+    return error;
   };
+
+  const updateUserProfile = async (data: ProfileUpdate) => saveProfile(await ShieldIQApi.updateUserProfile(data));
 
   return (
     <AppContext.Provider
@@ -222,6 +227,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         logout,
         submitOnboarding,
         updateUserProfile,
+        strategy,
+        aiStrategy,
+        aiProvider,
+        isGeneratingAi,
+        aiError,
+        generateAiStrategy,
       }}
     >
       {children}

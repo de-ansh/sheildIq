@@ -24,12 +24,12 @@ describe('LifeCalculatorView Component', () => {
     expect(screen.getByText(/Years to Retirement/i)).toBeInTheDocument();
   });
 
-  it('renders the connect with advisor call to action', () => {
+  it('renders the save as plan call to action', () => {
     render(
       <AppContextProvider>
         <LifeCalculatorView />
       </AppContextProvider>
     );
-    expect(screen.getByText(/Connect with Advisor/i)).toBeInTheDocument();
+    expect(screen.getByText(/Save as Plan/i)).toBeInTheDocument();
   });
 });

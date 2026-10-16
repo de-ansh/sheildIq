@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { getDatabase, hashPassword, generateSalt } from '../db/database.js';
+import type { CityTier, StrategyProfile } from './actuarial.service.js';
 
 export interface UserProfileData {
   id: string;
@@ -11,6 +12,15 @@ export interface UserProfileData {
   maritalStatus: 'Single' | 'Married';
   occupation: string;
   city: string;
+  cityTier: CityTier;
+  homeLoan: number;
+  otherLoans: number;
+  monthlyExpenses: number;
+  existingLifeCover: number;
+  existingHealthCover: number;
+  employerBenefits: string[];
+  lifestyleRisks: string[];
+  onboardingCompleted: boolean;
   isLoggedIn: boolean;
 }
 
@@ -26,7 +36,12 @@ export interface SavedPlanData {
 }
 
 export type ProfileUpdate = Partial<
-  Pick<UserProfileData, 'name' | 'age' | 'income' | 'dependents' | 'maritalStatus' | 'occupation' | 'city'>
+  Pick<
+    UserProfileData,
+    | 'name' | 'age' | 'income' | 'dependents' | 'maritalStatus' | 'occupation' | 'city' | 'cityTier'
+    | 'homeLoan' | 'otherLoans' | 'monthlyExpenses' | 'existingLifeCover' | 'existingHealthCover'
+    | 'employerBenefits' | 'lifestyleRisks' | 'onboardingCompleted'
+  >
 >;
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -41,6 +56,24 @@ const PROFILE_COLUMNS: Record<keyof ProfileUpdate, string> = {
   maritalStatus: 'marital_status',
   occupation: 'occupation',
   city: 'city',
+  cityTier: 'city_tier',
+  homeLoan: 'home_loan',
+  otherLoans: 'other_loans',
+  monthlyExpenses: 'monthly_expenses',
+  existingLifeCover: 'existing_life_cover',
+  existingHealthCover: 'existing_health_cover',
+  employerBenefits: 'employer_benefits',
+  lifestyleRisks: 'lifestyle_risks',
+  onboardingCompleted: 'onboarding_completed',
+};
+
+const parseList = (value: unknown): string[] => {
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
 };
 
 type UserRow = Record<string, string | number>;
@@ -56,6 +89,15 @@ function toProfile(row: UserRow): UserProfileData {
     maritalStatus: row.marital_status as UserProfileData['maritalStatus'],
     occupation: String(row.occupation),
     city: String(row.city),
+    cityTier: row.city_tier as CityTier,
+    homeLoan: Number(row.home_loan),
+    otherLoans: Number(row.other_loans),
+    monthlyExpenses: Number(row.monthly_expenses),
+    existingLifeCover: Number(row.existing_life_cover),
+    existingHealthCover: Number(row.existing_health_cover),
+    employerBenefits: parseList(row.employer_benefits),
+    lifestyleRisks: parseList(row.lifestyle_risks),
+    onboardingCompleted: Number(row.onboarding_completed) === 1,
     isLoggedIn: true,
   };
 }
@@ -112,8 +154,11 @@ export class UserService {
     const id = `USR-${crypto.randomUUID()}`;
     const salt = generateSalt();
     const now = new Date().toISOString();
+    // Explicit blank profile: the column defaults describe the demo persona, not a new user.
     db.prepare(
-      'INSERT INTO users (id, email, name, password_hash, salt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      `INSERT INTO users (id, email, name, password_hash, salt, created_at, updated_at,
+        age, income, dependents, marital_status, occupation, city, onboarding_completed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 30, 0, 0, 'Single', '', '', 0)`
     ).run(id, normalized, name, hashPassword(password, salt), salt, now, now);
     audit(id, 'REGISTER');
 
@@ -224,16 +269,39 @@ export class UserService {
   static updateUserProfile(userId: string, data: ProfileUpdate): UserProfileData | null {
     const entries = Object.entries(data).filter(
       ([key, value]) => value !== undefined && key in PROFILE_COLUMNS
-    ) as [keyof ProfileUpdate, string | number][];
+    ) as [keyof ProfileUpdate, unknown][];
 
     if (entries.length > 0) {
       const sets = entries.map(([key]) => `${PROFILE_COLUMNS[key]} = ?`).join(', ');
+      const toColumnValue = (value: unknown) =>
+        Array.isArray(value) ? JSON.stringify(value) : typeof value === 'boolean' ? Number(value) : (value as string | number);
       getDatabase()
         .prepare(`UPDATE users SET ${sets}, updated_at = ? WHERE id = ?`)
-        .run(...entries.map(([, value]) => value), new Date().toISOString(), userId);
+        .run(...entries.map(([, value]) => toColumnValue(value)), new Date().toISOString(), userId);
       audit(userId, 'PROFILE_UPDATE', entries.map(([key]) => key).join(','));
     }
     return UserService.getUserProfile(userId);
+  }
+
+  /** The subset of the profile the strategy engine uses; deliberately excludes name, email and free-text city. */
+  static getStrategyProfile(userId: string): StrategyProfile | null {
+    const u = UserService.getUserProfile(userId);
+    if (!u) return null;
+    return {
+      age: u.age,
+      income: u.income,
+      dependents: u.dependents,
+      maritalStatus: u.maritalStatus,
+      occupation: u.occupation,
+      cityTier: u.cityTier,
+      homeLoan: u.homeLoan,
+      otherLoans: u.otherLoans,
+      monthlyExpenses: u.monthlyExpenses,
+      existingLifeCover: u.existingLifeCover,
+      existingHealthCover: u.existingHealthCover,
+      employerBenefits: u.employerBenefits,
+      lifestyleRisks: u.lifestyleRisks,
+    };
   }
 
   static listPlans(userId: string): SavedPlanData[] {

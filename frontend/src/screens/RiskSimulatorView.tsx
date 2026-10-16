@@ -11,126 +11,79 @@ import {
     Activity,
     BrainCircuit,
     Zap,
-    CheckCircle2,
     TrendingDown,
     Loader2
 } from "lucide-react";
 import { ShieldIQApi, RiskSimResult } from '@/lib/api';
 import { useApp } from '@/lib/AppContext';
+import { formatINR } from '@/lib/utils';
+import { ExplainResult } from '@/components/ExplainResult';
+
+type Scenario = "death" | "illness" | "disability";
+const LIFESTYLE_SCALES: Record<string, number> = {
+    'Maintain Current Standard': 1,
+    'Optimized (-10%)': 0.9,
+    'Basic Survival (-25%)': 0.75,
+};
 
 export const RiskSimulatorView: React.FC = () => {
-    const { user, policies, setCurrentScreen } = useApp();
+    const { user, setCurrentScreen } = useApp();
 
-    const [scenario, setScenario] = useState<"death" | "illness" | "disability">("illness");
-    const [cost, setCost] = useState<number[]>([120000]);
-    const [years, setYears] = useState(5);
-    const [inflation, setInflation] = useState<number[]>([4.2]);
+    const [scenario, setScenario] = useState<Scenario>("illness");
+    const [cost, setCost] = useState<number[]>([1500000]);
+    const [years, setYears] = useState(2);
+    const [inflation, setInflation] = useState<number[]>([5]);
     const [lifestyleScale, setLifestyleScale] = useState<string>("Maintain Current Standard");
     const [isCalculating, setIsCalculating] = useState(false);
+    const [simResult, setSimResult] = useState<RiskSimResult | null>(null);
+    const [simError, setSimError] = useState<string | null>(null);
 
-    const existingCoverTotal = policies.reduce((sum, p) => {
-        if (scenario === 'death' && p.category === 'Life') return sum + p.coverageAmount;
-        if (scenario === 'illness' && (p.category === 'Health' || p.category === 'Critical Illness')) return sum + p.coverageAmount;
-        if (scenario === 'disability' && p.category === 'Critical Illness') return sum + p.coverageAmount;
-        return sum;
-    }, 0) || 500000;
-
-    const [simResult, setSimResult] = useState<RiskSimResult>({
-        depletionAge: 52,
-        shortfallAmount: 18400000,
-        treatmentCostTotal: 1540000,
-        earningCapacityLoss: 3600000,
-        riskSeverity: 'CRITICAL',
-        recommendation: 'Increase critical illness rider by ₹50L and secure hospital cash indemnity policy.',
-        survivalProbabilityIndex: 64,
-        stressLevel: 'CRITICAL',
-    });
+    // Cover that actually pays out in each scenario, from the user's declared policies.
+    // No disability cover is collected at onboarding, so disability is stress-tested with none.
+    const existingCoverTotal = scenario === 'death' ? user.existingLifeCover : scenario === 'illness' ? user.existingHealthCover : 0;
+    const monthlyExpenses = Math.round(user.monthlyExpenses * LIFESTYLE_SCALES[lifestyleScale]);
 
     const runSimulation = useCallback(async () => {
         setIsCalculating(true);
-        const costVal = cost[0] || 120000;
-        const inflationVal = inflation[0] || 4.2;
-
         try {
-            const apiRes = await ShieldIQApi.simulateRiskScenario({
+            const res = await ShieldIQApi.simulateRiskScenario({
                 scenario,
-                cost: costVal,
-                years,
-                inflation: inflationVal,
+                cost: cost[0],
+                years: scenario === 'death' ? 1 : years,
+                inflation: inflation[0],
                 existingCover: existingCoverTotal,
+                age: user.age,
+                income: user.income,
+                monthlyExpenses,
             });
-
-            if (apiRes && apiRes.success && apiRes.data) {
-                const data = apiRes.data;
-                const treatmentTotal = data.treatmentCostTotal || Math.round(costVal * Math.pow(1 + (inflationVal + 3) / 100, years));
-                const shortfall = data.shortfallAmount ?? Math.max(0, treatmentTotal - existingCoverTotal);
-                const adequacy = Math.min(100, Math.max(15, Math.round(100 - (shortfall / (treatmentTotal + 100000)) * 60)));
-
-                setSimResult({
-                    ...data,
-                    shortfallAmount: shortfall,
-                    treatmentCostTotal: treatmentTotal,
-                    survivalProbabilityIndex: adequacy,
-                });
+            if (res && res.success && res.data) {
+                setSimResult(res.data);
+                setSimError(null);
             } else {
-                // Client-side fallback computation
-                const medicalInflationRate = inflationVal / 100 + 0.03;
-                const totalTreatmentCost = Math.round(costVal * Math.pow(1 + medicalInflationRate, years));
-                let earningCapacityLoss = 0;
-                let severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM';
-                let recommendation = '';
-
-                if (scenario === 'illness') {
-                    earningCapacityLoss = Math.round(costVal * 0.6 * years);
-                    severity = totalTreatmentCost > existingCoverTotal ? 'CRITICAL' : 'MEDIUM';
-                    recommendation = 'Increase critical illness rider by ₹50L and secure comprehensive floater.';
-                } else if (scenario === 'disability') {
-                    earningCapacityLoss = Math.round(costVal * 1.2 * years);
-                    severity = 'HIGH';
-                    recommendation = 'Attach permanent disability rider providing monthly income replacement.';
-                } else {
-                    earningCapacityLoss = Math.round(costVal * 2.0 * years);
-                    severity = existingCoverTotal < costVal * 10 ? 'CRITICAL' : 'LOW';
-                    recommendation = 'Expand pure term life cover to minimum 15x annual household income.';
-                }
-
-                const totalFinancialImpact = totalTreatmentCost + earningCapacityLoss;
-                const shortfallAmount = Math.max(0, totalFinancialImpact - existingCoverTotal);
-                const depletionAge = Math.min(75, Math.max(42, Math.round(52 - shortfallAmount / 500000)));
-                const adequacy = Math.min(100, Math.max(15, Math.round(100 - (shortfallAmount / (totalFinancialImpact || 1)) * 100)));
-
-                setSimResult({
-                    depletionAge,
-                    shortfallAmount,
-                    treatmentCostTotal: totalTreatmentCost,
-                    earningCapacityLoss,
-                    riskSeverity: severity,
-                    recommendation,
-                    survivalProbabilityIndex: adequacy,
-                    stressLevel: severity,
-                });
+                setSimError(res?.error || 'Cannot reach the simulation engine. Check your connection and try again.');
             }
         } finally {
             setIsCalculating(false);
         }
-    }, [scenario, cost, years, inflation, existingCoverTotal]);
+    }, [scenario, cost, years, inflation, existingCoverTotal, user.age, user.income, monthlyExpenses]);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            runSimulation();
-        }, 200);
+        const timer = setTimeout(runSimulation, 200);
         return () => clearTimeout(timer);
     }, [runSimulation]);
 
-    const formatRupees = (val: number) => {
-        if (val >= 10000000) {
-            return `₹ ${(val / 10000000).toFixed(2)} Cr`;
-        }
-        if (val >= 100000) {
-            return `₹ ${(val / 100000).toFixed(1)} L`;
-        }
-        return `₹ ${val.toLocaleString()}`;
-    };
+    // Corpus run-down: the payout left after treatment is spent at the household's annual expenses.
+    const annualExpenses = monthlyExpenses * 12;
+    // Mirrors the engine: health cover reimburses bills only, so illness leaves no cash for living costs.
+    const leftover = simResult && scenario !== 'illness' ? Math.max(0, existingCoverTotal - simResult.treatmentCostTotal) : 0;
+    const recommendedCorpus = leftover + (simResult?.shortfallAmount ?? 0);
+    const recommendedYears = annualExpenses > 0 ? recommendedCorpus / annualExpenses : 0;
+    const chartYears = Math.max(5, Math.ceil(recommendedYears), Math.ceil(simResult?.yearsFunded ?? 0));
+    const chartMax = Math.max(1, recommendedCorpus, leftover);
+    const pt = (yearOffset: number, corpus: number) => `${(yearOffset / chartYears) * 1000},${300 - (corpus / chartMax) * 280}`;
+    const currentPath = `M${pt(0, leftover)} L${pt(simResult?.yearsFunded ?? 0, 0)}`;
+    const recommendedPath = `M${pt(0, recommendedCorpus)} L${pt(recommendedYears, 0)}`;
+    const ageTicks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(user.age + f * chartYears));
 
     const scenarioLabels = {
         death: "Early Death Event",
@@ -138,12 +91,12 @@ export const RiskSimulatorView: React.FC = () => {
         disability: "Total Disability",
     };
 
-    const userInitials = user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'AV';
+    const userInitials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
     return (
-        <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden">
+        <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
             {/* Top Nav Scenario Selector */}
-            <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4 sticky top-0 z-50">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-8 py-4">
                 <div className="flex items-center gap-4 text-blue-600">
                     <div className="bg-blue-600 p-2 rounded-lg text-white shadow-md shadow-blue-600/20">
                         <Activity className="w-5 h-5" />
@@ -162,7 +115,7 @@ export const RiskSimulatorView: React.FC = () => {
                     ].map(s => (
                         <button
                             key={s.id}
-                            onClick={() => setScenario(s.id as "death" | "illness" | "disability")}
+                            onClick={() => setScenario(s.id as Scenario)}
                             className={`flex items-center gap-2 px-6 py-2 rounded-lg text-xs font-black transition-all uppercase tracking-widest ${scenario === s.id ? "bg-background shadow-sm text-blue-600" : "text-muted-foreground hover:bg-background/50"}`}
                         >
                             <s.icon className="w-4 h-4" />
@@ -178,7 +131,7 @@ export const RiskSimulatorView: React.FC = () => {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+            <main className="flex-1 flex flex-col lg:flex-row">
                 {/* Left Sidebar - Controls */}
                 <aside className="w-full lg:w-80 border-r border-border bg-card p-8 space-y-10 overflow-y-auto">
                     <div className="space-y-2">
@@ -189,18 +142,19 @@ export const RiskSimulatorView: React.FC = () => {
                     <div className="space-y-10">
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                <Label>Treatment / Immediate Cost</Label>
-                                <span className="text-blue-600 font-mono font-bold">₹ {(cost[0] / 1000).toFixed(1)}L</span>
+                                <Label>{scenario === 'death' ? 'Final Expenses (Immediate)' : 'Treatment Cost (Total)'}</Label>
+                                <span className="text-blue-600 font-mono font-bold">{formatINR(cost[0])}</span>
                             </div>
                             <Slider
                                 value={cost}
                                 onValueChange={setCost}
-                                max={500000}
-                                min={10000}
-                                step={5000}
+                                max={5000000}
+                                min={100000}
+                                step={50000}
                             />
                         </div>
 
+                        {scenario !== 'death' && (
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                 <Label>Recovery Window</Label>
@@ -218,6 +172,7 @@ export const RiskSimulatorView: React.FC = () => {
                                 ))}
                             </div>
                         </div>
+                        )}
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -245,6 +200,15 @@ export const RiskSimulatorView: React.FC = () => {
                                 <option>Optimized (-10%)</option>
                                 <option>Basic Survival (-25%)</option>
                             </select>
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                                Household spend after the event: {formatINR(monthlyExpenses)}/month
+                                {user.monthlyExpenses === 0 && ' (add monthly expenses in onboarding for a runway estimate)'}
+                            </p>
+                        </div>
+
+                        <div className="p-3 rounded-lg bg-muted/40 border border-border text-[10px] font-bold text-muted-foreground uppercase tracking-widest space-y-1">
+                            <p>Age {user.age} · Income {formatINR(user.income)}/yr</p>
+                            <p>Cover that pays out: <span className="text-foreground">{formatINR(existingCoverTotal)}</span></p>
                         </div>
                     </div>
 
@@ -275,22 +239,31 @@ export const RiskSimulatorView: React.FC = () => {
                         <Card className="md:col-span-2 border-border shadow-sm overflow-hidden">
                             <CardContent className="p-8 flex flex-col md:flex-row justify-between items-center gap-8 group hover:border-blue-200 dark:hover:border-blue-800 transition-all">
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Projected Shortfall Age</p>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Payout Runs Out At</p>
                                     <h3 className="text-6xl font-black text-red-500 font-mono tracking-tighter">
-                                        {simResult.depletionAge || 52}
+                                        {simResult ? simResult.depletionAge : '—'}
                                         <span className="text-lg font-bold text-muted-foreground/30 ml-2 uppercase tracking-widest">Years Old</span>
                                     </h3>
                                     <p className="text-xs text-muted-foreground font-medium italic">
-                                        Portfolio depletion occurs {Math.max(1, (simResult.depletionAge || 52) - 38)} years post-event under current coverage.
+                                        {!simResult
+                                            ? 'Running simulation…'
+                                            : scenario === 'illness'
+                                                ? 'Health insurance pays hospital bills only. Living costs during recovery must come from savings or critical illness cover.'
+                                                : simResult.yearsFunded > 0
+                                                    ? `Current cover funds the household for ${simResult.yearsFunded} years after the event.`
+                                                    : 'Current cover is used up by the event itself, leaving nothing for living costs.'}
                                     </p>
+                                    {simError && <p role="alert" className="text-xs font-medium text-red-600">{simError}</p>}
                                 </div>
                                 <div className="h-20 w-px bg-muted hidden md:block" />
                                 <div className="space-y-2 text-right">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Est. Funding Gap</p>
                                     <h3 className="text-3xl font-black text-foreground font-mono tracking-tighter">
-                                        {formatRupees(simResult.shortfallAmount || 18400000)}
+                                        {simResult ? formatINR(simResult.shortfallAmount) : '—'}
                                     </h3>
-                                    <p className="text-xs text-muted-foreground font-medium">Addl. corpus needed for full continuity.</p>
+                                    <p className="text-xs text-muted-foreground font-medium">
+                                        {simResult ? `of ${formatINR(simResult.totalFinancialImpact)} total impact is not covered.` : ''}
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -308,22 +281,22 @@ export const RiskSimulatorView: React.FC = () => {
                                             stroke="currentColor"
                                             strokeWidth="4"
                                             className="text-blue-600 transition-all duration-500"
-                                            strokeDasharray={`${simResult.survivalProbabilityIndex || 64} 100`}
+                                            strokeDasharray={`${simResult?.adequacyIndex ?? 0} 100`}
                                             strokeLinecap="round"
                                         />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-2xl font-black text-foreground font-mono">
-                                            {simResult.survivalProbabilityIndex || 64}%
+                                            {simResult ? `${simResult.adequacyIndex}%` : '—'}
                                         </span>
                                         <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">
-                                            {simResult.riskSeverity || 'Adequate'}
+                                            {simResult?.riskSeverity ?? ''}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="font-black text-xs text-foreground uppercase tracking-tighter">Scenario Adequacy</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Stress Benchmarking</p>
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Share of impact covered</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -333,7 +306,7 @@ export const RiskSimulatorView: React.FC = () => {
                         <div className="flex justify-between items-center">
                             <div className="space-y-1">
                                 <h4 className="text-lg font-black text-foreground uppercase tracking-tight">Financial Impact Timeline</h4>
-                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Portfolio corpus trajectory under stress scenario.</p>
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Payout left after treatment, spent at {formatINR(annualExpenses)} a year.</p>
                             </div>
                             <div className="flex gap-6">
                                 <div className="flex items-center gap-2">
@@ -351,18 +324,16 @@ export const RiskSimulatorView: React.FC = () => {
                             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pr-8">
                                 {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-full border-t border-border/50" />)}
                             </div>
-                            <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300">
-                                <path d="M0,50 L200,80 L400,150 L600,200 L1000,230" fill="none" stroke="currentColor" strokeWidth="4" className="text-blue-600" strokeLinecap="round" />
-                                <path d="M0,50 L200,110 L400,280 L600,350" fill="none" stroke="currentColor" strokeWidth="4" className="text-red-500" strokeLinecap="round" />
-                                <circle cx="400" cy="280" r="6" fill="#ef4444" stroke="white" strokeWidth="2" />
-                                <line x1="400" y1="0" x2="400" y2="300" stroke="#ef4444" strokeWidth="1" strokeDasharray="4 4" />
+                            {simResult && (
+                            <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300" role="img"
+                                aria-label={`Current cover lasts ${simResult.yearsFunded} years; with the recommended cover it lasts ${recommendedYears.toFixed(1)} years`}>
+                                <path d={recommendedPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-blue-600" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                                <path d={currentPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-red-500" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                                <line x1={(simResult.yearsFunded / chartYears) * 1000} y1="0" x2={(simResult.yearsFunded / chartYears) * 1000} y2="300" stroke="#ef4444" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
                             </svg>
+                            )}
                             <div className="flex justify-between pt-4 text-[9px] font-black text-muted-foreground uppercase tracking-widest">
-                                <span>Age 38</span>
-                                <span>Age 45</span>
-                                <span className="text-red-500 font-bold">Shortfall ({simResult.depletionAge || 52})</span>
-                                <span>Age 60</span>
-                                <span>Age 75+</span>
+                                {ageTicks.map((a, i) => <span key={i}>Age {a}</span>)}
                             </div>
                         </div>
                     </Card>
@@ -378,15 +349,28 @@ export const RiskSimulatorView: React.FC = () => {
                             </div>
                             <div className="max-w-4xl space-y-6">
                                 <p className="text-lg font-medium text-slate-300 leading-relaxed italic">
-                                    "Based on your current <span className="text-white font-bold">{scenarioLabels[scenario]}</span> parameters and the defined recovery window of {years} years, your portfolio faces a terminal shortfall at <span className="text-white font-bold underline decoration-red-500 underline-offset-8 uppercase">Age {simResult.depletionAge || 52}</span>. The depletion is primarily driven by cumulative treatment costs ({formatRupees(simResult.treatmentCostTotal || 0)}) and lost earning capacity."
+                                    {simResult ? (
+                                        <>A <span className="text-white font-bold">{scenarioLabels[scenario]}</span> at age {user.age} costs about <span className="text-white font-bold">{formatINR(simResult.totalFinancialImpact)}</span>: {formatINR(simResult.treatmentCostTotal)} in {scenario === 'death' ? 'final expenses' : 'treatment'} and {formatINR(simResult.earningCapacityLoss)} of lost earnings. Your {formatINR(existingCoverTotal)} of cover absorbs {simResult.adequacyIndex}% of it{simResult.shortfallAmount > 0 ? <>, leaving a <span className="text-white font-bold underline decoration-red-500 underline-offset-8">{formatINR(simResult.shortfallAmount)}</span> gap</> : ''}.</>
+                                    ) : 'Running simulation…'}
                                 </p>
                                 <div className="flex items-center gap-2 text-blue-400">
                                     <TrendingDown className="w-4 h-4" />
                                     <p className="text-[10px] font-black uppercase tracking-widest">Recommended Strategic Shift:</p>
                                 </div>
                                 <p className="text-sm text-slate-400 font-mono uppercase tracking-wider leading-relaxed">
-                                    {simResult.recommendation} This stabilizes the adequacy index and protects family net worth.
+                                    {simResult?.recommendation}
                                 </p>
+                            </div>
+                            <div className="rounded-2xl bg-white p-1 text-slate-900 dark:bg-slate-900 dark:text-white">
+                                <ExplainResult
+                                    screen="risk-simulator"
+                                    inputs={{ scenario, cost: cost[0], recoveryYears: scenario === 'death' ? 0 : years, inflationPct: inflation[0], monthlyExpenses, coverThatPaysOut: existingCoverTotal, age: user.age, annualIncome: user.income }}
+                                    result={simResult ? {
+                                        totalFinancialImpact: simResult.totalFinancialImpact, treatmentCost: simResult.treatmentCostTotal, earningCapacityLoss: simResult.earningCapacityLoss,
+                                        shortfall: simResult.shortfallAmount, adequacyPct: simResult.adequacyIndex, yearsFunded: simResult.yearsFunded,
+                                        payoutRunsOutAtAge: simResult.depletionAge, severity: simResult.riskSeverity,
+                                    } : null}
+                                />
                             </div>
                             <div className="flex gap-4 pt-4">
                                 <Button
@@ -410,14 +394,9 @@ export const RiskSimulatorView: React.FC = () => {
 
             {/* Sticky Footer */}
             <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border px-10 py-4 flex justify-between items-center z-50">
-                <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Model Verified</span>
-                    </div>
-                    <div className="h-4 w-px bg-muted" />
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">Simulation ID: SM-9912-ACTUARIAL</p>
-                </div>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">
+                    Indicative estimate · {inflation[0].toFixed(1)}% inflation + 3% medical premium · 8% return on payouts
+                </p>
                 <div className="flex gap-3">
                     <Button
                         variant="outline"

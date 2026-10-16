@@ -3,6 +3,7 @@ import cors from 'cors';
 import { actuarialRouter } from './routes/actuarial.routes.js';
 import { policyRouter } from './routes/policy.routes.js';
 import { userRouter } from './routes/user.routes.js';
+import { configuredProvider } from './services/ai.service.js';
 
 export const app: Express = express();
 
@@ -25,6 +26,8 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 app.use(cors({ origin: allowedOrigins, credentials: true }));
+// Policy PDFs arrive base64-encoded; only this route gets the larger body limit.
+app.use('/api/v1/ai/policy-analysis', express.json({ limit: '15mb' }));
 app.use(express.json({ limit: '50kb' }));
 
 // Health Check Endpoint
@@ -33,6 +36,7 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
     status: 'UP',
     service: 'ShieldIQ Actuarial Intelligence API',
     version: '1.0.0',
+    ai: configuredProvider(),
     timestamp: new Date().toISOString(),
   });
 });

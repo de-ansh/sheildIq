@@ -1,81 +1,85 @@
+import { ActuarialService, type StrategyProfile } from './actuarial.service.js';
+import { PlansService, PLAN_PRODUCTS, type InsuranceType } from './plans.service.js';
+
 export interface PolicyDetail {
   id: string;
   title: string;
   provider: string;
-  category: 'Life' | 'Health' | 'Property' | 'Critical Illness';
+  category: 'Life' | 'Health' | 'Critical Illness' | 'Personal Accident';
   coverageAmount: number;
   monthlyPremium: number;
   claimRatio: number;
-  status: 'Active' | 'Under Review' | 'Recommended';
+  status: 'Available';
   features: string[];
   exclusions: string[];
   clarityScore: number;
+  structure: string;
+  waitingPeriod: string;
+  bestFor: string;
 }
 
-const mockPolicies: PolicyDetail[] = [
-  {
-    id: 'POL-8821',
-    title: 'OmniShield Term Life Max',
-    provider: 'Prudential Global',
-    category: 'Life',
-    coverageAmount: 1500000,
-    monthlyPremium: 145,
-    claimRatio: 99.2,
-    status: 'Active',
-    features: ['Terminal Illness Payout', 'Accidental Death Benefit 2x', 'Waiver of Premium'],
-    exclusions: ['Self-inflicted injuries within 12 months', 'Hazardous sports without rider'],
-    clarityScore: 94,
-  },
-  {
-    id: 'POL-4410',
-    title: 'Executive Health Safeguard Pro',
-    provider: 'Bupa International',
-    category: 'Health',
-    coverageAmount: 500000,
-    monthlyPremium: 210,
-    claimRatio: 97.8,
-    status: 'Active',
-    features: ['Zero Room Rent Capping', 'Global Emergency Care', '100% Restore Benefit'],
-    exclusions: ['Cosmetic surgeries', 'Pre-existing conditions waiting window (24 months)'],
-    clarityScore: 88,
-  },
-  {
-    id: 'POL-9012',
-    title: 'Disability Income Continuity Shield',
-    provider: 'MetLife Actuarial',
-    category: 'Critical Illness',
-    coverageAmount: 750000,
-    monthlyPremium: 95,
-    claimRatio: 98.4,
-    status: 'Recommended',
-    features: ['Monthly Income Replacement', 'Inflation Adjustment Indexing', 'Partial Disability Coverage'],
-    exclusions: ['Pre-existing mental health exclusions', 'Undeclared dangerous hobbies'],
-    clarityScore: 91,
-  },
-];
+const CATEGORY: Record<InsuranceType, PolicyDetail['category']> = {
+  term_life: 'Life',
+  health: 'Health',
+  critical_illness: 'Critical Illness',
+  personal_accident: 'Personal Accident',
+};
+
+// Catalog prices are quoted for a reference household; signed-in users get personal quotes from /plan-options.
+const REFERENCE_PROFILE: StrategyProfile = {
+  age: 35, income: 2000000, dependents: 2, maritalStatus: 'Married', occupation: 'Salaried professional', cityTier: 'Tier 1 (Metro)',
+  homeLoan: 3000000, otherLoans: 0, monthlyExpenses: 70000, existingLifeCover: 0, existingHealthCover: 0, employerBenefits: [], lifestyleRisks: [],
+};
+
+const quotedByProductId = new Map(
+  PlansService.optionsFor(REFERENCE_PROFILE, ActuarialService.buildStrategy(REFERENCE_PROFILE))
+    .flatMap(t => t.options)
+    .map(o => [o.id, o])
+);
+
+const catalog: PolicyDetail[] = PLAN_PRODUCTS.map(product => {
+  const quote = quotedByProductId.get(product.id)!;
+  return {
+    id: product.id,
+    title: product.name,
+    provider: product.insurer,
+    category: CATEGORY[product.type],
+    coverageAmount: quote.cover,
+    monthlyPremium: quote.monthlyPremium,
+    claimRatio: product.claimSettlementRatio,
+    status: 'Available',
+    features: product.features,
+    exclusions: product.exclusions,
+    clarityScore: product.clarityScore,
+    structure: product.structure,
+    waitingPeriod: product.waitingPeriod,
+    bestFor: product.bestFor,
+  };
+});
 
 export class PolicyService {
   static getAllPolicies(): PolicyDetail[] {
-    return mockPolicies;
+    return catalog;
   }
 
   static getPolicyById(id: string): PolicyDetail | undefined {
-    return mockPolicies.find(p => p.id.toLowerCase() === id.toLowerCase());
+    return catalog.find(p => p.id.toLowerCase() === id.toLowerCase());
   }
 
   static comparePolicies(policyIds: string[]) {
-    const selected = mockPolicies.filter(p =>
+    const selected = catalog.filter(p =>
       policyIds.some(id => id.toLowerCase() === p.id.toLowerCase())
     );
 
-    const items = selected.length > 0 ? selected : mockPolicies;
+    const items = selected.length > 0 ? selected : catalog;
 
+    const best = items.reduce((top, p) => (p.claimRatio > top.claimRatio ? p : top), items[0]);
     return {
       comparedCount: items.length,
       policies: items,
       recommendation:
         items.length > 1
-          ? `${items[0].title} offers superior claim settlement ratio (${items[0].claimRatio}%).`
+          ? `${best.title} has the highest claim settlement ratio (${best.claimRatio}%) of the policies compared.`
           : 'Select multiple policies for detailed clause comparison.',
     };
   }

@@ -16,6 +16,8 @@ import {
     Loader2
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
+import type { AiProfileDraft, CityTier } from '@/lib/api';
+import { DescribeYourself } from '@/components/DescribeYourself';
 
 export const OnboardingView: React.FC = () => {
     const { user, submitOnboarding, setCurrentScreen } = useApp();
@@ -24,20 +26,23 @@ export const OnboardingView: React.FC = () => {
     const totalSteps = 3;
     const progress = (step / totalSteps) * 100;
 
+    // Prefilled from the saved profile, so re-running onboarding edits rather than overwrites.
     const [formData, setFormData] = useState({
-        age: user?.age || 34,
-        income: user?.income || 1450000,
-        city: user?.city || 'Tier 1 (Metro)',
-        occupation: user?.occupation || 'Senior Systems Architect',
-        dependents: user?.dependents ?? 2,
-        homeLoan: 4500000,
-        otherLoans: 500000,
-        monthlyExpenses: 85000,
-        existingLifeCover: 10000000,
-        existingHealthCover: 1000000,
-        employerBenefits: ['Group Term Life', 'OPD Benefits'] as string[],
-        lifestyleRisks: [] as string[],
+        age: user.age,
+        income: user.income,
+        cityTier: user.cityTier as CityTier | '',
+        occupation: user.occupation,
+        maritalStatus: user.maritalStatus,
+        dependents: user.dependents,
+        homeLoan: user.homeLoan,
+        otherLoans: user.otherLoans,
+        monthlyExpenses: user.monthlyExpenses,
+        existingLifeCover: user.existingLifeCover,
+        existingHealthCover: user.existingHealthCover,
+        employerBenefits: user.employerBenefits,
+        lifestyleRisks: user.lifestyleRisks,
     });
+    const [stepError, setStepError] = useState<string | null>(null);
 
     const updateField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -67,27 +72,63 @@ export const OnboardingView: React.FC = () => {
         });
     };
 
-    const nextStep = () => setStep(s => Math.min(s + 1, totalSteps));
-    const prevStep = () => setStep(s => Math.max(s - 1, 1));
+    // Returns an error for the first step whose required answers are missing, checking steps 1..upTo.
+    const validate = (upTo: number): { step: number; error: string } | null => {
+        const { age, income, cityTier, monthlyExpenses } = formData;
+        if (!Number.isInteger(age) || age < 18 || age > 100) return { step: 1, error: 'Enter your age (18–100).' };
+        if (!(income > 0)) return { step: 1, error: 'Enter your annual gross income.' };
+        if (!cityTier) return { step: 1, error: 'Select your city category.' };
+        if (upTo >= 2 && !(monthlyExpenses > 0)) return { step: 2, error: 'Enter your monthly household expenses.' };
+        const amounts = [formData.homeLoan, formData.otherLoans, formData.existingLifeCover, formData.existingHealthCover];
+        if (upTo >= 2 && amounts.some(v => !(v >= 0))) return { step: 2, error: 'Amounts cannot be negative.' };
+        return null;
+    };
+
+    // Only fields the AI actually found are applied; everything stays editable before saving.
+    const applyDraft = (draft: AiProfileDraft) => {
+        const lists = ['notes', 'employerBenefits', 'lifestyleRisks'];
+        const found = Object.entries(draft).filter(([key, value]) => value !== null && !lists.includes(key));
+        setFormData(prev => ({
+            ...prev,
+            ...Object.fromEntries(found),
+            employerBenefits: draft.employerBenefits.length ? draft.employerBenefits : prev.employerBenefits,
+            lifestyleRisks: draft.lifestyleRisks.length ? draft.lifestyleRisks : prev.lifestyleRisks,
+        }));
+        setStepError(null);
+    };
+
+    const nextStep = () => {
+        const problem = validate(step);
+        setStepError(problem?.error ?? null);
+        if (!problem) setStep(s => Math.min(s + 1, totalSteps));
+    };
+    const prevStep = () => {
+        setStepError(null);
+        setStep(s => Math.max(s - 1, 1));
+    };
 
     const handleComplete = async () => {
+        const problem = validate(totalSteps);
+        if (problem) {
+            setStep(problem.step);
+            setStepError(problem.error);
+            return;
+        }
         setIsSubmitting(true);
         try {
-            await submitOnboarding(formData);
-            setCurrentScreen('dashboard');
+            setStepError(await submitOnboarding({ ...formData, cityTier: formData.cityTier as CityTier }));
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    // Existing users can leave without changes; new users must finish so the strategy has real inputs.
     const handleSaveAndExit = async () => {
-        setIsSubmitting(true);
-        try {
-            await submitOnboarding(formData);
+        if (user.onboardingCompleted) {
             setCurrentScreen('dashboard');
-        } finally {
-            setIsSubmitting(false);
+            return;
         }
+        await handleComplete();
     };
 
     return (
@@ -137,6 +178,8 @@ export const OnboardingView: React.FC = () => {
                                     <p className="text-muted-foreground font-medium">This helps us initialize your actuarial risk baseline.</p>
                                 </div>
 
+                                <DescribeYourself onDraft={applyDraft} />
+
                                 <div className="space-y-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="age-input" className="font-bold text-foreground">Current Age</Label>
@@ -176,8 +219,8 @@ export const OnboardingView: React.FC = () => {
                                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                             <select
                                                 id="city-select"
-                                                value={formData.city}
-                                                onChange={(e) => updateField('city', e.target.value)}
+                                                value={formData.cityTier}
+                                                onChange={(e) => updateField('cityTier', e.target.value as CityTier)}
                                                 className="flex h-12 w-full rounded-md border border-input bg-muted/30 px-12 py-2 text-base shadow-sm font-medium focus:outline-none focus:ring-1 focus:ring-ring appearance-none"
                                             >
                                                 <option value="">Select city category</option>
@@ -214,7 +257,25 @@ export const OnboardingView: React.FC = () => {
 
                                 <div className="space-y-8">
                                     <div className="space-y-4">
+                                        <Label className="font-bold text-foreground">Marital Status</Label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {(['Single', 'Married'] as const).map(status => (
+                                                <Button
+                                                    key={status}
+                                                    type="button"
+                                                    variant={formData.maritalStatus === status ? "default" : "outline"}
+                                                    className={`py-6 font-bold ${formData.maritalStatus === status ? 'bg-blue-600 text-white' : 'dark:hover:bg-slate-800'}`}
+                                                    onClick={() => updateField('maritalStatus', status)}
+                                                >
+                                                    {status}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
                                         <Label className="font-bold text-foreground">Immediate Dependents</Label>
+                                        <p className="text-xs text-muted-foreground -mt-2">People who rely on your income, including a non-earning spouse and children.</p>
                                         <div className="grid grid-cols-4 gap-3">
                                             {[0, 1, 2, 3].map(num => (
                                                 <Button
@@ -304,7 +365,7 @@ export const OnboardingView: React.FC = () => {
                                     <div className="space-y-4 pt-6 border-t border-border">
                                         <Label className="font-bold text-foreground">Employer Benefits</Label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {["Group Term Life", "Critical Illness", "Accident Cover", "OPD Benefits"].map(benefit => (
+                                            {["Group Term Life", "Group Health", "Critical Illness", "Accident Cover", "OPD Benefits"].map(benefit => (
                                                 <div
                                                     key={benefit}
                                                     onClick={() => toggleBenefit(benefit)}
@@ -348,6 +409,7 @@ export const OnboardingView: React.FC = () => {
 
                         {/* Navigation buttons */}
                         <div className="flex flex-col gap-4 pt-8 border-t border-border">
+                            {stepError && <p role="alert" className="text-sm font-medium text-red-600 text-center">{stepError}</p>}
                             <div className="flex items-center justify-between gap-4">
                                 {step > 1 ? (
                                     <Button

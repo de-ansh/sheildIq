@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,6 @@ import {
     Settings,
     ShieldCheck,
     ArrowRight,
-    BrainCircuit,
     ShieldAlert,
     ArrowRightLeft,
     Activity,
@@ -18,9 +17,13 @@ import {
     AlertTriangle,
     ChevronRight,
     LogOut,
-    CheckCircle2
+    CheckCircle2,
+    FileSearch
 } from "lucide-react";
 import { useApp, ScreenId } from '@/lib/AppContext';
+import { formatINR } from '@/lib/utils';
+import { ShieldIQApi, type PlanTypeOptions } from '@/lib/api';
+import { AiStrategyPanel } from '@/components/AiStrategyPanel';
 
 interface NavItem {
     id: ScreenId | 'reports' | 'settings';
@@ -35,12 +38,20 @@ const navItems: NavItem[] = [
     { id: 'simulator', label: 'Risk Simulator', icon: Activity },
     { id: 'calculator', label: 'Life Calculator', icon: PieChart },
     { id: 'healthplanner', label: 'Health Planner', icon: Hospital },
+    { id: 'policyscan', label: 'Policy Scan', icon: FileSearch },
     { id: 'reports', label: 'My Reports', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export const DashboardView: React.FC = () => {
-    const { user, policies, currentScreen, setCurrentScreen, logout, isBackendConnected } = useApp();
+    const { user, currentScreen, setCurrentScreen, logout, isBackendConnected, strategy } = useApp();
+    const [planTypes, setPlanTypes] = useState<PlanTypeOptions[] | null>(null);
+
+    // Recommended plan per insurance type; reloaded whenever the strategy (i.e. the profile) changes.
+    useEffect(() => {
+        if (!strategy) return;
+        ShieldIQApi.getPlanOptions().then(res => setPlanTypes(res && res.success ? res.data : null));
+    }, [strategy]);
 
     const handleNavClick = (id: NavItem['id']) => {
         if (id === 'reports') {
@@ -52,21 +63,9 @@ export const DashboardView: React.FC = () => {
         }
     };
 
-    const totalCoverage = policies.reduce((sum, p) => sum + (p.coverageAmount || 0), 0);
-    const activePoliciesCount = policies.filter(p => p.status === 'Active').length || policies.length;
-
-    const formatCurrency = (val: number) => {
-        if (val >= 10000000) {
-            return `₹ ${(val / 10000000).toFixed(1)} Cr`;
-        }
-        if (val >= 100000) {
-            return `₹ ${(val / 100000).toFixed(1)} L`;
-        }
-        return `₹ ${val.toLocaleString()}`;
-    };
-
-    const targetIncomeCover = (user?.income || 1450000) * 15;
-    const estimatedGap = Math.max(0, targetIncomeCover - totalCoverage);
+    const declaredCover = user.existingLifeCover + user.existingHealthCover;
+    const scoreColor = !strategy ? 'text-muted-foreground' : strategy.score >= 65 ? 'text-emerald-500' : strategy.score >= 40 ? 'text-amber-500' : 'text-red-500';
+    const scoreBar = !strategy ? 'bg-muted' : strategy.score >= 65 ? 'bg-emerald-500' : strategy.score >= 40 ? 'bg-amber-500' : 'bg-red-500';
 
     return (
         <div className="flex h-screen bg-background font-sans">
@@ -110,24 +109,26 @@ export const DashboardView: React.FC = () => {
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800 space-y-2">
                         <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                            Actuarial Guard Active
+                            {strategy ? `${strategy.rating} · ${strategy.score}/100` : 'Profile incomplete'}
                         </p>
                         <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                            {activePoliciesCount} policies monitored across life, health & disability nodes.
+                            {strategy
+                                ? `Life ${formatINR(user.existingLifeCover)} · Health ${formatINR(user.existingHealthCover)} declared.`
+                                : 'Finish onboarding to get your protection score.'}
                         </p>
                     </div>
 
                     <div className="flex items-center justify-between px-2">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-blue-600/10 border-2 border-blue-500/30 flex items-center justify-center font-bold text-blue-600 text-sm">
-                                {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'AV'}
+                                {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
                             <div className="overflow-hidden">
                                 <p className="text-sm font-black text-foreground leading-none truncate max-w-[120px]">
-                                    {user?.name || 'Alex Vance'}
+                                    {user.name}
                                 </p>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 truncate max-w-[120px]">
-                                    {user?.occupation || 'Senior Architect'}
+                                    {user.occupation || '—'}
                                 </p>
                             </div>
                         </div>
@@ -150,7 +151,7 @@ export const DashboardView: React.FC = () => {
                     <div className="space-y-1">
                         <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">Analytical Dashboard</h2>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-                            Real-time clarity for {user?.name || 'Alex Vance'} • {user?.city || 'San Francisco, CA'}
+                            Real-time clarity for {user.name}{user.city ? ` • ${user.city}` : ''} • {user.cityTier}
                         </p>
                     </div>
                     <div className="flex gap-4">
@@ -174,15 +175,15 @@ export const DashboardView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Income Cover</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Life Cover Need</span>
                             <TrendingUp className="w-4 h-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
-                                {formatCurrency(targetIncomeCover)}
+                                {strategy ? formatINR(strategy.life.totalNeed) : '—'}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                15x Gross income benchmark
+                                Income replacement + loans + education
                             </CardDescription>
                         </CardContent>
                     </Card>
@@ -194,27 +195,27 @@ export const DashboardView: React.FC = () => {
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
-                                {formatCurrency(estimatedGap)}
+                                {strategy ? formatINR(strategy.life.gap + strategy.health.gap) : '—'}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                Current unsecured exposure
+                                {strategy ? `Life ${formatINR(strategy.life.gap)} · Health ${formatINR(strategy.health.gap)}` : 'Unsecured exposure'}
                             </CardDescription>
                         </CardContent>
                     </Card>
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Policies</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Your Current Cover</span>
                             <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-none font-black text-[9px] uppercase tracking-widest">
-                                {activePoliciesCount} Active
+                                Declared
                             </Badge>
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
-                                {formatCurrency(totalCoverage)}
+                                {formatINR(declaredCover)}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                Aggregated sum assured
+                                Life {formatINR(user.existingLifeCover)} · Health {formatINR(user.existingHealthCover)}
                             </CardDescription>
                         </CardContent>
                     </Card>
@@ -222,14 +223,14 @@ export const DashboardView: React.FC = () => {
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Risk Adequacy</span>
-                            <span className="text-amber-500 font-black font-mono">68/100</span>
+                            <span className={`${scoreColor} font-black font-mono`}>{strategy ? `${strategy.score}/100` : '—'}</span>
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 w-[68%]" />
+                                <div className={`h-full ${scoreBar} transition-all`} style={{ width: `${strategy?.score ?? 0}%` }} />
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                Benchmark: 85 (High Adequacy)
+                                {strategy ? `${strategy.rating} · 85+ is optimal` : 'Complete onboarding to score'}
                             </CardDescription>
                         </CardContent>
                     </Card>
@@ -252,31 +253,34 @@ export const DashboardView: React.FC = () => {
                         <CardContent className="flex-1 p-8 pt-4 flex flex-col justify-between">
                             <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground font-medium">
-                                    Your portfolio currently holds {policies.length} registered policies. Select any policy to inspect actuarial fine print:
+                                    Recommended plan for each type of cover, quoted for you. Open Compare to see all four options per type.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {policies.map((policy) => (
-                                        <div
-                                            key={policy.id}
-                                            onClick={() => setCurrentScreen('deepdive')}
-                                            className="p-4 rounded-xl border border-border bg-card/60 hover:bg-muted/40 cursor-pointer transition-all hover:border-blue-500/40 group"
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <Badge variant="outline" className="text-[10px] font-mono">
-                                                    {policy.category}
-                                                </Badge>
-                                                <span className="text-xs font-bold text-blue-600 font-mono">
-                                                    ₹ {policy.monthlyPremium}/mo
-                                                </span>
-                                            </div>
-                                            <h4 className="font-bold text-foreground text-sm group-hover:text-blue-600 transition-colors">
-                                                {policy.title}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {policy.provider} • Cover: ₹ {(policy.coverageAmount / 100000).toFixed(0)} Lakh
-                                            </p>
-                                        </div>
-                                    ))}
+                                    {!planTypes && (
+                                        <p className="text-xs text-muted-foreground">{strategy ? 'Quoting plans…' : 'Complete your profile to see recommended plans.'}</p>
+                                    )}
+                                    {planTypes?.map(t => {
+                                        const pick = t.options.find(o => o.recommended);
+                                        return (
+                                            <button
+                                                key={t.type}
+                                                type="button"
+                                                onClick={() => setCurrentScreen('comparison')}
+                                                className="text-left p-4 rounded-xl border border-border bg-card/60 hover:bg-muted/40 transition-all hover:border-blue-500/40 group"
+                                            >
+                                                <div className="flex justify-between items-start mb-2 gap-2">
+                                                    <Badge variant="outline" className="text-[10px] font-mono">{t.label}</Badge>
+                                                    {pick && <span className="text-xs font-bold text-blue-600 font-mono">{formatINR(pick.annualPremium)}/yr</span>}
+                                                </div>
+                                                <h4 className="font-bold text-foreground text-sm group-hover:text-blue-600 transition-colors">
+                                                    {pick ? pick.name : 'Already covered'}
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {pick ? `${formatINR(pick.cover)} cover · 4 options to compare` : 'Your existing cover meets the need · see upgrade options'}
+                                                </p>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -300,36 +304,7 @@ export const DashboardView: React.FC = () => {
                     </Card>
 
                     <div className="space-y-6">
-                        <Card className="bg-slate-950 text-white p-8 border-none relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <BrainCircuit className="w-24 h-24 text-blue-500" />
-                            </div>
-                            <div className="relative z-10 space-y-6">
-                                <div className="flex items-center gap-2 text-blue-400">
-                                    <Activity className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">AI Risk Audit</span>
-                                </div>
-                                <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
-                                    "Current term coverage is efficient for immediate debt obligations but lacks 14 years of income nodes for dependent education."
-                                </p>
-                                <div className="space-y-3">
-                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5 transition-colors hover:border-blue-500/30">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Increase life cover by <span className="text-white font-bold">25%</span> for projected inflation.</p>
-                                    </div>
-                                    <div className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5 transition-colors hover:border-emerald-500/30">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Medical floaters are highly optimized for Tier 1 networks.</p>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={() => setCurrentScreen('simulator')}
-                                    className="w-full bg-white text-slate-950 hover:bg-slate-100 font-bold py-6 group"
-                                >
-                                    Optimize Strategically <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                </Button>
-                            </div>
-                        </Card>
+                        <AiStrategyPanel maxInsights={3} />
 
                         <Card className="p-8 border-border shadow-sm space-y-6">
                             <h5 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Urgent Nodes</h5>

@@ -17,65 +17,20 @@ import {
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, type SavedPlan } from '@/lib/api';
+import { formatINR, toCsv } from '@/lib/utils';
 
-// Shown until the backend responds (and when it is offline)
-const initialSavedPlans: SavedPlan[] = [
-    {
-        id: 'SIQ-992-X',
-        name: 'FY26 Core Comprehensive Portfolio',
-        category: 'OmniShield Bundle',
-        coverageAmount: 2750000,
-        monthlyPremium: 450,
-        status: 'Adequate',
-        lastModified: '2026-10-14',
-        description: 'Primary deployed portfolio combining pure term life, health floater, and critical illness indemnity.'
-    },
-    {
-        id: 'SIQ-104-Y',
-        name: 'Retirement Acceleration Strategy',
-        category: 'Term Life Max',
-        coverageAmount: 3500000,
-        monthlyPremium: 580,
-        status: 'Incomplete',
-        lastModified: '2026-09-28',
-        description: 'Exploratory setup testing increasing term riders with mortgage debt clearance.'
-    },
-    {
-        id: 'SIQ-882-B',
-        name: 'Disability & Trauma Shield v2',
-        category: 'Critical Illness',
-        coverageAmount: 1200000,
-        monthlyPremium: 165,
-        status: 'Adequate',
-        lastModified: '2026-08-15',
-        description: 'Standalone disability income continuity for tech lead occupational hazards.'
-    },
-    {
-        id: 'SIQ-045-Z',
-        name: 'Tier 1 Metro Health Floater',
-        category: 'Health Floater',
-        coverageAmount: 1000000,
-        monthlyPremium: 280,
-        status: 'Gap Detected',
-        lastModified: '2026-07-02',
-        description: 'Super top-up model with $25k deductible; identified 15% co-pay exposure.'
-    },
-    {
-        id: 'SIQ-012-A',
-        name: 'FY25 Archive - Baseline Term',
-        category: 'Term Life',
-        coverageAmount: 1500000,
-        monthlyPremium: 145,
-        status: 'Archived',
-        lastModified: '2025-12-20',
-        description: 'Legacy individual life policy prior to dependents addition.'
-    }
-];
+const STATUS_FOR_RATING: Record<string, SavedPlan['status']> = {
+    Optimal: 'Adequate',
+    Adequate: 'Adequate',
+    Vulnerable: 'Gap Detected',
+    'High Risk': 'Gap Detected',
+};
 
 export const SavedPlansView: React.FC = () => {
-    const { setCurrentScreen, setSelectedPolicyId, user } = useApp();
+    const { setCurrentScreen, user, strategy } = useApp();
 
-    const [plans, setPlans] = useState<SavedPlan[]>(initialSavedPlans);
+    const [plans, setPlans] = useState<SavedPlan[] | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -85,10 +40,14 @@ export const SavedPlansView: React.FC = () => {
         if (!user.isLoggedIn) return;
         ShieldIQApi.getPlans().then(res => {
             if (res && res.success && Array.isArray(res.data)) setPlans(res.data);
+            else {
+                setPlans([]);
+                setActionError(res?.error || 'Could not load your plans. Please try again.');
+            }
         });
     }, [user.isLoggedIn]);
 
-    const filteredPlans = plans.filter(p => {
+    const filteredPlans = (plans ?? []).filter(p => {
         const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
         const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,30 +57,40 @@ export const SavedPlansView: React.FC = () => {
 
     const handleCreatePlan = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newPlanName.trim()) return;
+        if (!newPlanName.trim() || !strategy) return;
 
-        const draft: Omit<SavedPlan, 'id' | 'lastModified'> = {
+        // Snapshot of the user's current strategy, so a saved plan records real numbers.
+        const res = await ShieldIQApi.createPlan({
             name: newPlanName.trim(),
-            category: 'Custom Bundle',
-            coverageAmount: 2500000,
-            monthlyPremium: 410,
-            status: 'Adequate',
-            description: 'Custom configuration generated from live actuarial adjustments.'
-        };
-
-        const res = await ShieldIQApi.createPlan(draft);
-        const created: SavedPlan = res && res.success
-            ? res.data
-            : { ...draft, id: `SIQ-${Math.floor(100 + Math.random() * 900)}-LOCAL`, lastModified: new Date().toISOString().split('T')[0] };
-
-        setPlans(prev => [created, ...prev]);
-        setNewPlanName('');
-        setIsCreateModalOpen(false);
+            category: 'Protection Strategy',
+            coverageAmount: strategy.life.totalNeed + strategy.health.recommendedCover,
+            monthlyPremium: Math.round(strategy.affordability.estimatedAnnualPremium / 12),
+            status: STATUS_FOR_RATING[strategy.rating],
+            description: `Score ${strategy.score}/100 (${strategy.rating}). Life need ${formatINR(strategy.life.totalNeed)}, gap ${formatINR(strategy.life.gap)}; health need ${formatINR(strategy.health.recommendedCover)}, gap ${formatINR(strategy.health.gap)}.`,
+        });
+        if (res && res.success) {
+            setPlans(prev => [res.data, ...(prev ?? [])]);
+            setNewPlanName('');
+            setIsCreateModalOpen(false);
+            setActionError(null);
+        } else {
+            setActionError(res?.error || 'Could not save the plan. Please try again.');
+        }
     };
 
-    const handleDeletePlan = (id: string) => {
-        ShieldIQApi.deletePlan(id);
-        setPlans(prev => prev.filter(p => p.id !== id));
+    const handleDeletePlan = async (id: string) => {
+        const res = await ShieldIQApi.deletePlan(id);
+        if (res && res.success) setPlans(prev => (prev ?? []).filter(p => p.id !== id));
+        else setActionError(res?.error || 'Could not delete the plan. Please try again.');
+    };
+
+    const handleExportCsv = () => {
+        const url = URL.createObjectURL(new Blob([toCsv(filteredPlans)], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `shieldiq-plans-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     const getStatusBadge = (status: SavedPlan['status']) => {
@@ -137,7 +106,7 @@ export const SavedPlansView: React.FC = () => {
         }
     };
 
-    const activePlan = plans[0];
+    const activePlan = plans?.[0];
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
@@ -160,7 +129,8 @@ export const SavedPlansView: React.FC = () => {
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <Button
                         variant="outline"
-                        onClick={() => setCurrentScreen('dashboard')}
+                        onClick={handleExportCsv}
+                        disabled={filteredPlans.length === 0}
                         className="font-bold border-border"
                     >
                         <Download className="w-4 h-4 mr-2" />
@@ -168,6 +138,8 @@ export const SavedPlansView: React.FC = () => {
                     </Button>
                     <Button
                         onClick={() => setIsCreateModalOpen(true)}
+                        disabled={!strategy}
+                        title={strategy ? undefined : 'Complete your profile to save a strategy snapshot'}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
                     >
                         <PlusCircle className="w-4 h-4 mr-2" />
@@ -177,13 +149,20 @@ export const SavedPlansView: React.FC = () => {
             </div>
 
             {/* Active Deployed Plan Highlight Card */}
+            {actionError && <p role="alert" className="text-sm font-medium text-red-600">{actionError}</p>}
+            {plans?.length === 0 && !actionError && (
+                <p className="text-sm text-muted-foreground">
+                    No saved plans yet. {strategy ? 'Use "Save Current Plan" to snapshot your strategy.' : 'Complete your profile, then save your first strategy.'}
+                </p>
+            )}
+
             {activePlan && (
                 <Card className="border-border shadow-md bg-gradient-to-br from-card via-card to-blue-500/5 relative overflow-hidden p-8">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div className="space-y-3 max-w-3xl">
                             <div className="flex items-center gap-3">
                                 <Badge className="bg-blue-600 text-white border-none text-[10px] font-bold uppercase tracking-wider">
-                                    Currently Deployed
+                                    Most Recent
                                 </Badge>
                                 <span className="text-xs font-mono text-muted-foreground">ID: {activePlan.id}</span>
                                 {getStatusBadge(activePlan.status)}
@@ -199,10 +178,10 @@ export const SavedPlansView: React.FC = () => {
                                     <Clock className="w-4 h-4 text-blue-600" /> Last Modified: {activePlan.lastModified}
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-600" /> Coverage: ${(activePlan.coverageAmount / 1000).toLocaleString()}k
+                                    <ShieldCheck className="w-4 h-4 text-emerald-600" /> Coverage: {formatINR(activePlan.coverageAmount)}
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <Calendar className="w-4 h-4 text-indigo-600" /> Premium: ${activePlan.monthlyPremium}/mo
+                                    <Calendar className="w-4 h-4 text-indigo-600" /> Premium: {formatINR(activePlan.monthlyPremium)}/mo
                                 </span>
                             </div>
                         </div>
@@ -216,13 +195,10 @@ export const SavedPlansView: React.FC = () => {
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={() => {
-                                    setSelectedPolicyId('POL-8821');
-                                    setCurrentScreen('deepdive');
-                                }}
+                                onClick={() => setCurrentScreen('comparison')}
                                 className="font-bold border-border"
                             >
-                                Inspect Deep-Dive <ExternalLink className="w-4 h-4 ml-2" />
+                                Compare Policies <ExternalLink className="w-4 h-4 ml-2" />
                             </Button>
                         </div>
                     </div>
@@ -294,7 +270,7 @@ export const SavedPlansView: React.FC = () => {
                                         </Badge>
                                     </td>
                                     <td className="p-4 font-mono font-bold text-foreground">
-                                        ${(plan.coverageAmount / 1000).toLocaleString()}k
+                                        {formatINR(plan.coverageAmount)}
                                     </td>
                                     <td className="p-4">{getStatusBadge(plan.status)}</td>
                                     <td className="p-4 font-mono text-xs text-muted-foreground">{plan.lastModified}</td>

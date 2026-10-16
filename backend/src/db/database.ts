@@ -101,6 +101,53 @@ export function initDatabase(dbPath?: string): DatabaseSync {
     );
   `);
 
+  // Financial profile collected at onboarding. ALTER keeps existing databases working.
+  const profileColumns: [string, string][] = [
+    ['city_tier', "TEXT NOT NULL DEFAULT 'Tier 1 (Metro)'"],
+    ['home_loan', 'REAL NOT NULL DEFAULT 0'],
+    ['other_loans', 'REAL NOT NULL DEFAULT 0'],
+    ['monthly_expenses', 'REAL NOT NULL DEFAULT 0'],
+    ['existing_life_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['existing_health_cover', 'REAL NOT NULL DEFAULT 0'],
+    ['employer_benefits', "TEXT NOT NULL DEFAULT '[]'"],
+    ['lifestyle_risks', "TEXT NOT NULL DEFAULT '[]'"],
+    ['onboarding_completed', 'INTEGER NOT NULL DEFAULT 0'],
+  ];
+  const existingColumns = new Set(
+    (db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map(c => c.name)
+  );
+  for (const [column, definition] of profileColumns) {
+    if (!existingColumns.has(column)) db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
+  }
+
+  // Databases created before the financial profile existed hold the old USD-era demo persona; upgrade it once.
+  if (process.env.NODE_ENV !== 'production') {
+    db.prepare(
+      `UPDATE users SET income = 2400000, city = 'Bengaluru, KA', city_tier = 'Tier 1 (Metro)', home_loan = 4500000,
+         other_loans = 500000, monthly_expenses = 85000, existing_life_cover = 15000000, existing_health_cover = 500000,
+         employer_benefits = '["Group Term Life","OPD Benefits"]', onboarding_completed = 1
+       WHERE id = 'USR-7701' AND onboarding_completed = 0 AND income = 145000`
+    ).run();
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_cache (
+      cache_key TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_strategies (
+      user_id TEXT PRIMARY KEY,
+      profile_hash TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
   // Seed default demo user if not present
   const checkUserStmt = db.prepare('SELECT id FROM users WHERE email = ?');
   const existingUser = checkUserStmt.get('alex.vance@shieldiq.internal');
@@ -113,8 +160,10 @@ export function initDatabase(dbPath?: string): DatabaseSync {
 
     const insertUserStmt = db.prepare(`
       INSERT INTO users (
-        id, email, name, password_hash, salt, age, income, dependents, marital_status, occupation, city, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, email, name, password_hash, salt, age, income, dependents, marital_status, occupation, city, created_at, updated_at,
+        city_tier, home_loan, other_loans, monthly_expenses, existing_life_cover, existing_health_cover,
+        employer_benefits, lifestyle_risks, onboarding_completed
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
     `);
 
     insertUserStmt.run(
@@ -124,13 +173,21 @@ export function initDatabase(dbPath?: string): DatabaseSync {
       passwordHash,
       salt,
       34,
-      145000,
+      2400000, // ₹24L annual gross income
       2,
       'Married',
       'Senior Systems Architect',
-      'San Francisco, CA',
+      'Bengaluru, KA',
       now,
-      now
+      now,
+      'Tier 1 (Metro)',
+      4500000, // home loan
+      500000, // other loans
+      85000, // monthly expenses
+      15000000, // ₹1.5 Cr term cover
+      500000, // ₹5L health cover
+      JSON.stringify(['Group Term Life', 'OPD Benefits']),
+      JSON.stringify([])
     );
 
     // Seed default saved plans for demo user

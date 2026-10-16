@@ -17,6 +17,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  FileSearch,
 } from 'lucide-react';
 
 const navItems: { id: ScreenId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -30,6 +31,7 @@ const navItems: { id: ScreenId; label: string; icon: React.ComponentType<{ class
   { id: 'healthplanner', label: 'Health', icon: HeartPulse },
   { id: 'savedplans', label: 'Saved Plans', icon: BookmarkCheck },
   { id: 'deepdive', label: 'Deep Dive', icon: FileText },
+  { id: 'policyscan', label: 'Policy Scan', icon: FileSearch },
 ];
 
 export const Navbar: React.FC = () => {
@@ -38,7 +40,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/80 px-6 py-3 transition-colors">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-[100rem] mx-auto flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <button
           onClick={() => setCurrentScreen('dashboard')}
@@ -58,7 +60,7 @@ export const Navbar: React.FC = () => {
         </button>
 
         {/* Navigation Tabs */}
-        <nav className="hidden xl:flex items-center gap-1 bg-muted/60 p-1 rounded-full border border-border/50">
+        <nav className="hidden min-[1700px]:flex items-center gap-1 bg-muted/60 p-1 rounded-full border border-border/50">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentScreen === item.id;
@@ -94,10 +96,10 @@ export const Navbar: React.FC = () => {
 
           {user.isLoggedIn ? (
             <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <div className="hidden sm:flex flex-col text-right">
+              <div className="hidden sm:flex flex-col text-right whitespace-nowrap">
                 <span className="text-xs font-bold text-foreground">{user.name}</span>
-                <span className="text-[9px] text-emerald-500 font-semibold uppercase tracking-wider">
-                  Verified Entity
+                <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">
+                  {user.cityTier}
                 </span>
               </div>
               <Button
@@ -122,7 +124,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile / Medium Screen Nav Drawer Bar */}
-      <div className="xl:hidden mt-3 pt-2 border-t border-border flex items-center gap-1 overflow-x-auto pb-1">
+      <div className="min-[1700px]:hidden mt-3 pt-2 border-t border-border flex items-center gap-1 overflow-x-auto pb-1">
         {navItems.map(item => {
           const Icon = item.icon;
           const isActive = currentScreen === item.id;

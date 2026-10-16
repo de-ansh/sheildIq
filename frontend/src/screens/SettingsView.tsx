@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     User,
     Shield,
@@ -13,44 +12,57 @@ import {
     Globe,
     Smartphone,
     Save,
-    RotateCcw
+    RotateCcw,
+    AlertTriangle
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
-import { ShieldIQApi } from '@/lib/api';
+import { ShieldIQApi, CITY_TIERS, type CityTier } from '@/lib/api';
+import { providerLabel } from '@/lib/utils';
 
 export const SettingsView: React.FC = () => {
-    const { user, updateUserProfile, setCurrentScreen, logout } = useApp();
+    const { user, updateUserProfile, setCurrentScreen, logout, aiProvider } = useApp();
 
     const [activeTab, setActiveTab] = useState<'profile' | 'regional' | 'security'>('profile');
-    const [savedNotification, setSavedNotification] = useState(false);
+    const [saveResult, setSaveResult] = useState<{ ok: boolean; text: string } | null>(null);
 
     // Form fields
-    const [name, setName] = useState(user?.name || 'Alex Vance');
-    const [email, setEmail] = useState(user?.email || 'alex.vance@shieldiq.internal');
-    const [income, setIncome] = useState(user?.income || 145000);
-    const [dependents, setDependents] = useState(user?.dependents ?? 2);
-    const [occupation, setOccupation] = useState(user?.occupation || 'Senior Systems Architect');
-    const [city, setCity] = useState(user?.city || 'San Francisco, CA');
-    const [currency, setCurrency] = useState('USD');
+    const [name, setName] = useState(user.name);
+    const [income, setIncome] = useState(user.income);
+    const [dependents, setDependents] = useState(user.dependents);
+    const [occupation, setOccupation] = useState(user.occupation);
+    const [city, setCity] = useState(user.city);
+    const [age, setAge] = useState(user.age);
+    const [maritalStatus, setMaritalStatus] = useState(user.maritalStatus);
+    const [cityTier, setCityTier] = useState<CityTier>(user.cityTier);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [passwordMessage, setPasswordMessage] = useState<{ ok: boolean; text: string } | null>(null);
-    const [sessionLogging, setSessionLogging] = useState(true);
-    const [modelTraining, setModelTraining] = useState(false);
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        updateUserProfile({
+        const error = await updateUserProfile({
             name,
-            email,
             income: Number(income),
             dependents: Number(dependents),
             occupation,
             city,
+            age: Number(age),
+            maritalStatus,
+            cityTier,
         });
+        setSaveResult(error ? { ok: false, text: error } : { ok: true, text: 'Profile saved. Your strategy has been recalculated.' });
+    };
 
-        setSavedNotification(true);
-        setTimeout(() => setSavedNotification(false), 3000);
+    const resetForm = () => {
+        setName(user.name);
+        setIncome(user.income);
+        setDependents(user.dependents);
+        setOccupation(user.occupation);
+        setCity(user.city);
+        setAge(user.age);
+        setMaritalStatus(user.maritalStatus);
+        setCityTier(user.cityTier);
+        setSaveResult(null);
     };
 
     const handleChangePassword = async () => {
@@ -103,13 +115,10 @@ export const SettingsView: React.FC = () => {
             </div>
 
             {/* Saved Banner */}
-            {savedNotification && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between animate-in fade-in">
-                    <div className="flex items-center gap-3 text-emerald-800 dark:text-emerald-300">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                        <span className="text-sm font-bold">Preferences saved successfully across all active models.</span>
-                    </div>
-                    <Badge className="bg-emerald-600 text-white border-none text-[10px]">Updated</Badge>
+            {saveResult && (
+                <div role="status" className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in border ${saveResult.ok ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-700 dark:text-red-400'}`}>
+                    {saveResult.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5" />}
+                    <span className="text-sm font-bold">{saveResult.text}</span>
                 </div>
             )}
 
@@ -141,9 +150,9 @@ export const SettingsView: React.FC = () => {
 
                     <div className="pt-6 border-t border-border mt-6 space-y-3">
                         <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pro Account</span>
-                            <p className="text-xs font-bold text-foreground">Verified Enterprise Tier</p>
-                            <p className="text-[11px] text-muted-foreground">Full unconstrained actuarial calculation engines unlocked.</p>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Signed In As</span>
+                            <p className="text-xs font-bold text-foreground break-all">{user.email}</p>
+                            <p className="text-[11px] text-muted-foreground">{user.onboardingCompleted ? 'Financial profile complete' : 'Financial profile incomplete'}</p>
                         </div>
                     </div>
                 </div>
@@ -178,11 +187,12 @@ export const SettingsView: React.FC = () => {
                                         <Input
                                             id="settings-email"
                                             type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="bg-muted/30 border-border"
-                                            required
+                                            value={user.email}
+                                            readOnly
+                                            aria-describedby="settings-email-note"
+                                            className="bg-muted/60 border-border text-muted-foreground"
                                         />
+                                        <p id="settings-email-note" className="text-[10px] text-muted-foreground">Your sign-in ID; it can't be changed here.</p>
                                     </div>
 
                                     <div className="space-y-2">
@@ -240,49 +250,47 @@ export const SettingsView: React.FC = () => {
                                 <div>
                                     <CardTitle className="text-xl font-bold">Regional Settings & Currency</CardTitle>
                                     <CardDescription className="text-xs text-muted-foreground">
-                                        Configure display currency and localized inflation benchmarks.
+                                        Age, family and city tier drive your cover and premium estimates.
                                     </CardDescription>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-currency" className="text-xs font-bold">Primary Currency</Label>
-                                        <select
-                                            id="settings-currency"
-                                            value={currency}
-                                            onChange={(e) => setCurrency(e.target.value)}
-                                            className="flex h-10 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-sm font-medium"
-                                        >
-                                            <option value="USD">USD ($) - United States Dollar</option>
-                                            <option value="INR">INR (₹) - Indian Rupee</option>
-                                            <option value="EUR">EUR (€) - Eurozone</option>
-                                            <option value="GBP">GBP (£) - British Pound</option>
+                                        <Label htmlFor="settings-age" className="text-xs font-bold">Age</Label>
+                                        <Input id="settings-age" type="number" min={18} max={100} value={age} onChange={(e) => setAge(Number(e.target.value))} className="bg-muted/30 border-border" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="settings-marital" className="text-xs font-bold">Marital Status</Label>
+                                        <select id="settings-marital" value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value as 'Single' | 'Married')} className="w-full h-10 rounded-md border border-border bg-muted/30 px-3 text-sm">
+                                            <option value="Single">Single</option>
+                                            <option value="Married">Married</option>
                                         </select>
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-timezone" className="text-xs font-bold">Reporting Timezone</Label>
-                                        <select
-                                            id="settings-timezone"
-                                            defaultValue="GMT-08:00"
-                                            className="flex h-10 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-sm font-medium"
-                                        >
-                                            <option value="GMT-08:00">(GMT-08:00) Pacific Time</option>
-                                            <option value="GMT-05:00">(GMT-05:00) Eastern Time</option>
-                                            <option value="GMT+05:30">(GMT+05:30) India Standard Time</option>
-                                            <option value="GMT+00:00">(GMT+00:00) London</option>
+                                        <Label htmlFor="settings-tier" className="text-xs font-bold">City Tier</Label>
+                                        <select id="settings-tier" value={cityTier} onChange={(e) => setCityTier(e.target.value as CityTier)} className="w-full h-10 rounded-md border border-border bg-muted/30 px-3 text-sm">
+                                            {CITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold">Currency</Label>
+                                        <p className="h-10 flex items-center px-3 rounded-md border border-border bg-muted/60 text-sm text-muted-foreground">INR (₹) – all amounts</p>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
-                                    <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                                        <Globe className="w-4 h-4 text-blue-600" />
-                                        Actuarial Regional Calibration
+                                <div className="p-4 rounded-xl bg-muted/30 border border-border flex items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                                            <Globe className="w-4 h-4 text-blue-600" />
+                                            Loans, expenses & existing cover
+                                        </div>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            City tier sets health-cost benchmarks. Update loans, expenses, existing cover and lifestyle risks in the financial profile.
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        Medical inflation and mortality tables are dynamically calibrated based on your selected region and demographic tier.
-                                    </p>
+                                    <Button type="button" variant="outline" size="sm" onClick={() => setCurrentScreen('onboarding')} className="font-bold shrink-0">
+                                        Edit Financial Profile
+                                    </Button>
                                 </div>
                             </Card>
                         )}
@@ -367,30 +375,17 @@ export const SettingsView: React.FC = () => {
                                         </Badge>
                                     </div>
 
-                                    <div className="p-4 rounded-xl border border-border space-y-4">
-                                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Privacy Controls</h4>
-
-                                        <div className="flex items-center gap-3">
-                                            <Checkbox
-                                                id="chk-session-logging"
-                                                checked={sessionLogging}
-                                                onCheckedChange={(c) => setSessionLogging(!!c)}
-                                            />
-                                            <Label htmlFor="chk-session-logging" className="text-xs font-medium cursor-pointer">
-                                                Technical Session Logging (store timestamp & IP metadata for fraud prevention)
-                                            </Label>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <Checkbox
-                                                id="chk-model-training"
-                                                checked={modelTraining}
-                                                onCheckedChange={(c) => setModelTraining(!!c)}
-                                            />
-                                            <Label htmlFor="chk-model-training" className="text-xs font-medium cursor-pointer">
-                                                Allow anonymized telemetry for actuarial model accuracy calibration
-                                            </Label>
-                                        </div>
+                                    <div className="p-4 rounded-xl border border-border space-y-3">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">What We Store</h4>
+                                        <ul className="text-xs text-muted-foreground leading-relaxed space-y-1.5 list-disc pl-4">
+                                            <li>Your account, financial profile and saved plans.</li>
+                                            <li>A security log of sign-ins, failed sign-ins, password and profile changes, used to protect your account.</li>
+                                            <li>
+                                                {aiProvider
+                                                    ? `When you generate an AI strategy, only anonymised figures (no name, email or city) are sent to ${providerLabel(aiProvider)}, with provider-side storage disabled.`
+                                                    : 'AI strategy generation is not enabled on this server.'}
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </Card>
@@ -401,10 +396,7 @@ export const SettingsView: React.FC = () => {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => {
-                                    setName(user?.name || 'Alex Vance');
-                                    setEmail(user?.email || 'alex.vance@shieldiq.internal');
-                                }}
+                                onClick={resetForm}
                                 className="font-bold border-border"
                             >
                                 <RotateCcw className="w-4 h-4 mr-2" />

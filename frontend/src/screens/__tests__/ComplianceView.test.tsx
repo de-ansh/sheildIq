@@ -15,7 +15,7 @@ describe('ComplianceView Component', () => {
     expect(screen.getByText(/Table of Contents/i)).toBeInTheDocument();
     expect(screen.getByText(/01 Introduction & Scope/i)).toBeInTheDocument();
     expect(screen.getByText(/02 Data Sourcing & Formulae/i)).toBeInTheDocument();
-    expect(screen.getByText(/04 Statutory Regulatory Standards/i)).toBeInTheDocument();
+    expect(screen.getByText(/04 Data Protection & Security/i)).toBeInTheDocument();
   });
 
   it('allows user to acknowledge terms and updates status badge', () => {
@@ -29,6 +29,6 @@ describe('ComplianceView Component', () => {
     const ackBtn = screen.getByRole('button', { name: /Acknowledge & Accept Terms/i });
     fireEvent.click(ackBtn);
 
-    expect(screen.getByText(/Acknowledged & Verified/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Acknowledged$/i)).toBeInTheDocument();
   });
 });

@@ -1,17 +1,20 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { mockApi } from '@/test/mockApi';
 import { SystemStatesView } from '../SystemStatesView';
 import { AppContextProvider } from '@/lib/AppContext';
 
 describe('SystemStatesView Component', () => {
-  it('renders default maintenance state and state switcher buttons', () => {
+  it('shows the live backend status and preview state buttons', async () => {
+    mockApi({ '/health': { status: 'UP', version: '1.0.0', timestamp: '2026-10-16T10:00:00.000Z' } });
     render(
       <AppContextProvider>
         <SystemStatesView />
       </AppContextProvider>
     );
 
-    expect(screen.getByText(/Periodic Model Calibration/i)).toBeInTheDocument();
+    expect(await screen.findByText(/All Systems Operational/i)).toBeInTheDocument();
+    vi.unstubAllGlobals();
     expect(screen.getByRole('button', { name: /^loading$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^error$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^empty$/i })).toBeInTheDocument();
