@@ -17,3 +17,6 @@ CLAUDE.md
 # compiled copies of vite.config.ts; Vite would load the .js instead of the real config
 frontend/vite.config.js
 frontend/vite.config.d.ts
+
+# Database backups (personal data)
+/backups/

@@ -7,9 +7,11 @@ import { useApp, ScreenId } from '@/lib/AppContext';
 import { formatINR, reviewOverdueMonths } from '@/lib/utils';
 import { ShieldIQApi, type PlanTypeOptions } from '@/lib/api';
 import { AiStrategyPanel } from '@/components/AiStrategyPanel';
+import { useI18n } from '@/lib/i18n';
 
 export const DashboardView: React.FC = () => {
     const { user, setCurrentScreen, strategy } = useApp();
+    const { t } = useI18n();
     const [planTypes, setPlanTypes] = useState<PlanTypeOptions[] | null>(null);
 
     // Recommended plan per insurance type; reloaded whenever the strategy (i.e. the profile) changes.
@@ -26,9 +28,9 @@ export const DashboardView: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
                 <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">Analytical Dashboard</h2>
+                        <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">{t('dash.title')}</h2>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-                            Real-time clarity for {user.name}{user.city ? ` • ${user.city}` : ''} • {user.cityTier}
+                            {t('dash.subtitle', { name: user.name })}{user.city ? ` • ${user.city}` : ''} • {t(`tier.${user.cityTier}`)}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
@@ -37,13 +39,13 @@ export const DashboardView: React.FC = () => {
                             onClick={() => setCurrentScreen('comparison')}
                             className="font-bold border-slate-200 dark:border-slate-800"
                         >
-                            <FileText className="w-4 h-4 mr-2" /> Compare Policies
+                            <FileText className="w-4 h-4 mr-2" /> {t('dash.comparePolicies')}
                         </Button>
                         <Button
                             onClick={() => setCurrentScreen('calculator')}
                             className="font-bold bg-blue-600 hover:bg-blue-700 text-white"
                         >
-                            New Risk Audit
+                            {t('dash.newAudit')}
                         </Button>
                     </div>
                 </header>
@@ -51,12 +53,12 @@ export const DashboardView: React.FC = () => {
                 {reviewOverdueMonths(user.profileReviewedAt) !== null && (
                     <div role="status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-amber-500/40 bg-amber-500/10">
                         <div className="space-y-1">
-                            <p className="font-black text-foreground">Time for your yearly review</p>
+                            <p className="font-black text-foreground">{t('dash.reviewTitle')}</p>
                             <p className="text-sm text-muted-foreground">
-                                Your profile was last updated {reviewOverdueMonths(user.profileReviewedAt)} months ago. Income, loans and family change, and so does the cover you need.
+                                {t('dash.reviewBody', { months: reviewOverdueMonths(user.profileReviewedAt) ?? 0 })}
                             </p>
                         </div>
-                        <Button variant="outline" onClick={() => setCurrentScreen('onboarding')} className="font-bold shrink-0">Review Profile</Button>
+                        <Button variant="outline" onClick={() => setCurrentScreen('onboarding')} className="font-bold shrink-0">{t('dash.reviewButton')}</Button>
                     </div>
                 )}
 
@@ -64,7 +66,7 @@ export const DashboardView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Life Cover Need</span>
+                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{t('dash.lifeNeed')}</span>
                             <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
@@ -72,14 +74,14 @@ export const DashboardView: React.FC = () => {
                                 {strategy ? formatINR(strategy.life.totalNeed) : '—'}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                {strategy && strategy.life.savings > 0 ? 'Income + loans + education − savings' : 'Income replacement + loans + education'}
+                                {strategy && strategy.life.savings > 0 ? t('dash.lifeNeedWithSavings') : t('dash.lifeNeedPlain')}
                             </CardDescription>
                         </CardContent>
                     </Card>
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Coverage Gap</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.gap')}</span>
                             <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
@@ -88,17 +90,18 @@ export const DashboardView: React.FC = () => {
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
                                 {strategy
-                                    ? `Life ${formatINR(strategy.life.gap)} · Health ${formatINR(strategy.health.gap)}${strategy.parentsHealth ? ` · Parents ${formatINR(strategy.parentsHealth.gap)}` : ''}`
-                                    : 'Unsecured exposure'}
+                                    ? t('dash.gapSplit', { life: formatINR(strategy.life.gap), health: formatINR(strategy.health.gap) })
+                                        + (strategy.parentsHealth ? t('dash.gapParents', { parents: formatINR(strategy.parentsHealth.gap) }) : '')
+                                    : t('dash.gapEmpty')}
                             </CardDescription>
                         </CardContent>
                     </Card>
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Your Current Cover</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.currentCover')}</span>
                             <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-none font-black text-[9px] uppercase tracking-widest">
-                                Declared
+                                {t('dash.declared')}
                             </Badge>
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
@@ -106,14 +109,14 @@ export const DashboardView: React.FC = () => {
                                 {formatINR(declaredCover)}
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                Life {formatINR(user.existingLifeCover)} · Health {formatINR(user.existingHealthCover)}
+                                {t('dash.coverSplit', { life: formatINR(user.existingLifeCover), health: formatINR(user.existingHealthCover) })}
                             </CardDescription>
                         </CardContent>
                     </Card>
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Risk Adequacy</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.adequacy')}</span>
                             <span className={`${scoreColor} font-black font-mono`}>{strategy ? `${strategy.score}/100` : '—'}</span>
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
@@ -121,7 +124,7 @@ export const DashboardView: React.FC = () => {
                                 <div className={`h-full ${scoreBar} transition-all`} style={{ width: `${strategy?.score ?? 0}%` }} />
                             </div>
                             <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
-                                {strategy ? `${strategy.rating} · 85+ is optimal` : 'Complete onboarding to score'}
+                                {strategy ? t('dash.optimalHint', { rating: t(`rating.${strategy.rating}`) }) : t('dash.completeToScore')}
                             </CardDescription>
                         </CardContent>
                     </Card>
@@ -131,43 +134,43 @@ export const DashboardView: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <Card className="lg:col-span-2 border-border shadow-xl min-h-[460px] flex flex-col">
                         <CardHeader className="p-6 sm:p-8 pb-0 sm:pb-0 flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-                            <CardTitle className="text-lg font-black text-foreground uppercase tracking-tight">Protection Strategy Overview</CardTitle>
+                            <CardTitle className="text-lg font-black text-foreground uppercase tracking-tight">{t('dash.overview')}</CardTitle>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setCurrentScreen('analysis')}
                                 className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700"
                             >
-                                Full analysis <ArrowRight className="w-3 h-3 ml-2" />
+                                {t('dash.fullAnalysis')} <ArrowRight className="w-3 h-3 ml-2" />
                             </Button>
                         </CardHeader>
                         <CardContent className="flex-1 p-8 pt-4 flex flex-col justify-between">
                             <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground font-medium">
-                                    Recommended plan for each type of cover, quoted for you. Open Compare to see all four options per type.
+                                    {t('dash.overviewSub')}
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {!planTypes && (
-                                        <p className="text-xs text-muted-foreground">{strategy ? 'Quoting plans…' : 'Complete your profile to see recommended plans.'}</p>
+                                        <p className="text-xs text-muted-foreground">{strategy ? t('dash.quoting') : t('dash.completeForPlans')}</p>
                                     )}
-                                    {planTypes?.map(t => {
-                                        const pick = t.options.find(o => o.recommended);
+                                    {planTypes?.map(pt => {
+                                        const pick = pt.options.find(o => o.recommended);
                                         return (
                                             <button
-                                                key={t.type}
+                                                key={pt.type}
                                                 type="button"
                                                 onClick={() => setCurrentScreen('comparison')}
                                                 className="text-left p-4 rounded-xl border border-border bg-card/60 hover:bg-muted/40 transition-all hover:border-blue-500/40 group"
                                             >
                                                 <div className="flex justify-between items-start mb-2 gap-2">
-                                                    <Badge variant="outline" className="text-[10px] font-mono">{t.label}</Badge>
-                                                    {pick && <span className="text-xs font-bold text-blue-600 font-mono">{formatINR(pick.annualPremium)}/yr</span>}
+                                                    <Badge variant="outline" className="text-[10px] font-mono">{t(`planType.${pt.type}`)}</Badge>
+                                                    {pick && <span className="text-xs font-bold text-blue-600 font-mono">{formatINR(pick.annualPremium)}{t('common.perYear')}</span>}
                                                 </div>
                                                 <h4 className="font-bold text-foreground text-sm group-hover:text-blue-600 transition-colors">
-                                                    {pick ? pick.name : 'Already covered'}
+                                                    {pick ? pick.name : t('dash.alreadyCovered')}
                                                 </h4>
                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                    {pick ? `${formatINR(pick.cover)} cover · 4 options to compare` : 'Your existing cover meets the need · see upgrade options'}
+                                                    {pick ? t('dash.planCover', { cover: formatINR(pick.cover) }) : t('dash.planCovered')}
                                                 </p>
                                             </button>
                                         );
@@ -179,8 +182,8 @@ export const DashboardView: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <Activity className="w-5 h-5 text-blue-600" />
                                     <div>
-                                        <p className="text-xs font-bold text-foreground">Interactive Simulation Ready</p>
-                                        <p className="text-[11px] text-muted-foreground">Test portfolio stress under illness, death, and disability scenarios.</p>
+                                        <p className="text-xs font-bold text-foreground">{t('dash.simReady')}</p>
+                                        <p className="text-[11px] text-muted-foreground">{t('dash.simSub')}</p>
                                     </div>
                                 </div>
                                 <Button
@@ -188,7 +191,7 @@ export const DashboardView: React.FC = () => {
                                     onClick={() => setCurrentScreen('simulator')}
                                     className="bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white"
                                 >
-                                    Launch Simulator
+                                    {t('dash.launchSim')}
                                 </Button>
                             </div>
                         </CardContent>
@@ -198,12 +201,12 @@ export const DashboardView: React.FC = () => {
                         <AiStrategyPanel maxInsights={3} />
 
                         <Card className="p-8 border-border shadow-sm space-y-6">
-                            <h5 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Urgent Nodes</h5>
+                            <h5 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.urgent')}</h5>
                             <div className="space-y-2">
                                 {[
-                                    { label: 'Recalculate Human Life Value', screen: 'calculator' as ScreenId },
-                                    { label: 'Audit Health Floater Top-Up', screen: 'healthplanner' as ScreenId },
-                                    { label: 'Review Actuarial Policy Fine Print', screen: 'deepdive' as ScreenId }
+                                    { label: t('dash.nodeHlv'), screen: 'calculator' as ScreenId },
+                                    { label: t('dash.nodeHealth'), screen: 'healthplanner' as ScreenId },
+                                    { label: t('dash.nodeFinePrint'), screen: 'deepdive' as ScreenId }
                                 ].map((node, i) => (
                                     <button
                                         key={i}
@@ -228,7 +231,7 @@ export const DashboardView: React.FC = () => {
                             onClick={() => setCurrentScreen('compliance')}
                             className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
-                            Disclaimer & Compliance Disclosure
+                            {t('dash.compliance')}
                         </button>
                         <span>•</span>
                         <button
@@ -236,7 +239,7 @@ export const DashboardView: React.FC = () => {
                             onClick={() => setCurrentScreen('settings')}
                             className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
-                            Platform Settings
+                            {t('dash.settings')}
                         </button>
                         <span>•</span>
                         <button
@@ -244,11 +247,11 @@ export const DashboardView: React.FC = () => {
                             onClick={() => setCurrentScreen('systemstates')}
                             className="hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
                         >
-                            System Status
+                            {t('dash.status')}
                         </button>
                     </div>
                     <p className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto italic">
-                        ShieldIQ Platform • Analytical Intelligence for Human Risk Management • © 2026
+                        {t('dash.footer')}
                     </p>
                 </footer>
         </div>

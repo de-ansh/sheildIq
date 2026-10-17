@@ -22,6 +22,8 @@ export default defineConfig({
     viewport: { width: 1440, height: 900 },
     // Locally the installed Chrome is used; CI installs Playwright's Chromium.
     ...(process.env.CI ? {} : { channel: 'chrome' }),
+    // Settled colours for the contrast checks; the app turns transitions off under reduced motion.
+    contextOptions: { reducedMotion: 'reduce' },
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },

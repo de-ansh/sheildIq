@@ -3,19 +3,18 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, X, Send, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, visibleAnswer, type ChatMessage } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
-const STARTERS = [
-    'Why is my life cover need this high?',
-    'Should I prepay my home loan or buy more term cover?',
-    'What does my health cover gap mean for my family?',
-];
 
 /** Floating "Ask ShieldIQ" chat, grounded in the signed-in user's profile and strategy. */
 export const AskShieldIQ: React.FC = () => {
     const { currentScreen } = useApp();
+    const { t, tServer } = useI18n();
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [suggestions, setSuggestions] = useState<string[]>(STARTERS);
+    // null = the starter questions, built at render time so they follow a language switch.
+    const [followUps, setSuggestions] = useState<string[] | null>(null);
+    const suggestions = followUps ?? [t('chat.starter1'), t('chat.starter2'), t('chat.starter3')];
     const [draft, setDraft] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -61,7 +60,7 @@ export const AskShieldIQ: React.FC = () => {
                 // Nothing was saved: drop the partial turn and give the question back to retry.
                 setMessages(before);
                 setDraft(content);
-                setError(res.error);
+                setError(tServer(res.error));
             }
         } finally {
             setIsSending(false);
@@ -77,12 +76,12 @@ export const AskShieldIQ: React.FC = () => {
             <button
                 type="button"
                 onClick={openChat}
-                aria-label="Ask ShieldIQ"
+                aria-label={t('chat.open')}
                 className={`fixed ${launcherOffset} right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 p-3 sm:px-5 sm:py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
             >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
                 {/* Icon only on phones, where the label would cover page content. */}
-                <span className="hidden sm:inline">Ask ShieldIQ</span>
+                <span className="hidden sm:inline">{t('chat.open')}</span>
             </button>
         );
     }
@@ -90,7 +89,7 @@ export const AskShieldIQ: React.FC = () => {
     return (
         <div
             role="dialog"
-            aria-label="Ask ShieldIQ"
+            aria-label={t('chat.open')}
             onKeyDown={e => e.key === 'Escape' && setOpen(false)}
             className="fixed inset-x-4 bottom-4 top-24 z-[60] flex flex-col rounded-2xl border border-border bg-card shadow-2xl sm:inset-x-auto sm:right-6 sm:w-[420px] print:hidden"
         >
@@ -98,8 +97,8 @@ export const AskShieldIQ: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-blue-600" aria-hidden="true" />
                     <div>
-                        <h2 className="text-sm font-black tracking-tight">Ask ShieldIQ</h2>
-                        <p className="text-[10px] text-muted-foreground">Answers use your profile and strategy</p>
+                        <h2 className="text-sm font-black tracking-tight">{t('chat.open')}</h2>
+                        <p className="text-[10px] text-muted-foreground">{t('chat.subtitle')}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -107,22 +106,22 @@ export const AskShieldIQ: React.FC = () => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            aria-label="Clear conversation"
-                            title="Clear conversation"
+                            aria-label={t('chat.clear')}
+                            title={t('chat.clear')}
                             onClick={async () => {
                                 const res = await ShieldIQApi.clearChatHistory();
                                 if (res?.success) {
                                     setMessages([]);
-                                    setSuggestions(STARTERS);
+                                    setSuggestions(null);
                                 } else {
-                                    setError('Could not clear the conversation. Please try again.');
+                                    setError(t('chat.clearFailed'));
                                 }
                             }}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close chat">
+                    <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label={t('chat.close')}>
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
@@ -131,7 +130,7 @@ export const AskShieldIQ: React.FC = () => {
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4" aria-live="polite">
                 {messages.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                        Ask anything about protecting your household: life and health cover, loans, emergency funds, or the numbers on any screen.
+                        {t('chat.empty')}
                     </p>
                 )}
                 {messages.map((m, i) => m.content && (
@@ -145,7 +144,7 @@ export const AskShieldIQ: React.FC = () => {
                 ))}
                 {isSending && !messages[messages.length - 1]?.content && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Thinking…
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('chat.thinking')}
                     </div>
                 )}
                 {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
@@ -174,7 +173,7 @@ export const AskShieldIQ: React.FC = () => {
                 }}
                 className="flex items-end gap-2 px-5 py-4"
             >
-                <label htmlFor="ask-shieldiq-input" className="sr-only">Your question</label>
+                <label htmlFor="ask-shieldiq-input" className="sr-only">{t('chat.inputLabel')}</label>
                 <textarea
                     id="ask-shieldiq-input"
                     ref={inputRef}
@@ -188,15 +187,15 @@ export const AskShieldIQ: React.FC = () => {
                     }}
                     rows={2}
                     maxLength={2000}
-                    placeholder="Ask a question…"
+                    placeholder={t('chat.placeholder')}
                     className="flex-1 resize-none rounded-xl border border-input bg-muted/30 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 />
-                <Button type="submit" size="icon" disabled={!draft.trim() || isSending} aria-label="Send" className="h-10 w-10 bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" size="icon" disabled={!draft.trim() || isSending} aria-label={t('chat.send')} className="h-10 w-10 bg-blue-600 hover:bg-blue-700">
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
             <p className="px-5 pb-3 text-[9px] text-muted-foreground">
-                Guidance from your profile, not regulated financial advice. Only anonymised figures are sent to the AI provider.
+                {t('chat.footer')}
             </p>
         </div>
     );

@@ -96,6 +96,9 @@ export interface HealthPlanResult {
 
 export interface Insight {
   severity: 'critical' | 'warning' | 'info';
+  /** Stable id and formatted values, so the app can show the finding in the user's language. */
+  code?: string;
+  params?: Record<string, string | number>;
   title: string;
   detail: string;
 }

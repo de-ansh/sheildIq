@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { one, run } from '../db/database.js';
 import { CITY_TIERS, DEPENDENT_RELATIONS, formatINR, type StrategyProfile, type StrategyResult } from './actuarial.service.js';
 import type { PlanTypeOptions } from './plans.service.js';
+import type { Language } from './user.service.js';
 import { HEALTH_INSURER_RECORDS, INSURER_RECORDS_SOURCE, LIFE_INSURER_RECORDS } from './insurer-records.js';
 
 export type AiProvider = 'gemini' | 'openai';
@@ -22,6 +23,15 @@ const sha256 = (value: string) => crypto.createHash('sha256').update(value).dige
 /** Stable hash of everything a narrative depends on, so cached output is reused only for an identical profile. */
 export function profileHash(profile: StrategyProfile): string {
   return sha256(JSON.stringify(profile));
+}
+// English keeps the plain profile hash, so narratives cached before languages existed stay valid.
+const strategyKey = (profile: StrategyProfile, language: Language) => (language === 'en' ? profileHash(profile) : sha256(JSON.stringify([profile, language])));
+
+/** Appended to a prompt so the answer comes back in the user's language. Figures and names stay exactly as given. */
+export function languageRule(language: Language): string {
+  return language === 'hi'
+    ? `\n- Write every sentence of your answer in simple, everyday Hindi in Devanagari script (not Hinglish, not English). Keep ₹ amounts, percentages, L/Cr, insurer names and plan names exactly as written in the data. JSON keys stay in English.`
+    : '';
 }
 
 export function configuredProvider(): AiProvider | null {
@@ -489,17 +499,18 @@ async function cachePut(key: string, provider: string, data: unknown) {
 }
 
 export class AiService {
-  static async getCached(userId: string, profile: StrategyProfile): Promise<{ strategy: AiStrategy; provider: string; createdAt: string } | null> {
+  static async getCached(userId: string, profile: StrategyProfile, language: Language = 'en'): Promise<{ strategy: AiStrategy; provider: string; createdAt: string } | null> {
     const row = await one<Record<string, string>>('SELECT profile_hash, provider, payload, created_at FROM ai_strategies WHERE user_id = $1', [userId]);
-    if (!row || row.profile_hash !== profileHash(profile)) return null;
+    // The language is part of the key: switching language must not serve the narrative written in the other one.
+    if (!row || row.profile_hash !== strategyKey(profile, language)) return null;
     const parsed = aiStrategySchema.safeParse(JSON.parse(row.payload));
     return parsed.success ? { strategy: parsed.data, provider: row.provider, createdAt: row.created_at } : null;
   }
 
   /** Generates (and caches) a narrative strategy for the user's current profile. */
-  static async generate(userId: string, profile: StrategyProfile, strategy: StrategyResult, beforeCall: BeforeAiCall) {
+  static async generate(userId: string, profile: StrategyProfile, strategy: StrategyResult, beforeCall: BeforeAiCall, language: Language = 'en') {
     const { data, provider } = await generateJson(
-      { prompt: `${STRATEGY_PROMPT}\n\nHousehold and computed analysis (JSON):\n${context(profile, strategy)}`, schema: strategyJsonSchema, schemaName: 'protection_strategy' },
+      { prompt: `${STRATEGY_PROMPT}${languageRule(language)}\n\nHousehold and computed analysis (JSON):\n${context(profile, strategy)}`, schema: strategyJsonSchema, schemaName: 'protection_strategy' },
       aiStrategySchema,
       beforeCall
     );
@@ -508,7 +519,7 @@ export class AiService {
       `INSERT INTO ai_strategies (user_id, profile_hash, provider, payload, created_at) VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id) DO UPDATE SET profile_hash = excluded.profile_hash, provider = excluded.provider,
          payload = excluded.payload, created_at = excluded.created_at`,
-      [userId, profileHash(profile), provider, JSON.stringify(data), createdAt]
+      [userId, strategyKey(profile, language), provider, JSON.stringify(data), createdAt]
     );
     return { strategy: data, provider, createdAt };
   }
@@ -521,7 +532,8 @@ export class AiService {
     planOptions: PlanTypeOptions[],
     onDelta: (text: string) => void,
     beforeCall: BeforeAiCall,
-    signal: AbortSignal
+    signal: AbortSignal,
+    language: Language = 'en'
   ): Promise<{ data: AiChatReply; provider: AiProvider }> {
     const plans = planOptions.map(t => ({
       type: t.label,
@@ -542,7 +554,7 @@ You are "Ask ShieldIQ", answering this user's questions about protecting their h
 - The plan premiums above are ShieldIQ estimates for plan types, never an insurer's quote: never attach them to a named insurer. Tell the user to get actual quotes before buying.
 - Keep answers under about 180 words. This is guidance, not regulated financial advice; say so only when the user is about to make a purchase decision.
 - Write plain text: short paragraphs or "- " bullet lines; no markdown headings, bold or tables.
-- After the answer, write a line containing only ---, then up to 3 short follow-up questions this user might ask next, one per line.
+- After the answer, write a line containing only ---, then up to 3 short follow-up questions this user might ask next, one per line.${languageRule(language)}
 
 User profile and computed analysis (JSON):
 ${context(profile, strategy)}
@@ -570,16 +582,17 @@ Reply to the last USER message.`;
     screen: ExplainScreen,
     inputs: Record<string, unknown>,
     result: Record<string, unknown>,
-    beforeCall: BeforeAiCall
+    beforeCall: BeforeAiCall,
+    language: Language = 'en'
   ) {
-    const key = sha256(JSON.stringify(['explain', userId, screen, inputs, result, profile]));
+    const key = sha256(JSON.stringify(['explain', userId, screen, inputs, result, profile, ...(language === 'en' ? [] : [language])]));
     const cached = await cacheGet(key, aiExplainSchema);
     if (cached) return { ...cached, cached: true };
 
     const prompt = `${SHARED_RULES}
 Explain the result of this ShieldIQ calculator to the person who ran it.
 How the calculator works: ${SCREEN_DESCRIPTIONS[screen]}
-- Use only the inputs and results given. Describe which inputs drive the result most and in which direction.
+- Use only the inputs and results given. Describe which inputs drive the result most and in which direction.${languageRule(language)}
 
 Their profile (JSON): ${JSON.stringify(profile)}
 Calculator inputs (JSON): ${JSON.stringify(inputs)}
@@ -590,10 +603,10 @@ Calculator result (JSON): ${JSON.stringify(result)}`;
   }
 
   /** Turns a free-text self-description into onboarding fields; the user reviews before anything is saved. */
-  static async parseProfile(description: string, beforeCall: BeforeAiCall) {
+  static async parseProfile(description: string, beforeCall: BeforeAiCall, language: Language = 'en') {
     const prompt = `${SHARED_RULES}
 Extract onboarding details from the person's own description below. Fill only what they state or clearly imply; use null for anything missing.
-Convert Indian notation: "18L" or "18 lakh" = 1800000, "1.5 Cr" = 15000000, "50k" = 50000.
+Convert Indian notation: "18L" or "18 lakh" = 1800000, "1.5 Cr" = 15000000, "50k" = 50000. The description may be in Hindi or Hinglish: "18 लाख" = 1800000, "60 हज़ार" = 60000, "1 करोड़" = 10000000.${language === 'hi' ? '\n- Write the notes in simple Hindi (Devanagari). Keep every other field in the format the schema asks for.' : ''}
 
 Description:
 """${description}"""`;
@@ -601,8 +614,8 @@ Description:
   }
 
   /** Extracts a policy's key terms from a PDF, then measures it against the user's gaps in code. */
-  static async analyzePolicy(pdf: { base64: string; filename: string }, strategy: StrategyResult | null, beforeCall: BeforeAiCall) {
-    const { data, provider } = await generateJson({ prompt: POLICY_PROMPT, schema: policyJsonSchema, schemaName: 'policy_analysis', pdf }, aiPolicySchema, beforeCall);
+  static async analyzePolicy(pdf: { base64: string; filename: string }, strategy: StrategyResult | null, beforeCall: BeforeAiCall, language: Language = 'en') {
+    const { data, provider } = await generateJson({ prompt: POLICY_PROMPT + languageRule(language), schema: policyJsonSchema, schemaName: 'policy_analysis', pdf }, aiPolicySchema, beforeCall);
 
     // Fit against the user's own gap is arithmetic, so it is computed here rather than by the model.
     const category = data.policyType === 'term_life' ? 'life' : data.policyType === 'health' ? 'health' : null;

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ShieldIQApi, type AiStrategy, type CityTier, type Strategy } from './api';
+import { hasStoredLang, useI18n, type Lang } from './i18n';
 import type { Dependent } from './household';
 
 export type ScreenId =
@@ -48,11 +49,13 @@ export interface UserProfile {
   onboardingCompleted: boolean;
   /** ISO time the financial profile was last saved; '' when unknown. */
   profileReviewedAt: string;
+  /** App and AI language, saved on the account. */
+  language: Lang;
   disclaimerAcknowledgedAt: string | null;
   isLoggedIn: boolean;
 }
 
-export type ProfileUpdate = Partial<Omit<UserProfile, 'email' | 'isLoggedIn' | 'onboardingCompleted' | 'profileReviewedAt' | 'disclaimerAcknowledgedAt'>>;
+export type ProfileUpdate = Partial<Omit<UserProfile, 'email' | 'isLoggedIn' | 'onboardingCompleted' | 'profileReviewedAt' | 'disclaimerAcknowledgedAt'> & { language?: Lang }>;
 
 export interface Policy {
   id: string;
@@ -124,6 +127,7 @@ const defaultUser: UserProfile = {
   lifestyleRisks: [],
   onboardingCompleted: true,
   profileReviewedAt: '',
+  language: 'en',
   disclaimerAcknowledgedAt: null,
   isLoggedIn: false,
 };
@@ -145,6 +149,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [aiProvider, setAiProvider] = useState<string | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // Language: a choice made on this device is saved to the account; a device with no choice yet adopts the account's.
+  const { lang, setLang } = useI18n();
+  useEffect(() => {
+    if (!user.isLoggedIn || user.language === lang) return;
+    if (!hasStoredLang()) {
+      setLang(user.language);
+      return;
+    }
+    ShieldIQApi.updateUserProfile({ language: lang }).then(res => {
+      if (res?.success && res.user) setUser({ ...res.user, isLoggedIn: true });
+    });
+  }, [lang, setLang, user.isLoggedIn, user.language]);
 
   const homeScreen = (u: UserProfile): ScreenId => (u.onboardingCompleted ? 'dashboard' : 'onboarding');
 

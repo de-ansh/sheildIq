@@ -22,7 +22,7 @@ describe('mobile menu', () => {
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     const menu = document.getElementById('mobile-menu')!;
-    expect(menu.querySelectorAll('button')).toHaveLength(11);
+    expect(menu.querySelectorAll('button')).toHaveLength(12); // 11 screens + the language switch
     // Focus lands on the current screen's item, or the first item when the current screen isn't in the menu.
     expect(document.activeElement).toBe(menu.querySelector('[aria-current="page"]') ?? menu.querySelector('button'));
 

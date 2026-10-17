@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
 import { one, query, run } from '../db/database.js';
-import { resetAuthRateLimit } from '../routes/user.routes.js';
+import { resetAuthRateLimit } from '../routes/middleware.js';
 import { UserService } from '../services/user.service.js';
 
 const sessionCookie = (res: request.Response) => {
@@ -457,6 +457,34 @@ describe('AI features', () => {
     expect(failed[0]).toEqual({ delta: 'Half an ' });
     expect(failed.at(-1)).toEqual({ error: 'The answer was interrupted. Please try again.' });
     expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toHaveLength(2); // only the first turn
+  });
+
+  it('language: saved on the profile, sent to the AI, and cached separately per language', async () => {
+    const auth = await onboarded('hindi@example.com');
+    const reviewedAt = (await request(app).get('/api/v1/user/profile').set(auth)).body.user.profileReviewedAt;
+    expect((await request(app).put('/api/v1/user/profile').set(auth).send({ language: 'fr' })).status).toBe(400);
+    const switched = await request(app).put('/api/v1/user/profile').set(auth).send({ language: 'hi' });
+    expect(switched.body.user.language).toBe('hi');
+    expect(switched.body.user.profileReviewedAt).toBe(reviewedAt); // not a financial review
+
+    // Chat asks for Hindi.
+    const chatMock = vi.fn().mockResolvedValue(geminiStream(['टर्म कवर पहले लें।']));
+    vi.stubGlobal('fetch', chatMock);
+    await request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'क्या करूँ?' });
+    expect(JSON.parse(chatMock.mock.calls[0][1].body).input).toMatch(/simple, everyday Hindi in Devanagari script/);
+
+    // The narrative strategy is generated and cached per language: switching back to English regenerates it.
+    const strategyMock = gemini({ summary: 'हिंदी सारांश', priorities: [{ title: 't', action: 'a', rationale: 'r', urgency: 'low' }], watchouts: [] });
+    vi.stubGlobal('fetch', strategyMock);
+    expect((await request(app).post('/api/v1/strategy/ai').set(auth)).body.ai.strategy.summary).toBe('हिंदी सारांश');
+    expect(JSON.parse(strategyMock.mock.calls[0][1].body).input).toMatch(/Devanagari/);
+    expect((await request(app).get('/api/v1/strategy').set(auth)).body.ai.strategy.summary).toBe('हिंदी सारांश');
+    await request(app).put('/api/v1/user/profile').set(auth).send({ language: 'en' });
+    expect((await request(app).get('/api/v1/strategy').set(auth)).body.ai).toBeNull(); // the Hindi text is not served in English
+    const englishMock = gemini({ summary: 'English summary', priorities: [{ title: 't', action: 'a', rationale: 'r', urgency: 'low' }], watchouts: [] });
+    vi.stubGlobal('fetch', englishMock);
+    await request(app).post('/api/v1/strategy/ai').set(auth);
+    expect(JSON.parse(englishMock.mock.calls[0][1].body).input).not.toMatch(/Devanagari/);
   });
 
   it('chat requires onboarding', async () => {

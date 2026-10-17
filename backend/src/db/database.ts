@@ -201,6 +201,9 @@ async function migrate(db: Driver) {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id, id);
+
+    -- Added after the first Postgres release: existing databases gain the column in place.
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'en';
   `);
 }
 

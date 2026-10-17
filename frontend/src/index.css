@@ -105,3 +105,23 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+/* Honour the system "reduce motion" setting: no transitions or animations for people who ask for none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hindi: a Devanagari face, and no letter-spacing. Tracking pulls apart the joined headline (shirorekha) of Devanagari
+   letters, and the design uses wide tracking on many labels. */
+:lang(hi) body {
+  font-family: ui-sans-serif, system-ui, 'Noto Sans Devanagari', sans-serif;
+}
+:lang(hi) * {
+  letter-spacing: normal !important;
+}

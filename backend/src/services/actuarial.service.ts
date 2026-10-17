@@ -147,6 +147,10 @@ export interface StrategyProfile {
 
 export interface Insight {
   severity: 'critical' | 'warning' | 'info';
+  /** Stable id of the finding, so the app can show it in the user's language. */
+  code: string;
+  /** Values for the localized text, already formatted (₹ amounts, percentages). */
+  params?: Record<string, string | number>;
   title: string;
   detail: string;
 }
@@ -547,6 +551,12 @@ export class ActuarialService {
     if (lifeGap > 0) {
       insights.push({
         severity: lifeRatio < 0.5 ? 'critical' : 'warning',
+        code: 'life_gap',
+        params: {
+          gap: formatINR(lifeGap), need: formatINR(lifeNeed), incomeReplacement: formatINR(humanLifeValue), partner: p.spouseIncome > 0 ? 1 : 0,
+          loans: formatINR(liabilities), education: formatINR(educationCorpus), savings: savingsApplied > 0 ? formatINR(savingsApplied) : '',
+          held: formatINR(p.existingLifeCover), premium: formatINR(lifePremiumForGap),
+        },
         title: `Life cover gap of ${formatINR(lifeGap)}`,
         detail: `Your family would need about ${formatINR(lifeNeed)} (income replacement ${formatINR(humanLifeValue)}${p.spouseIncome > 0 ? ' after your partner\'s income' : ''}, loans ${formatINR(liabilities)}, education ${formatINR(educationCorpus)}${savingsApplied > 0 ? `, less ${formatINR(savingsApplied)} of savings` : ''}) but you hold ${formatINR(p.existingLifeCover)}. The recommended term plan for the gap costs about ${formatINR(lifePremiumForGap)} a year.`,
       });
@@ -554,35 +564,39 @@ export class ActuarialService {
     if (healthGap > 0) {
       insights.push({
         severity: p.existingHealthCover / health.recommendedCover < 0.5 ? 'critical' : 'warning',
+        code: 'health_gap',
+        params: { gap: formatINR(healthGap), members: adults + floaterChildren, cityTier: p.cityTier, recommended: formatINR(health.recommendedCover), held: formatINR(p.existingHealthCover) },
         title: `Health cover gap of ${formatINR(healthGap)}`,
         detail: `A ${adults + floaterChildren}-member family in ${p.cityTier} needs about ${formatINR(health.recommendedCover)} of personal health cover; you hold ${formatINR(p.existingHealthCover)}.`,
       });
     }
     if (p.employerBenefits.includes('Group Term Life')) {
-      insights.push({ severity: 'info', title: 'Employer life cover is not portable', detail: 'Group term life ends when you leave the job, so it is not counted towards your life cover.' });
+      insights.push({ severity: 'info', code: 'employer_life', title: 'Employer life cover is not portable', detail: 'Group term life ends when you leave the job, so it is not counted towards your life cover.' });
     }
     if (p.employerBenefits.includes('Group Health')) {
-      insights.push({ severity: 'info', title: 'Employer health cover is not portable', detail: 'Group health insurance ends with the job and is not counted towards your own health cover. Keep a personal policy so you stay covered between jobs and after retirement.' });
+      insights.push({ severity: 'info', code: 'employer_health', title: 'Employer health cover is not portable', detail: 'Group health insurance ends with the job and is not counted towards your own health cover. Keep a personal policy so you stay covered between jobs and after retirement.' });
     }
     if (tobacco) {
-      insights.push({ severity: 'warning', title: 'Tobacco use increases premiums', detail: 'Term premiums are roughly 80% higher for tobacco users. Quitting for 12+ months can qualify you for non-smoker rates.' });
+      insights.push({ severity: 'warning', code: 'tobacco', title: 'Tobacco use increases premiums', detail: 'Term premiums are roughly 80% higher for tobacco users. Quitting for 12+ months can qualify you for non-smoker rates.' });
     }
     if (p.lifestyleRisks.some(r => /hobb/i.test(r))) {
-      insights.push({ severity: 'info', title: 'Declare high-risk hobbies', detail: 'Undeclared hazardous activities are a common reason for claim rejection; check exclusions before buying.' });
+      insights.push({ severity: 'info', code: 'hobbies', title: 'Declare high-risk hobbies', detail: 'Undeclared hazardous activities are a common reason for claim rejection; check exclusions before buying.' });
     }
     const emergencyTarget = p.monthlyExpenses * ASSUMPTIONS.emergencyFundMonths;
     if (emergencyTarget > 0 && p.liquidSavings < emergencyTarget) {
       insights.push({
         severity: 'warning',
+        code: 'emergency_fund',
+        params: { savings: formatINR(p.liquidSavings), months: (p.liquidSavings / p.monthlyExpenses).toFixed(1), target: formatINR(emergencyTarget) },
         title: 'Emergency fund below 6 months',
         detail: `Savings of ${formatINR(p.liquidSavings)} cover ${(p.liquidSavings / p.monthlyExpenses).toFixed(1)} months of expenses. Aim for ${formatINR(emergencyTarget)} before long-term investing; it pays for waiting periods and deductibles insurance won't.`,
       });
     }
     if (pct(annualExpenses, p.income) > 60) {
-      insights.push({ severity: 'warning', title: 'High expense ratio', detail: `Living expenses take ${pct(annualExpenses, p.income)}% of gross income, leaving little room for premiums and savings.` });
+      insights.push({ severity: 'warning', code: 'expense_ratio', params: { pct: pct(annualExpenses, p.income) }, title: 'High expense ratio', detail: `Living expenses take ${pct(annualExpenses, p.income)}% of gross income, leaving little room for premiums and savings.` });
     }
     if (liabilities > p.income * 3) {
-      insights.push({ severity: 'warning', title: 'High debt load', detail: `Outstanding loans are ${(liabilities / Math.max(1, p.income)).toFixed(1)}x annual income. Make sure life cover clears them in full.` });
+      insights.push({ severity: 'warning', code: 'debt_load', params: { multiple: (liabilities / Math.max(1, p.income)).toFixed(1) }, title: 'High debt load', detail: `Outstanding loans are ${(liabilities / Math.max(1, p.income)).toFixed(1)}x annual income. Make sure life cover clears them in full.` });
     }
     const missing = [
       criticalIllness.gap > 0 && `critical illness cover (${formatINR(criticalIllness.gap)} short)`,
@@ -591,6 +605,8 @@ export class ActuarialService {
     if (missing.length > 0 && p.income > 0) {
       insights.push({
         severity: 'info',
+        code: 'income_protection',
+        params: { ciGap: criticalIllness.gap > 0 ? formatINR(criticalIllness.gap) : '', paGap: personalAccident.gap > 0 ? formatINR(personalAccident.gap) : '' },
         title: 'Income protection beyond death',
         detail: `Term life pays only on death and health insurance only covers bills. Consider ${missing.join(' and ')}: lump sums that replace income if illness or an accident stops you working.`,
       });
@@ -598,6 +614,8 @@ export class ActuarialService {
     if (pct(annualEmi, p.income) > ASSUMPTIONS.maxEmiShare * 100) {
       insights.push({
         severity: 'warning',
+        code: 'emi_share',
+        params: { pct: pct(annualEmi, p.income), emi: formatINR(p.loanEmi), maxPct: ASSUMPTIONS.maxEmiShare * 100, loans: formatINR(liabilities) },
         title: `Loan repayments take ${pct(annualEmi, p.income)}% of income`,
         detail: `EMIs of ${formatINR(p.loanEmi)} a month are above the ${ASSUMPTIONS.maxEmiShare * 100}% most lenders allow. Avoid new loans, and keep term cover at least equal to the outstanding ${formatINR(liabilities)}.`,
       });
@@ -605,25 +623,32 @@ export class ActuarialService {
     if (annualSurplus < 0 && p.income > 0) {
       insights.push({
         severity: 'critical',
+        code: 'over_income',
+        params: { expenses: formatINR(annualExpenses), emis: formatINR(annualEmi), premiums: formatINR(estimatedAnnualPremium), short: formatINR(-annualSurplus) },
         title: 'Expenses, EMIs and premiums exceed income',
         detail: `After ${formatINR(annualExpenses)} of expenses and ${formatINR(annualEmi)} of EMIs a year, the recommended ${formatINR(estimatedAnnualPremium)} of premiums leaves you ${formatINR(-annualSurplus)} short. Cover term life first and review expenses before adding more.`,
       });
     }
     if (estimatedAnnualPremium > premiumBudget && premiumBudget > 0) {
-      insights.push({ severity: 'warning', title: 'Closing every gap exceeds a 10% premium budget', detail: `Estimated ${formatINR(estimatedAnnualPremium)} a year versus a ${formatINR(premiumBudget)} budget. Prioritise term life first, then health.` });
+      insights.push({ severity: 'warning', code: 'over_budget', params: { premiums: formatINR(estimatedAnnualPremium), budget: formatINR(premiumBudget) }, title: 'Closing every gap exceeds a 10% premium budget', detail: `Estimated ${formatINR(estimatedAnnualPremium)} a year versus a ${formatINR(premiumBudget)} budget. Prioritise term life first, then health.` });
     }
     if (parentsHealth && parentsHealth.gap > 0) {
       insights.push({
         severity: parentsHealth.existing === 0 ? 'critical' : 'warning',
+        code: 'parents_gap',
+        params: {
+          gap: formatINR(parentsHealth.gap), count: parentsHealth.count, eldest: parentsHealth.eldestAge, recommended: formatINR(parentsHealth.recommendedCover),
+          held: formatINR(parentsHealth.existing), premium: formatINR(parentsHealth.estimatedAnnualPremium),
+        },
         title: `Parents need ${formatINR(parentsHealth.gap)} more health cover`,
         detail: `${parentsHealth.count === 1 ? `Your parent (age ${parentsHealth.eldestAge})` : `Your ${parentsHealth.count} parents (eldest ${parentsHealth.eldestAge})`} should have their own senior health policy of about ${formatINR(parentsHealth.recommendedCover)}; they hold ${formatINR(parentsHealth.existing)}. Expect about ${formatINR(parentsHealth.estimatedAnnualPremium)} a year, and check pre-existing disease waiting periods carefully.`,
       });
     }
     if (household.count > 0 && p.maritalStatus === 'Single') {
-      insights.push({ severity: 'info', title: 'Sole provider for dependents', detail: 'With no partner income, nominate a guardian and consider a monthly-income payout option on the term plan.' });
+      insights.push({ severity: 'info', code: 'sole_provider', title: 'Sole provider for dependents', detail: 'With no partner income, nominate a guardian and consider a monthly-income payout option on the term plan.' });
     }
     if (insights.every(i => i.severity === 'info')) {
-      insights.unshift({ severity: 'info', title: 'Protection is on track', detail: 'Your cover meets the estimated need. Review it yearly and after major life events.' });
+      insights.unshift({ severity: 'info', code: 'on_track', title: 'Protection is on track', detail: 'Your cover meets the estimated need. Review it yearly and after major life events.' });
     }
     // Most important first, so short lists (the dashboard shows three) never hide a critical finding.
     const rank = { critical: 0, warning: 1, info: 2 } as const;

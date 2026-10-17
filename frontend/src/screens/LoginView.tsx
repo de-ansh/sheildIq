@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
 
 export const LoginView: React.FC = () => {
     const { login, register } = useApp();
+    const { t, tServer, lang, setLang } = useI18n();
     // Reset links arrive as /?reset=<token>
     const [resetToken] = useState(() => new URLSearchParams(window.location.search).get('reset'));
     const [mode, setMode] = useState<Mode>(resetToken ? 'reset' : 'signin');
@@ -27,12 +29,12 @@ export const LoginView: React.FC = () => {
         setNotice(null);
 
         if (mode !== 'reset' && (!email.trim() || !email.includes('@'))) {
-            setError('Please enter a valid email address.');
+            setError(t('login.invalidEmail'));
             return;
         }
 
         if ((mode === 'signup' || mode === 'reset') && password.length < 8) {
-            setError('Password must be at least 8 characters.');
+            setError(t('login.passwordTooShort'));
             return;
         }
 
@@ -40,20 +42,20 @@ export const LoginView: React.FC = () => {
         try {
             if (mode === 'forgot') {
                 const res = await ShieldIQApi.forgotPassword(email);
-                if (res && res.success) setNotice(res.message);
-                else setError(res?.error || 'Cannot reach the ShieldIQ server. Please try again.');
+                if (res && res.success) setNotice(tServer(res.message));
+                else setError(tServer(res?.error) || t('common.serverUnreachable'));
             } else if (mode === 'reset') {
                 const res = await ShieldIQApi.resetPassword(resetToken!, password);
                 if (res && res.success) {
                     window.history.replaceState(null, '', window.location.pathname);
                     setPassword('');
                     setMode('signin');
-                    setNotice('Password updated. Please sign in with your new password.');
+                    setNotice(t('login.passwordUpdated'));
                 } else {
-                    setError(res?.error || 'Cannot reach the ShieldIQ server. Please try again.');
+                    setError(tServer(res?.error) || t('common.serverUnreachable'));
                 }
             } else {
-                setError(isSignUp ? await register(name.trim(), email, password) : await login(email, password));
+                setError(tServer(isSignUp ? await register(name.trim(), email, password) : await login(email, password)));
             }
         } finally {
             setIsLoading(false);
@@ -64,7 +66,7 @@ export const LoginView: React.FC = () => {
         setError(null);
         setIsLoading(true);
         try {
-            setError(await login('alex.vance@shieldiq.internal', 'Password123!'));
+            setError(tServer(await login('alex.vance@shieldiq.internal', 'Password123!')));
         } finally {
             setIsLoading(false);
         }
@@ -72,6 +74,16 @@ export const LoginView: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+            {/* Language can be chosen before signing in. The word is shown in its own script. */}
+            <button
+                type="button"
+                onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+                title={t('language.switchAria')}
+                lang={lang === 'en' ? 'hi' : 'en'}
+                className="fixed top-4 right-4 h-9 rounded-full border border-border bg-card px-4 text-sm font-bold hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+                {t('language.switch')}
+            </button>
             <Card className="w-full max-w-md shadow-lg border-border bg-card">
                 <CardHeader className="space-y-1 text-center pb-8">
                     <div className="flex justify-center mb-4">
@@ -83,7 +95,7 @@ export const LoginView: React.FC = () => {
                         ShieldIQ
                     </CardTitle>
                     <p className="text-sm text-muted-foreground font-medium">
-                        Risk-Intelligent Protection Planning
+                        {t('login.tagline')}
                     </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -105,7 +117,7 @@ export const LoginView: React.FC = () => {
                         {isSignUp && (
                             <div className="space-y-2">
                                 <label htmlFor="name" className="text-sm font-medium leading-none text-foreground">
-                                    Full Name
+                                    {t('login.fullName')}
                                 </label>
                                 <Input
                                     id="name"
@@ -121,7 +133,7 @@ export const LoginView: React.FC = () => {
                         {mode !== 'reset' && (
                         <div className="space-y-2">
                             <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
-                                Email Address
+                                {t('login.email')}
                             </label>
                             <Input
                                 id="email"
@@ -139,7 +151,7 @@ export const LoginView: React.FC = () => {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <label htmlFor="password" className="text-sm font-medium leading-none text-foreground">
-                                    {mode === 'reset' ? 'New Password' : 'Password'}
+                                    {mode === 'reset' ? t('login.newPassword') : t('login.password')}
                                 </label>
                                 {mode === 'signin' && (
                                 <button
@@ -147,7 +159,7 @@ export const LoginView: React.FC = () => {
                                     onClick={() => { setMode('forgot'); setError(null); setNotice(null); }}
                                     className="text-xs text-blue-600 hover:underline bg-transparent border-0 p-0 cursor-pointer"
                                 >
-                                    Forgot Password?
+                                    {t('login.forgot')}
                                 </button>
                                 )}
                             </div>
@@ -172,10 +184,10 @@ export const LoginView: React.FC = () => {
                             {isLoading ? (
                                 <span className="flex items-center gap-2">
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    {mode === 'signin' || mode === 'signup' ? 'Authenticating...' : 'Submitting...'}
+                                    {mode === 'signin' || mode === 'signup' ? t('login.authenticating') : t('login.submitting')}
                                 </span>
                             ) : (
-                                { signin: 'Sign In', signup: 'Create Account', forgot: 'Send Reset Link', reset: 'Set New Password' }[mode]
+                                t(({ signin: 'login.signIn', signup: 'login.createAccount', forgot: 'login.sendReset', reset: 'login.setNewPassword' } as const)[mode])
                             )}
                         </Button>
                     </form>
@@ -190,20 +202,20 @@ export const LoginView: React.FC = () => {
                             disabled={isLoading}
                             className="w-full font-semibold border-slate-200 dark:border-slate-800 text-xs text-muted-foreground hover:text-foreground"
                         >
-                            One-Click Demo Sign-In (Alex Vance)
+                            {t('login.demo')}
                         </Button>
                     </div>
                     )}
 
                     <div className="text-center mt-6">
                         <p className="text-sm text-muted-foreground">
-                            {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
+                            {mode === 'signin' ? t('login.noAccount') : t('login.haveAccount')}{' '}
                             <button
                                 type="button"
                                 onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setNotice(null); }}
                                 className="text-blue-600 font-semibold hover:underline bg-transparent border-0 p-0 cursor-pointer"
                             >
-                                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                                {mode === 'signin' ? t('login.signUp') : t('login.signIn')}
                             </button>
                         </p>
                     </div>
@@ -212,8 +224,7 @@ export const LoginView: React.FC = () => {
 
             <div className="fixed bottom-8 text-center w-full px-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed max-w-lg mx-auto">
-                    This platform provides analytical insights and does not constitute insurance advisory.
-                    © 2026 ShieldIQ Technologies. All rights reserved.
+                    {t('login.footer')}
                 </p>
             </div>
         </div>

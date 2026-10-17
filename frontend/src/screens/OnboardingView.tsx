@@ -19,13 +19,19 @@ import { useApp } from '@/lib/AppContext';
 import type { AiProfileDraft, CityTier } from '@/lib/api';
 import { DescribeYourself } from '@/components/DescribeYourself';
 import { householdOf, type DependentRelation } from '@/lib/household';
+import { useI18n } from '@/lib/i18n';
+import type { MessageKey } from '@/locales/en';
 
 type DependentRow = { relation: DependentRelation; age: number | null };
-const RELATION_LABEL: Record<DependentRelation, string> = { child: 'Child', parent: 'Parent', sibling: 'Sibling' };
+const RELATIONS: DependentRelation[] = ['child', 'parent', 'sibling'];
+const TIERS = ['Tier 1 (Metro)', 'Tier 2 (Emerging Metro)', 'Tier 3 (Urban Center)'] as const;
+const BENEFITS = ['Group Term Life', 'Group Health', 'Critical Illness', 'Accident Cover', 'OPD Benefits'] as const;
+const RISKS = ['Tobacco/Smoking', 'High-Risk Hobbies', "Frequent Int'l Travel"] as const;
 const MAX_DEPENDENTS = 12;
 
 export const OnboardingView: React.FC = () => {
     const { user, submitOnboarding, setCurrentScreen } = useApp();
+    const { t, tServer } = useI18n();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const totalSteps = 3;
@@ -89,19 +95,19 @@ export const OnboardingView: React.FC = () => {
     };
 
     // Returns an error for the first step whose required answers are missing, checking steps 1..upTo.
-    const validate = (upTo: number): { step: number; error: string } | null => {
+    const validate = (upTo: number): { step: number; error: MessageKey } | null => {
         const { age, income, cityTier, monthlyExpenses } = formData;
-        if (!Number.isInteger(age) || age < 18 || age > 100) return { step: 1, error: 'Enter your age (18–100).' };
-        if (!(income > 0)) return { step: 1, error: 'Enter your annual gross income.' };
-        if (!cityTier) return { step: 1, error: 'Select your city category.' };
-        if (upTo >= 2 && !(monthlyExpenses > 0)) return { step: 2, error: 'Enter your monthly household expenses.' };
+        if (!Number.isInteger(age) || age < 18 || age > 100) return { step: 1, error: 'onb.errAge' };
+        if (!(income > 0)) return { step: 1, error: 'onb.errIncome' };
+        if (!cityTier) return { step: 1, error: 'onb.errCity' };
+        if (upTo >= 2 && !(monthlyExpenses > 0)) return { step: 2, error: 'onb.errExpenses' };
         const amounts = [formData.homeLoan, formData.otherLoans, formData.existingLifeCover, formData.existingHealthCover, formData.liquidSavings, formData.spouseIncome, formData.parentsHealthCover, formData.loanEmi, formData.existingCiCover, formData.existingPaCover];
-        if (upTo >= 2 && amounts.some(v => !(v >= 0))) return { step: 2, error: 'Amounts cannot be negative.' };
+        if (upTo >= 2 && amounts.some(v => !(v >= 0))) return { step: 2, error: 'onb.errNegative' };
         if (upTo >= 2 && !(Number.isInteger(formData.homeLoanYearsLeft) && formData.homeLoanYearsLeft >= 0 && formData.homeLoanYearsLeft <= 40)) {
-            return { step: 2, error: 'Enter the years left on your home loan (0–40).' };
+            return { step: 2, error: 'onb.errLoanYears' };
         }
         if (upTo >= 2 && formData.dependentDetails.some(d => d.age === null || !Number.isInteger(d.age) || d.age < 0 || d.age > 110)) {
-            return { step: 2, error: "Enter each dependent's age (0–110)." };
+            return { step: 2, error: 'onb.errDependentAge' };
         }
         return null;
     };
@@ -122,7 +128,7 @@ export const OnboardingView: React.FC = () => {
 
     const nextStep = () => {
         const problem = validate(step);
-        setStepError(problem?.error ?? null);
+        setStepError(problem ? t(problem.error) : null);
         if (!problem) setStep(s => Math.min(s + 1, totalSteps));
     };
     const prevStep = () => {
@@ -134,19 +140,19 @@ export const OnboardingView: React.FC = () => {
         const problem = validate(totalSteps);
         if (problem) {
             setStep(problem.step);
-            setStepError(problem.error);
+            setStepError(t(problem.error));
             return;
         }
         setIsSubmitting(true);
         try {
             const dependentDetails = formData.dependentDetails.map(d => ({ relation: d.relation, age: d.age as number }));
             const spouseDependent = formData.maritalStatus === 'Married' && !formData.spouseIncome;
-            setStepError(await submitOnboarding({
+            setStepError(tServer(await submitOnboarding({
                 ...formData,
                 cityTier: formData.cityTier as CityTier,
                 dependentDetails,
                 dependents: dependentDetails.length + (spouseDependent ? 1 : 0),
-            }));
+            })));
         } finally {
             setIsSubmitting(false);
         }
@@ -177,7 +183,7 @@ export const OnboardingView: React.FC = () => {
                     disabled={isSubmitting}
                     className="text-muted-foreground font-bold text-sm"
                 >
-                    Save & Exit
+                    {t('onb.saveExit')}
                 </Button>
             </header>
 
@@ -186,16 +192,16 @@ export const OnboardingView: React.FC = () => {
                 <div className="w-full max-w-[600px] mb-12 space-y-4">
                     <div className="flex justify-between items-end">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Step {step} of 3</p>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{t('onb.stepOf', { step })}</p>
                             <h2 className="text-lg font-bold text-foreground">
-                                {step === 1 && "Personal Information"}
-                                {step === 2 && "Family & Liabilities"}
-                                {step === 3 && "Protection & Lifestyle"}
+                                {step === 1 && t('onb.step1')}
+                                {step === 2 && t('onb.step2')}
+                                {step === 3 && t('onb.step3')}
                             </h2>
                         </div>
                         <p className="text-sm font-black text-muted-foreground font-mono">{Math.round(progress)}%</p>
                     </div>
-                    <Progress value={progress} aria-label="Onboarding progress" className="h-2" />
+                    <Progress value={progress} aria-label={t('onb.progress')} className="h-2" />
                 </div>
 
                 {/* Step Content */}
@@ -204,15 +210,15 @@ export const OnboardingView: React.FC = () => {
                         {step === 1 && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="text-center space-y-2">
-                                    <h1 className="text-3xl font-black text-foreground tracking-tight">Personal Profile</h1>
-                                    <p className="text-muted-foreground font-medium">This helps us initialize your actuarial risk baseline.</p>
+                                    <h1 className="text-3xl font-black text-foreground tracking-tight">{t('onb.title1')}</h1>
+                                    <p className="text-muted-foreground font-medium">{t('onb.sub1')}</p>
                                 </div>
 
                                 <DescribeYourself onDraft={applyDraft} />
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="age-input" className="font-bold text-foreground">Current Age</Label>
+                                        <Label htmlFor="age-input" className="font-bold text-foreground">{t('onb.age')}</Label>
                                         <div className="relative">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                             <Input
@@ -222,14 +228,14 @@ export const OnboardingView: React.FC = () => {
                                                 max={100}
                                                 value={formData.age || ''}
                                                 onChange={(e) => updateField('age', Number(e.target.value))}
-                                                placeholder="e.g. 32"
+                                                placeholder={t('onb.agePlaceholder')}
                                                 className="pl-12 py-6 bg-muted/30"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="income-input" className="font-bold text-foreground">Annual Gross Income (INR)</Label>
+                                        <Label htmlFor="income-input" className="font-bold text-foreground">{t('onb.income')}</Label>
                                         <div className="relative">
                                             <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">₹</span>
                                             <Input
@@ -237,14 +243,14 @@ export const OnboardingView: React.FC = () => {
                                                 type="number"
                                                 value={formData.income || ''}
                                                 onChange={(e) => updateField('income', Number(e.target.value))}
-                                                placeholder="Enter amount"
+                                                placeholder={t('onb.incomePlaceholder')}
                                                 className="pl-12 py-6 bg-muted/30"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="city-select" className="font-bold text-foreground">Primary Resident City</Label>
+                                        <Label htmlFor="city-select" className="font-bold text-foreground">{t('onb.city')}</Label>
                                         <div className="relative">
                                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                             <select
@@ -253,23 +259,21 @@ export const OnboardingView: React.FC = () => {
                                                 onChange={(e) => updateField('cityTier', e.target.value as CityTier)}
                                                 className="flex h-12 w-full rounded-md border border-input bg-muted/30 px-12 py-2 text-base shadow-sm font-medium focus:outline-none focus:ring-1 focus:ring-ring appearance-none"
                                             >
-                                                <option value="">Select city category</option>
-                                                <option value="Tier 1 (Metro)">Tier 1 (Metro)</option>
-                                                <option value="Tier 2 (Emerging Metro)">Tier 2 (Emerging Metro)</option>
-                                                <option value="Tier 3 (Urban Center)">Tier 3 (Urban Center)</option>
+                                                <option value="">{t('onb.cityPlaceholder')}</option>
+                                                {TIERS.map(tier => <option key={tier} value={tier}>{t(`tier.${tier}`)}</option>)}
                                             </select>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="occupation-input" className="font-bold text-foreground">Occupation</Label>
+                                        <Label htmlFor="occupation-input" className="font-bold text-foreground">{t('onb.occupation')}</Label>
                                         <div className="relative">
                                             <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                             <Input
                                                 id="occupation-input"
                                                 value={formData.occupation}
                                                 onChange={(e) => updateField('occupation', e.target.value)}
-                                                placeholder="e.g. Product Designer"
+                                                placeholder={t('onb.occupationPlaceholder')}
                                                 className="pl-12 py-6 bg-muted/30"
                                             />
                                         </div>
@@ -281,13 +285,13 @@ export const OnboardingView: React.FC = () => {
                         {step === 2 && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div className="text-center space-y-2">
-                                    <h1 className="text-3xl font-black text-foreground tracking-tight">Family & Debt</h1>
-                                    <p className="text-muted-foreground font-medium">Understand your financial continuity requirements.</p>
+                                    <h1 className="text-3xl font-black text-foreground tracking-tight">{t('onb.title2')}</h1>
+                                    <p className="text-muted-foreground font-medium">{t('onb.sub2')}</p>
                                 </div>
 
                                 <div className="space-y-8">
                                     <div className="space-y-4">
-                                        <Label className="font-bold text-foreground">Marital Status</Label>
+                                        <Label className="font-bold text-foreground">{t('onb.marital')}</Label>
                                         <div className="grid grid-cols-2 gap-3">
                                             {(['Single', 'Married'] as const).map(status => (
                                                 <Button
@@ -297,7 +301,7 @@ export const OnboardingView: React.FC = () => {
                                                     className={`py-6 font-bold ${formData.maritalStatus === status ? 'bg-blue-600 text-white' : 'dark:hover:bg-slate-800'}`}
                                                     onClick={() => updateField('maritalStatus', status)}
                                                 >
-                                                    {status}
+                                                    {t(`marital.${status}`)}
                                                 </Button>
                                             ))}
                                         </div>
@@ -305,47 +309,47 @@ export const OnboardingView: React.FC = () => {
 
                                     {formData.maritalStatus === 'Married' && (
                                         <div className="space-y-2">
-                                            <Label htmlFor="spouse-income-input" className="font-bold text-foreground">Partner's Annual Income (INR)</Label>
+                                            <Label htmlFor="spouse-income-input" className="font-bold text-foreground">{t('onb.partnerIncome')}</Label>
                                             <Input
                                                 id="spouse-income-input"
                                                 type="number"
                                                 min={0}
                                                 value={formData.spouseIncome || ''}
                                                 onChange={(e) => updateField('spouseIncome', Number(e.target.value))}
-                                                placeholder="0 if they don't work"
+                                                placeholder={t('onb.partnerIncomePlaceholder')}
                                                 aria-describedby="spouse-income-help"
                                                 className="bg-muted/30 font-mono"
                                             />
                                             <p id="spouse-income-help" className="text-xs text-muted-foreground">
-                                                A working partner's income reduces how much of yours the family would need replaced.
+                                                {t('onb.partnerIncomeHelp')}
                                             </p>
                                         </div>
                                     )}
 
                                     <fieldset className="space-y-3">
-                                        <legend className="font-bold text-foreground text-sm">Who depends on you financially?</legend>
+                                        <legend className="font-bold text-foreground text-sm">{t('onb.dependents')}</legend>
                                         <p className="text-xs text-muted-foreground">
-                                            Children, parents or siblings you support. {formData.maritalStatus === 'Married' ? 'A non-earning spouse is counted automatically.' : ''}
+                                            {t('onb.dependentsHelp')} {formData.maritalStatus === 'Married' ? t('onb.spouseCounted') : ''}
                                         </p>
                                         {formData.dependentDetails.length === 0 && (
-                                            <p className="text-sm text-muted-foreground">No dependents added.</p>
+                                            <p className="text-sm text-muted-foreground">{t('onb.noDependents')}</p>
                                         )}
                                         {formData.dependentDetails.map((d, i) => (
                                             <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-3">
                                                 <select
-                                                    aria-label={`Relationship of dependent ${i + 1}`}
+                                                    aria-label={t('onb.relationOf', { n: i + 1 })}
                                                     value={d.relation}
                                                     onChange={(e) => updateField('dependentDetails', formData.dependentDetails.map((x, j) => j === i ? { ...x, relation: e.target.value as DependentRelation } : x))}
                                                     className="h-11 rounded-md border border-input bg-muted/30 px-3 text-sm font-medium"
                                                 >
-                                                    {(Object.keys(RELATION_LABEL) as DependentRelation[]).map(r => <option key={r} value={r}>{RELATION_LABEL[r]}</option>)}
+                                                    {RELATIONS.map(r => <option key={r} value={r}>{t(`relation.${r}`)}</option>)}
                                                 </select>
                                                 <Input
                                                     type="number"
                                                     min={0}
                                                     max={110}
-                                                    aria-label={`Age of dependent ${i + 1}`}
-                                                    placeholder="Age"
+                                                    aria-label={t('onb.ageOf', { n: i + 1 })}
+                                                    placeholder={t('onb.agePlaceholderShort')}
                                                     value={d.age ?? ''}
                                                     onChange={(e) => updateField('dependentDetails', formData.dependentDetails.map((x, j) => j === i ? { ...x, age: e.target.value === '' ? null : Number(e.target.value) } : x))}
                                                     className="w-24 bg-muted/30 font-mono"
@@ -353,11 +357,11 @@ export const OnboardingView: React.FC = () => {
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
-                                                    aria-label={`Remove dependent ${i + 1}`}
+                                                    aria-label={t('onb.removeDependent', { n: i + 1 })}
                                                     onClick={() => updateField('dependentDetails', formData.dependentDetails.filter((_, j) => j !== i))}
                                                     className="text-muted-foreground hover:text-red-600"
                                                 >
-                                                    Remove
+                                                    {t('onb.remove')}
                                                 </Button>
                                             </div>
                                         ))}
@@ -368,15 +372,15 @@ export const OnboardingView: React.FC = () => {
                                             onClick={() => updateField('dependentDetails', [...formData.dependentDetails, { relation: 'child', age: null }])}
                                             className="font-bold"
                                         >
-                                            + Add Dependent
+                                            {t('onb.addDependent')}
                                         </Button>
                                     </fieldset>
 
                                     <div className="space-y-4 pt-6 border-t border-border">
-                                        <Label className="font-bold text-foreground">Total Outstanding Liabilities</Label>
+                                        <Label className="font-bold text-foreground">{t('onb.liabilities')}</Label>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="home-loan-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Home Loan</Label>
+                                                <Label htmlFor="home-loan-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('onb.homeLoan')}</Label>
                                                 <Input
                                                     id="home-loan-input"
                                                     type="number"
@@ -387,7 +391,7 @@ export const OnboardingView: React.FC = () => {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="other-loans-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Other Loans</Label>
+                                                <Label htmlFor="other-loans-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('onb.otherLoans')}</Label>
                                                 <Input
                                                     id="other-loans-input"
                                                     type="number"
@@ -401,33 +405,33 @@ export const OnboardingView: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="expenses-input" className="font-bold text-foreground">Monthly Expenses (excluding loan EMIs)</Label>
+                                        <Label htmlFor="expenses-input" className="font-bold text-foreground">{t('onb.expenses')}</Label>
                                         <Input
                                             id="expenses-input"
                                             type="number"
                                             value={formData.monthlyExpenses || ''}
                                             onChange={(e) => updateField('monthlyExpenses', Number(e.target.value))}
-                                            placeholder="₹ Enter average amount"
+                                            placeholder={t('onb.expensesPlaceholder')}
                                             className="py-6 bg-muted/30 font-mono"
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="emi-input" className="font-bold text-foreground">Total Monthly EMIs</Label>
+                                            <Label htmlFor="emi-input" className="font-bold text-foreground">{t('onb.emi')}</Label>
                                             <Input
                                                 id="emi-input"
                                                 type="number"
                                                 min={0}
                                                 value={formData.loanEmi || ''}
                                                 onChange={(e) => updateField('loanEmi', Number(e.target.value))}
-                                                placeholder="₹ 0 if no loans"
+                                                placeholder={t('onb.emiPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                         {formData.homeLoan > 0 && (
                                             <div className="space-y-2">
-                                                <Label htmlFor="loan-years-input" className="font-bold text-foreground">Home Loan Years Left</Label>
+                                                <Label htmlFor="loan-years-input" className="font-bold text-foreground">{t('onb.loanYears')}</Label>
                                                 <Input
                                                     id="loan-years-input"
                                                     type="number"
@@ -435,7 +439,7 @@ export const OnboardingView: React.FC = () => {
                                                     max={40}
                                                     value={formData.homeLoanYearsLeft || ''}
                                                     onChange={(e) => updateField('homeLoanYearsLeft', Number(e.target.value))}
-                                                    placeholder="e.g. 15"
+                                                    placeholder={t('onb.loanYearsPlaceholder')}
                                                     className="bg-muted/30 font-mono"
                                                 />
                                             </div>
@@ -448,97 +452,97 @@ export const OnboardingView: React.FC = () => {
                         {step === 3 && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div className="text-center space-y-2">
-                                    <h1 className="text-3xl font-black text-foreground tracking-tight">Final Assessment</h1>
-                                    <p className="text-muted-foreground font-medium">Lifestyle and existing coverage verification.</p>
+                                    <h1 className="text-3xl font-black text-foreground tracking-tight">{t('onb.title3')}</h1>
+                                    <p className="text-muted-foreground font-medium">{t('onb.sub3')}</p>
                                 </div>
 
                                 <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="life-cover-input" className="font-bold text-foreground">Existing Life Cover</Label>
+                                            <Label htmlFor="life-cover-input" className="font-bold text-foreground">{t('onb.lifeCover')}</Label>
                                             <Input
                                                 id="life-cover-input"
                                                 type="number"
                                                 value={formData.existingLifeCover || ''}
                                                 onChange={(e) => updateField('existingLifeCover', Number(e.target.value))}
-                                                placeholder="₹ Total Sum Assured"
+                                                placeholder={t('onb.lifeCoverPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="health-cover-input" className="font-bold text-foreground">Existing Health Cover</Label>
+                                            <Label htmlFor="health-cover-input" className="font-bold text-foreground">{t('onb.healthCover')}</Label>
                                             <Input
                                                 id="health-cover-input"
                                                 type="number"
                                                 value={formData.existingHealthCover || ''}
                                                 onChange={(e) => updateField('existingHealthCover', Number(e.target.value))}
-                                                placeholder="₹ Floater/Individual"
+                                                placeholder={t('onb.healthCoverPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="ci-cover-input" className="font-bold text-foreground">Critical Illness Cover</Label>
+                                            <Label htmlFor="ci-cover-input" className="font-bold text-foreground">{t('onb.ciCover')}</Label>
                                             <Input
                                                 id="ci-cover-input"
                                                 type="number"
                                                 min={0}
                                                 value={formData.existingCiCover || ''}
                                                 onChange={(e) => updateField('existingCiCover', Number(e.target.value))}
-                                                placeholder="₹ Lump sum, incl. riders"
+                                                placeholder={t('onb.ciCoverPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="pa-cover-input" className="font-bold text-foreground">Accident & Disability Cover</Label>
+                                            <Label htmlFor="pa-cover-input" className="font-bold text-foreground">{t('onb.paCover')}</Label>
                                             <Input
                                                 id="pa-cover-input"
                                                 type="number"
                                                 min={0}
                                                 value={formData.existingPaCover || ''}
                                                 onChange={(e) => updateField('existingPaCover', Number(e.target.value))}
-                                                placeholder="₹ Personal accident sum insured"
+                                                placeholder={t('onb.paCoverPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground -mt-2">Policies you hold yourself. Employer cover ends with your job, so tick it under benefits instead.</p>
+                                    <p className="text-xs text-muted-foreground -mt-2">{t('onb.ownPolicies')}</p>
 
                                     {formData.dependentDetails.some(d => d.relation === 'parent') && (
                                         <div className="space-y-2">
-                                            <Label htmlFor="parents-cover-input" className="font-bold text-foreground">Parents' Existing Health Cover</Label>
+                                            <Label htmlFor="parents-cover-input" className="font-bold text-foreground">{t('onb.parentsCover')}</Label>
                                             <Input
                                                 id="parents-cover-input"
                                                 type="number"
                                                 min={0}
                                                 value={formData.parentsHealthCover || ''}
                                                 onChange={(e) => updateField('parentsHealthCover', Number(e.target.value))}
-                                                placeholder="₹ 0 if they have none"
+                                                placeholder={t('onb.parentsCoverPlaceholder')}
                                                 className="bg-muted/30 font-mono"
                                             />
                                         </div>
                                     )}
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="savings-input" className="font-bold text-foreground">Savings & Investments</Label>
+                                        <Label htmlFor="savings-input" className="font-bold text-foreground">{t('onb.savings')}</Label>
                                         <Input
                                             id="savings-input"
                                             type="number"
                                             min={0}
                                             value={formData.liquidSavings || ''}
                                             onChange={(e) => updateField('liquidSavings', Number(e.target.value))}
-                                            placeholder="₹ FDs, mutual funds, stocks"
+                                            placeholder={t('onb.savingsPlaceholder')}
                                             aria-describedby="savings-help"
                                             className="bg-muted/30 font-mono"
                                         />
                                         <p id="savings-help" className="text-xs text-muted-foreground">
-                                            Money your family could use if needed. Leave out your home and locked retirement funds like PF.
+                                            {t('onb.savingsHelp')}
                                         </p>
                                     </div>
 
                                     <div className="space-y-4 pt-6 border-t border-border">
-                                        <Label className="font-bold text-foreground">Employer Benefits</Label>
+                                        <Label className="font-bold text-foreground">{t('onb.benefits')}</Label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {["Group Term Life", "Group Health", "Critical Illness", "Accident Cover", "OPD Benefits"].map(benefit => (
+                                            {BENEFITS.map(benefit => (
                                                 // A real <label> makes the whole tile toggle the checkbox exactly once.
                                                 <label
                                                     key={benefit}
@@ -549,7 +553,7 @@ export const OnboardingView: React.FC = () => {
                                                         onCheckedChange={() => toggleBenefit(benefit)}
                                                     />
                                                     <span className="font-bold text-sm text-muted-foreground group-hover:text-blue-600 transition-colors">
-                                                        {benefit}
+                                                        {t(`benefit.${benefit}`)}
                                                     </span>
                                                 </label>
                                             ))}
@@ -557,9 +561,9 @@ export const OnboardingView: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <Label className="font-bold text-foreground">Lifestyle Risk Indicators</Label>
+                                        <Label className="font-bold text-foreground">{t('onb.risks')}</Label>
                                         <div className="flex flex-wrap gap-4">
-                                            {["Tobacco/Smoking", "High-Risk Hobbies", "Frequent Int'l Travel"].map(risk => (
+                                            {RISKS.map(risk => (
                                                 <label
                                                     key={risk}
                                                     className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-full border border-border cursor-pointer hover:bg-muted/50 transition-colors"
@@ -568,7 +572,7 @@ export const OnboardingView: React.FC = () => {
                                                         checked={formData.lifestyleRisks.includes(risk)}
                                                         onCheckedChange={() => toggleRisk(risk)}
                                                     />
-                                                    <span className="text-xs font-bold text-muted-foreground">{risk}</span>
+                                                    <span className="text-xs font-bold text-muted-foreground">{t(`risk.${risk}`)}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -591,7 +595,7 @@ export const OnboardingView: React.FC = () => {
                                         disabled={isSubmitting}
                                     >
                                         <ArrowLeft className="w-4 h-4 mr-2" />
-                                        Back
+                                        {t('onb.back')}
                                     </Button>
                                 ) : <div className="hidden sm:block sm:flex-1" />}
 
@@ -604,11 +608,11 @@ export const OnboardingView: React.FC = () => {
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">
                                             <Loader2 className="w-5 h-5 animate-spin" />
-                                            Saving...
+                                            {t('onb.saving')}
                                         </span>
                                     ) : (
                                         <>
-                                            {step === 3 ? "Generate Policy Gap" : "Continue"}
+                                            {step === 3 ? t('onb.generate') : t('onb.continue')}
                                             <ArrowRight className="w-5 h-5 ml-2" />
                                         </>
                                     )}
@@ -616,7 +620,7 @@ export const OnboardingView: React.FC = () => {
                             </div>
                             <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                 <Lock className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">Saved to your account · Your name and email are never sent to the AI</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">{t('onb.privacyNote')}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -624,9 +628,9 @@ export const OnboardingView: React.FC = () => {
 
                 {/* Footer info */}
                 <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                    <a href="#" className="hover:text-blue-600">Privacy Policy</a>
-                    <a href="#" className="hover:text-blue-600">Protocol Disclosures</a>
-                    <a href="#" className="hover:text-blue-600">Compliance Audit</a>
+                    <a href="#" className="hover:text-blue-600">{t('onb.privacyPolicy')}</a>
+                    <a href="#" className="hover:text-blue-600">{t('onb.disclosures')}</a>
+                    <a href="#" className="hover:text-blue-600">{t('onb.complianceAudit')}</a>
                 </div>
             </main>
         </div>

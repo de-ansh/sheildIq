@@ -5,6 +5,7 @@ import { Navbar } from "./components/Navbar";
 import { LoginView } from "./screens/LoginView";
 import { AskShieldIQ } from "./components/AskShieldIQ";
 import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
+import { LanguageProvider, useI18n } from "./lib/i18n";
 
 // Each screen downloads the first time it is opened; only the login screen ships in the first bundle.
 const screen = <K extends string>(name: K, load: () => Promise<Record<K, React.ComponentType>>) =>
@@ -27,6 +28,7 @@ const PolicyAnalyzerView = screen("PolicyAnalyzerView", () => import("./screens/
 
 function MainContent() {
   const { currentScreen, setCurrentScreen, user, aiProvider } = useApp();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-blue-500 selection:text-white">
@@ -34,7 +36,7 @@ function MainContent() {
 
       <main className="flex-1">
         <ScreenErrorBoundary key={currentScreen} onHome={() => setCurrentScreen(user.isLoggedIn ? "dashboard" : "login")}>
-        <Suspense fallback={<p role="status" className="px-6 py-24 text-center text-sm text-muted-foreground">Loading…</p>}>
+        <Suspense fallback={<p role="status" className="px-6 py-24 text-center text-sm text-muted-foreground">{t("screen.loading")}</p>}>
         {currentScreen === "login" && <LoginView />}
         {currentScreen === "onboarding" && <OnboardingView />}
         {currentScreen === "dashboard" && <DashboardView />}
@@ -64,9 +66,11 @@ function MainContent() {
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="shield-iq-theme">
-      <AppContextProvider>
-        <MainContent />
-      </AppContextProvider>
+      <LanguageProvider>
+        <AppContextProvider>
+          <MainContent />
+        </AppContextProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

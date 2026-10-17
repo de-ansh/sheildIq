@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
 import { closeDatabase, initDatabase, one } from '../db/database.js';
-import { resetAuthRateLimit } from '../routes/user.routes.js';
+import { resetAuthRateLimit } from '../routes/middleware.js';
 
 const DEMO = 'alex.vance@shieldiq.internal';
 const env = { ...process.env };

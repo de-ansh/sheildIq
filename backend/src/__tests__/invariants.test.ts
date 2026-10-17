@@ -61,6 +61,8 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
       expect(s.score).toBeGreaterThanOrEqual(0);
       expect(s.score).toBeLessThanOrEqual(100);
       expect(s.insights.length).toBeGreaterThan(0);
+      // Every finding has a stable code, so the app can show it in the user's language.
+      for (const i of s.insights) expect(i.code).toMatch(/^[a-z_]+$/);
       if (s.life.gap === 0) expect(s.life.estimatedAnnualPremiumForGap).toBe(0);
       // Nobody relying on the income and no debts means no income-replacement need.
       if (p.dependents === 0 && p.homeLoan + p.otherLoans === 0) expect(s.life.humanLifeValue).toBe(0);

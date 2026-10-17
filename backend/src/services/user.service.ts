@@ -33,8 +33,13 @@ export interface UserProfileData {
   profileReviewedAt: string;
   /** When the user accepted the methodology & liability disclaimer; null if never. */
   disclaimerAcknowledgedAt: string | null;
+  /** Language for the app and AI answers. */
+  language: Language;
   isLoggedIn: boolean;
 }
+
+export const LANGUAGES = ['en', 'hi'] as const;
+export type Language = (typeof LANGUAGES)[number];
 
 /** Chat messages kept per user; older ones are deleted as new ones arrive. */
 export const CHAT_HISTORY_LIMIT = 100;
@@ -70,7 +75,7 @@ export type ProfileUpdate = Partial<
     UserProfileData,
     | 'name' | 'age' | 'income' | 'dependents' | 'maritalStatus' | 'occupation' | 'city' | 'cityTier'
     | 'homeLoan' | 'otherLoans' | 'monthlyExpenses' | 'existingLifeCover' | 'existingHealthCover' | 'liquidSavings' | 'spouseIncome' | 'dependentDetails' | 'parentsHealthCover' | 'loanEmi' | 'homeLoanYearsLeft' | 'existingCiCover' | 'existingPaCover'
-    | 'employerBenefits' | 'lifestyleRisks' | 'onboardingCompleted'
+    | 'employerBenefits' | 'lifestyleRisks' | 'onboardingCompleted' | 'language'
   >
 >;
 
@@ -103,6 +108,7 @@ const PROFILE_COLUMNS: Record<keyof ProfileUpdate, string> = {
   employerBenefits: 'employer_benefits',
   lifestyleRisks: 'lifestyle_risks',
   onboardingCompleted: 'onboarding_completed',
+  language: 'language',
 };
 
 const parseDependents = (value: unknown): Dependent[] => {
@@ -157,6 +163,7 @@ function toProfile(row: UserRow): UserProfileData {
     onboardingCompleted: Number(row.onboarding_completed) === 1,
     profileReviewedAt: String(row.profile_reviewed_at ?? row.created_at),
     disclaimerAcknowledgedAt: row.disclaimer_acknowledged_at ? String(row.disclaimer_acknowledged_at) : null,
+    language: (LANGUAGES as readonly string[]).includes(String(row.language)) ? (row.language as Language) : 'en',
     isLoggedIn: true,
   };
 }
@@ -403,7 +410,10 @@ export class UserService {
       const n = entries.length;
       const toColumnValue = (value: unknown) =>
         Array.isArray(value) ? JSON.stringify(value) : typeof value === 'boolean' ? Number(value) : (value as string | number);
-      await run(`UPDATE users SET ${sets}, updated_at = $${n + 1}, profile_reviewed_at = $${n + 1} WHERE id = $${n + 2}`, [
+      // Only financial answers count as a review; switching language or renaming doesn't restart the yearly reminder.
+      const reviewed = entries.some(([key]) => key !== 'language' && key !== 'name');
+      const stamp = reviewed ? `, profile_reviewed_at = $${n + 1}` : '';
+      await run(`UPDATE users SET ${sets}, updated_at = $${n + 1}${stamp} WHERE id = $${n + 2}`, [
         ...entries.map(([, value]) => toColumnValue(value)), now, userId,
       ]);
       await audit(userId, 'PROFILE_UPDATE', entries.map(([key]) => key).join(','));
