@@ -18,16 +18,15 @@ describe('DashboardView Component', () => {
     expect(screen.getByText(/Protection Strategy Overview/i)).toBeInTheDocument();
   });
 
-  it('renders sidebar navigation items and user card', () => {
+  it('has no second navigation of its own (the top navbar is the only one)', () => {
     render(
       <AppContextProvider>
         <DashboardView />
       </AppContextProvider>
     );
 
-    expect(screen.getByText(/Coverage Analysis/i)).toBeInTheDocument();
-    expect(screen.getByText(/Policy Compare/i)).toBeInTheDocument();
-    expect(screen.getByText(/Risk Simulator/i)).toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Policy Compare/i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/Alex Vance/i).length).toBeGreaterThan(0);
   });
 });

@@ -110,8 +110,8 @@ export const DependencyModelingView: React.FC = () => {
         amount === 0
             ? { text: 'Not needed', cls: 'bg-muted text-muted-foreground' }
             : cover >= projections.totalLifetimeLiability
-                ? { text: 'Covered by existing life cover', cls: 'bg-emerald-500/10 text-emerald-600' }
-                : { text: `Part of ${formatINR(projections.totalLifetimeLiability - cover)} total gap`, cls: 'bg-amber-500/10 text-amber-600' };
+                ? { text: 'Covered by existing life cover', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' }
+                : { text: `Part of ${formatINR(projections.totalLifetimeLiability - cover)} total gap`, cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' };
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
@@ -129,7 +129,7 @@ export const DependencyModelingView: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <Button
                         variant="outline"
                         onClick={() => window.print()}
@@ -166,10 +166,10 @@ export const DependencyModelingView: React.FC = () => {
                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                         Peak Pressure Year
                     </span>
-                    <div className={`text-3xl font-black font-mono tracking-tight mt-2 flex items-baseline gap-2 ${projections.peak.gap > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <div className={`text-3xl font-black font-mono tracking-tight mt-2 flex items-baseline gap-2 ${projections.peak.gap > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                         {projections.peak.gap > 0 ? projections.peak.year : 'None'}
                         {projections.peak.gap > 0 && (
-                            <Badge className="bg-red-500/10 text-red-500 border-none text-[9px] font-bold uppercase tracking-wider">
+                            <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-none text-[9px] font-bold uppercase tracking-wider">
                                 Age {projections.peak.age}
                             </Badge>
                         )}
@@ -203,7 +203,7 @@ export const DependencyModelingView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             <span className="flex items-center gap-1">
                                 <span className="w-2.5 h-2.5 rounded bg-red-500" /> Critical
                             </span>
@@ -226,10 +226,10 @@ export const DependencyModelingView: React.FC = () => {
                         {projections.timeline.map((ms) => {
                             const isPeak = ms.gap > 0 && ms.year === projections.peak.year;
                             const load = Math.round((ms.obligation / projections.maxObligation) * 100);
-                            let barColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-                            if (ms.status === 'critical') barColor = 'bg-red-500/20 text-red-400 border-red-500/50';
-                            else if (ms.status === 'moderate') barColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-                            else if (ms.status === 'surplus') barColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+                            let barColor = 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30';
+                            if (ms.status === 'critical') barColor = 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/50';
+                            else if (ms.status === 'moderate') barColor = 'bg-amber-500/20 text-amber-800 dark:text-amber-400 border-amber-500/40';
+                            else if (ms.status === 'surplus') barColor = 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 border-emerald-500/40';
 
                             return (
                                 <div
@@ -340,7 +340,7 @@ export const DependencyModelingView: React.FC = () => {
                     <Card className="border-border shadow-sm p-6 hover:border-blue-500/40 transition-all">
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
-                                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 mt-1">
+                                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 mt-1">
                                     <Home className="w-6 h-6" />
                                 </div>
                                 <div className="space-y-1">
@@ -385,7 +385,7 @@ export const DependencyModelingView: React.FC = () => {
                                 <Label>Projected General Inflation</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{inflationRate[0].toFixed(1)}%</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Projected general inflation"
                                 value={inflationRate}
                                 onValueChange={setInflationRate}
                                 max={10}
@@ -404,7 +404,7 @@ export const DependencyModelingView: React.FC = () => {
                                 <Label>Loan Interest Rate</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{interestRate[0].toFixed(1)}%</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Loan interest rate"
                                 value={interestRate}
                                 onValueChange={setInterestRate}
                                 max={12}
@@ -423,7 +423,7 @@ export const DependencyModelingView: React.FC = () => {
                                 <Label>Education Cost Multiplier</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{educationMultiplier[0].toFixed(2)}x</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Education cost multiplier"
                                 value={educationMultiplier}
                                 onValueChange={setEducationMultiplier}
                                 max={2.5}

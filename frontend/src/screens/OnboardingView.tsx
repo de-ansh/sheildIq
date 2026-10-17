@@ -195,7 +195,7 @@ export const OnboardingView: React.FC = () => {
                         </div>
                         <p className="text-sm font-black text-muted-foreground font-mono">{Math.round(progress)}%</p>
                     </div>
-                    <Progress value={progress} className="h-2" />
+                    <Progress value={progress} aria-label="Onboarding progress" className="h-2" />
                 </div>
 
                 {/* Step Content */}
@@ -331,7 +331,7 @@ export const OnboardingView: React.FC = () => {
                                             <p className="text-sm text-muted-foreground">No dependents added.</p>
                                         )}
                                         {formData.dependentDetails.map((d, i) => (
-                                            <div key={i} className="flex items-center gap-3">
+                                            <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-3">
                                                 <select
                                                     aria-label={`Relationship of dependent ${i + 1}`}
                                                     value={d.relation}
@@ -539,20 +539,19 @@ export const OnboardingView: React.FC = () => {
                                         <Label className="font-bold text-foreground">Employer Benefits</Label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             {["Group Term Life", "Group Health", "Critical Illness", "Accident Cover", "OPD Benefits"].map(benefit => (
-                                                <div
+                                                // A real <label> makes the whole tile toggle the checkbox exactly once.
+                                                <label
                                                     key={benefit}
-                                                    onClick={() => toggleBenefit(benefit)}
                                                     className="flex items-center gap-3 p-4 border border-border rounded-xl hover:bg-muted/30 cursor-pointer transition-colors group"
                                                 >
                                                     <Checkbox
-                                                        id={benefit}
                                                         checked={formData.employerBenefits.includes(benefit)}
                                                         onCheckedChange={() => toggleBenefit(benefit)}
                                                     />
-                                                    <Label htmlFor={benefit} className="font-bold text-sm text-muted-foreground group-hover:text-blue-600 transition-colors cursor-pointer">
+                                                    <span className="font-bold text-sm text-muted-foreground group-hover:text-blue-600 transition-colors">
                                                         {benefit}
-                                                    </Label>
-                                                </div>
+                                                    </span>
+                                                </label>
                                             ))}
                                         </div>
                                     </div>
@@ -561,18 +560,16 @@ export const OnboardingView: React.FC = () => {
                                         <Label className="font-bold text-foreground">Lifestyle Risk Indicators</Label>
                                         <div className="flex flex-wrap gap-4">
                                             {["Tobacco/Smoking", "High-Risk Hobbies", "Frequent Int'l Travel"].map(risk => (
-                                                <div
+                                                <label
                                                     key={risk}
-                                                    onClick={() => toggleRisk(risk)}
                                                     className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-full border border-border cursor-pointer hover:bg-muted/50 transition-colors"
                                                 >
                                                     <Checkbox
-                                                        id={risk}
                                                         checked={formData.lifestyleRisks.includes(risk)}
                                                         onCheckedChange={() => toggleRisk(risk)}
                                                     />
                                                     <span className="text-xs font-bold text-muted-foreground">{risk}</span>
-                                                </div>
+                                                </label>
                                             ))}
                                         </div>
                                     </div>
@@ -583,24 +580,25 @@ export const OnboardingView: React.FC = () => {
                         {/* Navigation buttons */}
                         <div className="flex flex-col gap-4 pt-8 border-t border-border">
                             {stepError && <p role="alert" className="text-sm font-medium text-red-600 text-center">{stepError}</p>}
-                            <div className="flex items-center justify-between gap-4">
+                            {/* Phones stack the buttons full width, primary action on top. */}
+                            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                                 {step > 1 ? (
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        className="flex-1 py-7 font-bold text-muted-foreground hover:text-blue-600"
+                                        className="w-full sm:w-auto sm:flex-1 py-7 font-bold text-muted-foreground hover:text-blue-600"
                                         onClick={prevStep}
                                         disabled={isSubmitting}
                                     >
                                         <ArrowLeft className="w-4 h-4 mr-2" />
                                         Back
                                     </Button>
-                                ) : <div className="flex-1" />}
+                                ) : <div className="hidden sm:block sm:flex-1" />}
 
                                 <Button
                                     type="button"
                                     disabled={isSubmitting}
-                                    className="flex-2 py-7 px-10 bg-blue-600 hover:bg-blue-700 font-bold text-lg"
+                                    className="w-full sm:w-auto sm:flex-2 py-7 px-6 sm:px-10 bg-blue-600 hover:bg-blue-700 font-bold text-base sm:text-lg text-white"
                                     onClick={step === 3 ? handleComplete : nextStep}
                                 >
                                     {isSubmitting ? (
@@ -616,16 +614,16 @@ export const OnboardingView: React.FC = () => {
                                     )}
                                 </Button>
                             </div>
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground/50">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                 <Lock className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">End-to-end encrypted actuarial data</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Saved to your account · Your name and email are never sent to the AI</span>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Footer info */}
-                <div className="mt-12 flex gap-8 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                     <a href="#" className="hover:text-blue-600">Privacy Policy</a>
                     <a href="#" className="hover:text-blue-600">Protocol Disclosures</a>
                     <a href="#" className="hover:text-blue-600">Compliance Audit</a>

@@ -12,7 +12,7 @@ describe('server startup', () => {
     const port = 5600 + Math.floor(Math.random() * 300);
     fs.writeFileSync(
       path.join(dir, '.env'),
-      `PORT=${port}\nCORS_ORIGIN=https://app.example.com\nDATABASE_PATH=${path.join(dir, 'test.db')}\n`
+      `PORT=${port}\nCORS_ORIGIN=https://app.example.com\nPGLITE_DIR=memory://\n`
     );
     const tsx = path.resolve('node_modules/.bin/tsx');
     // A clean env so the test's own NODE_ENV/CORS_ORIGIN cannot mask what .env provides.

@@ -22,9 +22,9 @@ import { formatINR } from '@/lib/utils';
 const HEALTH_PREMIUM_INFLATION = 0.1;
 
 const getZone = (ratio: number) => {
-    if (ratio < 7.0) return { label: 'Safe Zone', color: 'text-emerald-500' };
-    if (ratio <= 12.0) return { label: 'Alert Zone', color: 'text-amber-500' };
-    return { label: 'Critical Zone', color: 'text-red-500' };
+    if (ratio < 7.0) return { label: 'Safe Zone', color: 'text-emerald-700 dark:text-emerald-400' };
+    if (ratio <= 12.0) return { label: 'Alert Zone', color: 'text-amber-700 dark:text-amber-400' };
+    return { label: 'Critical Zone', color: 'text-red-600 dark:text-red-400' };
 };
 
 export const AffordabilityAnalysisView: React.FC = () => {
@@ -88,7 +88,7 @@ export const AffordabilityAnalysisView: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto print:hidden">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto print:hidden">
                     <Button variant="outline" onClick={() => window.print()} className="font-bold border-border">
                         <Download className="w-4 h-4 mr-2" />
                         Print Report
@@ -123,7 +123,7 @@ export const AffordabilityAnalysisView: React.FC = () => {
                 <Card className="border-border shadow-sm">
                     <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Debt-to-Income</span>
-                        <Landmark className="w-4 h-4 text-emerald-500" />
+                        <Landmark className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
                         <div className="text-3xl font-black font-mono tracking-tight text-foreground">{dash(`${a?.liabilityToIncome}x`)}</div>
@@ -131,7 +131,7 @@ export const AffordabilityAnalysisView: React.FC = () => {
                             Loans of {formatINR(user.homeLoan + user.otherLoans)} vs annual income
                         </p>
                         {a && a.annualEmi > 0 && (
-                            <p className={`text-[10px] font-bold mt-1 ${a.emiToIncomeRatio > 40 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                            <p className={`text-[10px] font-bold mt-1 ${a.emiToIncomeRatio > 40 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
                                 EMIs {formatINR(user.loanEmi)}/mo · {a.emiToIncomeRatio}% of income (lenders cap ~40%)
                             </p>
                         )}
@@ -152,7 +152,7 @@ export const AffordabilityAnalysisView: React.FC = () => {
                 <Card className="border-border shadow-sm">
                     <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sustainability Tier</span>
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
                         <div className={`text-2xl font-black uppercase tracking-tight ${strategy ? zone.color : 'text-muted-foreground'}`}>{dash(zone.label)}</div>
@@ -173,9 +173,9 @@ export const AffordabilityAnalysisView: React.FC = () => {
 
                     <div className="space-y-4">
                         <div className="h-6 w-full rounded-xl overflow-hidden flex font-mono text-[10px] font-bold text-white shadow-inner">
-                            <div className="bg-emerald-500 w-[35%] flex items-center justify-center">SAFE (&lt;7%)</div>
-                            <div className="bg-amber-500 w-[25%] flex items-center justify-center">ALERT (7-12%)</div>
-                            <div className="bg-red-500 w-[40%] flex items-center justify-center">CRITICAL (&gt;12%)</div>
+                            <div className="bg-emerald-700 w-[35%] flex items-center justify-center">SAFE (&lt;7%)</div>
+                            <div className="bg-amber-700 w-[25%] flex items-center justify-center">ALERT (7-12%)</div>
+                            <div className="bg-red-600 w-[40%] flex items-center justify-center">CRITICAL (&gt;12%)</div>
                         </div>
                         <div className="relative h-5 text-xs font-mono font-bold text-muted-foreground">
                             <span className="absolute left-0">0%</span>
@@ -190,8 +190,8 @@ export const AffordabilityAnalysisView: React.FC = () => {
                         <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2">
                             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                                 {a.estimatedAnnualPremium <= a.premiumBudget
-                                    ? <><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Within Budget</>
-                                    : <><AlertTriangle className="w-4 h-4 text-amber-500" /> Over Budget</>}
+                                    ? <><CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> Within Budget</>
+                                    : <><AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" /> Over Budget</>}
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Closing your gaps costs about {formatINR(a.estimatedAnnualPremium)} a year against a {formatINR(a.premiumBudget)} budget
@@ -227,8 +227,8 @@ export const AffordabilityAnalysisView: React.FC = () => {
                     <div className="grid grid-cols-3 gap-4 font-mono">
                         {[
                             { label: 'Year 1 (Today)', value: projected(0), note: 'Baseline', color: 'text-foreground' },
-                            { label: 'Year 3', value: projected(3), note: `+${growth(3)}%`, color: 'text-amber-500' },
-                            { label: `Year ${horizonYears}`, value: projected(horizonYears), note: `+${growth(horizonYears)}%`, color: 'text-red-500' },
+                            { label: 'Year 3', value: projected(3), note: `+${growth(3)}%`, color: 'text-amber-700 dark:text-amber-400' },
+                            { label: `Year ${horizonYears}`, value: projected(horizonYears), note: `+${growth(horizonYears)}%`, color: 'text-red-600 dark:text-red-400' },
                         ].map(item => (
                             <div key={item.label} className="p-4 rounded-xl bg-muted/30 border border-border space-y-1">
                                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{item.label}</span>

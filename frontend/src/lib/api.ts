@@ -282,8 +282,17 @@ export interface PlanOption {
 /** Official IRDAI claim records, ranked best first. */
 export interface InsurerRecords {
   source: { period: string; publisher: string; documents: string; url: string };
-  life: { insurer: string; claimsHandled: number; paidByNumberPct: number; paidByAmountPct: number }[];
-  health: { insurer: string; claimsHandled: number; paidPct: number; repudiatedPct: number; incurredClaimsRatioPct: number }[];
+  life: (InsurerService & { claimsHandled: number; paidByNumberPct: number; paidByAmountPct: number; settledWithin30DaysPct: number })[];
+  health: (InsurerService & { claimsHandled: number; paidPct: number; repudiatedPct: number; incurredClaimsRatioPct: number })[];
+}
+
+/** Service measures IRDAI publishes for every insurer. */
+export interface InsurerService {
+  insurer: string;
+  complaintsPer10kPolicies: number;
+  /** IRDAI's minimum is 1.5. */
+  solvencyRatio: number;
+  offices: number;
 }
 
 export interface PlanTypeOptions {

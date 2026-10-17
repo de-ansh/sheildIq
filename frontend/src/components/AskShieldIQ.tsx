@@ -77,10 +77,12 @@ export const AskShieldIQ: React.FC = () => {
             <button
                 type="button"
                 onClick={openChat}
-                className={`fixed ${launcherOffset} right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
+                aria-label="Ask ShieldIQ"
+                className={`fixed ${launcherOffset} right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 p-3 sm:px-5 sm:py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
             >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
-                Ask ShieldIQ
+                {/* Icon only on phones, where the label would cover page content. */}
+                <span className="hidden sm:inline">Ask ShieldIQ</span>
             </button>
         );
     }

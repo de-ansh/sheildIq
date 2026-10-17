@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
-import { getDatabase } from '../db/database.js';
+import { one, query, run } from '../db/database.js';
 import { resetAuthRateLimit } from '../routes/user.routes.js';
 import { UserService } from '../services/user.service.js';
 
@@ -86,7 +86,7 @@ describe('Auth, profile and saved plans', () => {
     expect(setCookie).toMatch(/HttpOnly/);
     expect(setCookie).toMatch(/SameSite=Strict/);
     const token = sessionCookie(ok).Cookie.split('=')[1];
-    expect(getDatabase().prepare('SELECT token FROM sessions WHERE token = ?').get(token)).toBeUndefined();
+    expect(await one('SELECT token FROM sessions WHERE token = $1', [token])).toBeUndefined();
     expect(ok.body.user.name).toBe('Alex Vance');
     expect(ok.body.user).not.toHaveProperty('password_hash');
 
@@ -196,7 +196,7 @@ describe('Password management', () => {
 
   it('resets a password with a one-time token and revokes sessions', async () => {
     const reg = await register('reset@example.com');
-    const token = UserService.requestPasswordReset('reset@example.com')!;
+    const token = (await UserService.requestPasswordReset('reset@example.com'))!;
 
     const ok = await request(app).post('/api/v1/auth/reset-password').send({ token, password: 'brand-new-pass' });
     expect(ok.status).toBe(200);
@@ -375,8 +375,8 @@ describe('Strategy and AI', () => {
 
 describe('AI features', () => {
   const env = { ...process.env };
-  beforeEach(() => {
-    resetAuthRateLimit();
+  beforeEach(async () => {
+    await resetAuthRateLimit();
     process.env.GEMINI_API_KEY = 'test-key';
     delete process.env.OPENAI_API_KEY;
   });
@@ -420,6 +420,11 @@ describe('AI features', () => {
     expect(body.input).toContain('"homeLoan": 4000000');
     expect(body.input).toContain('USER: Prepay loan or buy term?');
     expect(body.input).not.toMatch(/Rohan|chat@example\.com/);
+    // Official insurer records ride along so the chat can compare insurers, citing only those figures.
+    expect(body.input).toContain('"insurer":"LIC","claimsHandled":869086,"paidByNumberPct":97.59');
+    expect(body.input).toContain('"insurer":"Star Health"');
+    expect(body.input).toMatch(/IRDAI FY 2024-25/);
+    expect(body.input).toMatch(/never attach them to a named insurer/);
 
     // History is stored server-side, survives a reload (GET), and feeds the next question.
     expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toMatchObject([
@@ -549,8 +554,8 @@ describe('Plan options endpoint', () => {
 
 describe('AI cost controls', () => {
   const env = { ...process.env };
-  beforeEach(() => {
-    resetAuthRateLimit();
+  beforeEach(async () => {
+    await resetAuthRateLimit();
     process.env.GEMINI_API_KEY = 'test-key';
     delete process.env.OPENAI_API_KEY;
   });
@@ -569,7 +574,7 @@ describe('AI cost controls', () => {
     const reg = await request(app).post('/api/v1/auth/register').send({ email: `cost${++seq}@example.com`, password: 'longenough', name: 'C' });
     const auth = sessionCookie(reg);
     await request(app).post('/api/v1/user/onboarding').set(auth).send({ age: 30, income: 1500000, dependents: 1, cityTier: 'Tier 1 (Metro)', monthlyExpenses: 50000 });
-    resetAuthRateLimit(); // registration attempts share the limiter table; start each check clean
+    await resetAuthRateLimit(); // registration attempts share the limiter table; start each check clean
     return auth;
   };
   const chat = (auth: Record<string, string>) => request(app).post('/api/v1/ai/chat').set(auth).send({ message: 'hi' });
@@ -645,7 +650,7 @@ describe('Upload route checks login before reading the body', () => {
   });
 
   it('still accepts large bodies for signed-in users and small limits elsewhere', async () => {
-    resetAuthRateLimit();
+    await resetAuthRateLimit();
     const reg = await request(app).post('/api/v1/auth/register').send({ email: 'upload@example.com', password: 'longenough', name: 'U' });
     const auth = sessionCookie(reg);
     // 1 MB of valid JSON passes the parser and reaches validation (bad base64 -> 400 from our schema, not 413).
@@ -660,7 +665,7 @@ describe('Upload route checks login before reading the body', () => {
 
 describe('Per-account login limit', () => {
   // Clearing only the per-IP counters simulates an attacker rotating through many IP addresses.
-  const newIp = () => getDatabase().prepare("DELETE FROM auth_attempts WHERE key LIKE 'ip:%'").run();
+  const newIp = () => run("DELETE FROM auth_attempts WHERE key LIKE 'ip:%'");
   const login = (email: string, password: string) => request(app).post('/api/v1/auth/login').send({ email, password });
 
   beforeEach(() => resetAuthRateLimit());
@@ -723,12 +728,11 @@ describe('Account export and deletion', () => {
     expect(res.status).toBe(200);
     expect((res.headers['set-cookie'] as unknown as string[])[0]).toMatch(/siq_session=;/);
 
-    const db = getDatabase();
-    for (const table of ['users', 'sessions', 'saved_plans', 'password_resets', 'ai_strategies', 'audit_logs']) {
+    for (const table of ['users', 'sessions', 'saved_plans', 'password_resets', 'ai_strategies', 'audit_logs', 'chat_messages']) {
       const col = table === 'users' ? 'id' : 'user_id';
-      expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${col} = ?`).get(userId)).toEqual({ n: 0 });
+      expect(await query(`SELECT 1 FROM ${table} WHERE ${col} = $1`, [userId])).toEqual([]);
     }
-    expect(db.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action = 'ACCOUNT_DELETED' AND user_id IS NULL").get()).toMatchObject({ n: expect.any(Number) });
+    expect(await query("SELECT 1 FROM audit_logs WHERE action = 'ACCOUNT_DELETED' AND user_id IS NULL")).not.toEqual([]);
     expect((await request(app).get('/api/v1/user/profile').set(auth)).status).toBe(401);
     expect((await request(app).post('/api/v1/auth/login').send({ email: 'erase@example.com', password: 'my-password-1' })).status).toBe(401);
     // The email is free to register again.
@@ -738,8 +742,8 @@ describe('Account export and deletion', () => {
 
 describe('AI cache retention', () => {
   const env = { ...process.env };
-  beforeEach(() => {
-    resetAuthRateLimit();
+  beforeEach(async () => {
+    await resetAuthRateLimit();
     process.env.GEMINI_API_KEY = 'test-key';
   });
   afterEach(() => {
@@ -748,11 +752,11 @@ describe('AI cache retention', () => {
   });
 
   it('drops cached explanations older than 30 days when new ones are stored', async () => {
-    const db = getDatabase();
     const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
     const recent = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
-    db.prepare('INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES (?, ?, ?, ?)').run('old-entry', 'gemini', '{}', old);
-    db.prepare('INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES (?, ?, ?, ?)').run('recent-entry', 'gemini', '{}', recent);
+    const insert = 'INSERT INTO ai_cache (cache_key, provider, payload, created_at) VALUES ($1, $2, $3, $4)';
+    await run(insert, ['old-entry', 'gemini', '{}', old]);
+    await run(insert, ['recent-entry', 'gemini', '{}', recent]);
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify({ summary: 's', drivers: [{ factor: 'f', effect: 'e' }], whatIfs: [] }) }] }],
@@ -760,10 +764,10 @@ describe('AI cache retention', () => {
     const reg = await request(app).post('/api/v1/auth/register').send({ email: 'retention@example.com', password: 'longenough', name: 'R' });
     const auth = sessionCookie(reg);
     await request(app).post('/api/v1/user/onboarding').set(auth).send({ age: 30, income: 1500000, dependents: 0, cityTier: 'Tier 2 (Emerging Metro)', monthlyExpenses: 40000 });
-    resetAuthRateLimit();
+    await resetAuthRateLimit();
     expect((await request(app).post('/api/v1/ai/explain').set(auth).send({ screen: 'health-planner', inputs: { a: 1 }, result: { b: 2 } })).status).toBe(200);
 
-    const keys = (db.prepare('SELECT cache_key FROM ai_cache').all() as { cache_key: string }[]).map(r => r.cache_key);
+    const keys = (await query<{ cache_key: string }>('SELECT cache_key FROM ai_cache')).map(r => r.cache_key);
     expect(keys).not.toContain('old-entry');
     expect(keys).toContain('recent-entry');
   });

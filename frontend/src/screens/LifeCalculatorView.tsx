@@ -116,7 +116,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 <label className="text-sm font-bold text-foreground">Annual Income (Gross)</label>
                                 <span className="text-blue-600 font-mono font-bold text-lg">{formatINR(income)}</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Annual income"
                                 value={[income]}
                                 max={incomeMax}
                                 min={100000}
@@ -135,7 +135,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 <label className="text-sm font-bold text-foreground">Years to Retirement</label>
                                 <span className="text-blue-600 font-mono font-bold text-lg">{years} Years</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Years to retirement"
                                 value={[years]}
                                 max={50}
                                 min={1}
@@ -154,7 +154,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 <label className="text-sm font-bold text-foreground">Inflation Rate</label>
                                 <span className="text-blue-600 font-mono font-bold text-lg">{inflation.toFixed(1)}%</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Inflation rate"
                                 value={[inflation]}
                                 max={15}
                                 min={0}
@@ -273,7 +273,7 @@ export const LifeCalculatorView: React.FC = () => {
                             {coverageGap > 0 ? (
                                 <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+                                        <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
                                         <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-wider">
                                             {gapPercentage}% Coverage Gap Identified ({formatINR(coverageGap)})
                                         </span>
@@ -281,7 +281,7 @@ export const LifeCalculatorView: React.FC = () => {
                                 </div>
                             ) : hlv && (
                                 <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-xl flex items-center gap-3">
-                                    <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                                    <ShieldCheck className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0" />
                                     <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                                         Existing cover meets this target
                                     </span>
@@ -340,7 +340,7 @@ export const LifeCalculatorView: React.FC = () => {
             {saveMessage && (
                 <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between animate-in fade-in">
                     <div className="flex items-center gap-3 text-emerald-800 dark:text-emerald-300">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
                         <div>
                             <p className="text-sm font-bold">{saveMessage}</p>
                         </div>
@@ -362,7 +362,7 @@ export const LifeCalculatorView: React.FC = () => {
                     <h3 className="text-2xl font-black tracking-tight">Ready to secure this coverage?</h3>
                     <p className="opacity-70 font-medium">Save this calculation to your plans, or compare policies that could close the gap.</p>
                 </div>
-                <div className="flex gap-4 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                     <Button
                         variant="outline"
                         onClick={() => setCurrentScreen('comparison')}

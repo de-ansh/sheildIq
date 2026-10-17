@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { CHAT_HISTORY_LIMIT, UserService } from '../services/user.service.js';
-import { getDatabase } from '../db/database.js';
+import { run } from '../db/database.js';
 import { isDevelopment } from '../config.js';
 import { ActuarialService, CITY_TIERS, DEPENDENT_RELATIONS } from '../services/actuarial.service.js';
 import { PlansService } from '../services/plans.service.js';
@@ -105,27 +105,28 @@ function readSessionCookie(req: Request): string | undefined {
   return match ? decodeURIComponent(match.slice(SESSION_COOKIE.length + 1)) : undefined;
 }
 
-// Stored in SQLite so the limit holds across restarts and across instances sharing the DB.
+// Stored in the database so the limit holds across restarts and across instances sharing it.
 const AUTH_WINDOW_MS = 15 * 60 * 1000;
-const AUTH_MAX_ATTEMPTS = 10;
+// Overridable only so automated browser tests, which sign in many times from one address, can run; production keeps 10.
+const AUTH_MAX_ATTEMPTS = Number(process.env.AUTH_RATE_LIMIT_MAX) || 10;
 
-function rateLimitAuth(req: Request, res: Response, next: NextFunction) {
-  const retryAfter = UserService.hitRateLimit(`ip:${req.ip ?? 'unknown'}`, AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS);
+const rateLimitAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const retryAfter = await UserService.hitRateLimit(`ip:${req.ip ?? 'unknown'}`, AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS);
   if (retryAfter !== null) {
     res.set('Retry-After', String(retryAfter));
     res.status(429).json({ success: false, error: 'Too many attempts. Please try again later.' });
     return;
   }
   next();
+});
+
+export async function resetAuthRateLimit() {
+  await run('DELETE FROM auth_attempts');
 }
 
-export function resetAuthRateLimit() {
-  getDatabase().exec('DELETE FROM auth_attempts');
-}
-
-function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+const requireAuth = asyncHandler(async (req: AuthedRequest, res: Response, next: NextFunction) => {
   const token = readSessionCookie(req);
-  const userId = token ? UserService.resolveSession(token) : null;
+  const userId = token ? await UserService.resolveSession(token) : null;
   if (!token || !userId) {
     res.status(401).json({ success: false, error: 'Authentication required' });
     return;
@@ -133,7 +134,7 @@ function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   req.userId = userId;
   req.token = token;
   next();
-}
+});
 
 // POST /api/v1/auth/register
 router.post('/auth/register', rateLimitAuth, asyncHandler(async (req: Request, res: Response) => {
@@ -161,7 +162,7 @@ router.post('/auth/login', rateLimitAuth, asyncHandler(async (req: Request, res:
   // Per-account limit on top of the per-IP one, so rotating IPs can't keep guessing one password.
   // Only failures count, so the real owner signing in never uses it up.
   const accountKey = `login:${parse.data.email.toLowerCase()}`;
-  const lockedFor = UserService.rateLimitRetryAfter(accountKey, AUTH_MAX_ATTEMPTS);
+  const lockedFor = await UserService.rateLimitRetryAfter(accountKey, AUTH_MAX_ATTEMPTS);
   if (lockedFor !== null) {
     res.set('Retry-After', String(lockedFor));
     res.status(429).json({ success: false, error: 'Too many failed sign-in attempts for this account. Please try again later.' });
@@ -169,7 +170,7 @@ router.post('/auth/login', rateLimitAuth, asyncHandler(async (req: Request, res:
   }
   const result = await UserService.login(parse.data.email, parse.data.password);
   if (!result) {
-    UserService.hitRateLimit(accountKey, AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS);
+    await UserService.hitRateLimit(accountKey, AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS);
     res.status(401).json({ success: false, error: 'Invalid email or password' });
     return;
   }
@@ -178,27 +179,27 @@ router.post('/auth/login', rateLimitAuth, asyncHandler(async (req: Request, res:
 }));
 
 // POST /api/v1/auth/logout
-router.post('/auth/logout', requireAuth, (req: AuthedRequest, res: Response) => {
-  UserService.logout(req.token!);
+router.post('/auth/logout', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  await UserService.logout(req.token!);
   res.clearCookie(SESSION_COOKIE, { path: '/api' });
   res.json({ success: true });
-});
+}));
 
 // POST /api/v1/auth/forgot-password — always 200 so the response never reveals whether an account exists
-router.post('/auth/forgot-password', rateLimitAuth, (req: Request, res: Response) => {
+router.post('/auth/forgot-password', rateLimitAuth, asyncHandler(async (req: Request, res: Response) => {
   const parse = forgotSchema.safeParse(req.body);
   if (!parse.success) {
     res.status(400).json({ error: 'Invalid email', details: parse.error.format() });
     return;
   }
-  const token = UserService.requestPasswordReset(parse.data.email);
+  const token = await UserService.requestPasswordReset(parse.data.email);
   if (token) {
     const link = `${process.env.APP_URL || 'http://localhost:5173'}/?reset=${token}`;
     // shortcut: no mail provider yet, so the link is only printed in development; wire an email service before production.
     if (isDevelopment()) console.log(`[ShieldIQ] Password reset link for ${parse.data.email}: ${link}`);
   }
   res.json({ success: true, message: 'If an account exists for that email, a reset link has been sent.' });
-});
+}));
 
 // POST /api/v1/auth/reset-password
 router.post('/auth/reset-password', rateLimitAuth, asyncHandler(async (req: Request, res: Response) => {
@@ -229,21 +230,21 @@ router.post('/auth/change-password', requireAuth, rateLimitAuth, asyncHandler(as
 }));
 
 // POST /api/v1/auth/logout-all
-router.post('/auth/logout-all', requireAuth, (req: AuthedRequest, res: Response) => {
-  UserService.logoutAll(req.userId!);
+router.post('/auth/logout-all', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  await UserService.logoutAll(req.userId!);
   res.clearCookie(SESSION_COOKIE, { path: '/api' });
   res.json({ success: true });
-});
+}));
 
 // GET /api/v1/user/export — download of everything stored about the user
-router.get('/user/export', requireAuth, (req: AuthedRequest, res: Response) => {
-  const data = UserService.exportData(req.userId!);
+router.get('/user/export', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  const data = await UserService.exportData(req.userId!);
   if (!data) {
     res.status(404).json({ success: false, error: 'User not found' });
     return;
   }
   res.attachment(`shieldiq-data-${data.exportedAt.slice(0, 10)}.json`).json(data);
-});
+}));
 
 // DELETE /api/v1/user/account — permanent erasure, confirmed with the current password
 router.delete('/user/account', requireAuth, rateLimitAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
@@ -261,27 +262,27 @@ router.delete('/user/account', requireAuth, rateLimitAuth, asyncHandler(async (r
 }));
 
 // GET /api/v1/user/profile
-router.get('/user/profile', requireAuth, (req: AuthedRequest, res: Response) => {
-  res.json({ success: true, user: UserService.getUserProfile(req.userId!) });
-});
+router.get('/user/profile', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  res.json({ success: true, user: await UserService.getUserProfile(req.userId!) });
+}));
 
 // PUT /api/v1/user/profile
-router.put('/user/profile', requireAuth, (req: AuthedRequest, res: Response) => {
+router.put('/user/profile', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const parse = profileSchema.safeParse(req.body);
   if (!parse.success) {
     res.status(400).json({ error: 'Invalid profile payload', details: parse.error.format() });
     return;
   }
-  res.json({ success: true, user: UserService.updateUserProfile(req.userId!, parse.data) });
-});
+  res.json({ success: true, user: await UserService.updateUserProfile(req.userId!, parse.data) });
+}));
 
 // POST /api/v1/user/disclaimer — records that the user accepted the methodology & liability terms
-router.post('/user/disclaimer', requireAuth, (req: AuthedRequest, res: Response) => {
-  res.json({ success: true, user: UserService.acknowledgeDisclaimer(req.userId!) });
-});
+router.post('/user/disclaimer', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  res.json({ success: true, user: await UserService.acknowledgeDisclaimer(req.userId!) });
+}));
 
 // POST /api/v1/user/onboarding — accepts the full onboarding form; only profile fields are persisted
-router.post('/user/onboarding', requireAuth, (req: AuthedRequest, res: Response) => {
+router.post('/user/onboarding', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const parse = onboardingSchema.safeParse(req.body);
   if (!parse.success) {
     res.status(400).json({ error: 'Invalid onboarding payload', details: parse.error.format() });
@@ -289,15 +290,15 @@ router.post('/user/onboarding', requireAuth, (req: AuthedRequest, res: Response)
   }
   res.json({
     success: true,
-    user: UserService.updateUserProfile(req.userId!, { ...parse.data, onboardingCompleted: true }),
+    user: await UserService.updateUserProfile(req.userId!, { ...parse.data, onboardingCompleted: true }),
     message: 'Onboarding data processed and baseline actuarial risk profile initialized.',
   });
-});
+}));
 
 // GET /api/v1/strategy — deterministic strategy from the stored profile, plus any cached AI narrative
-router.get('/strategy', requireAuth, (req: AuthedRequest, res: Response) => {
-  const user = UserService.getUserProfile(req.userId!);
-  const profile = UserService.getStrategyProfile(req.userId!);
+router.get('/strategy', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  const user = await UserService.getUserProfile(req.userId!);
+  const profile = user && UserService.toStrategyProfile(user);
   if (!user || !profile) {
     res.status(404).json({ success: false, error: 'User not found' });
     return;
@@ -309,15 +310,15 @@ router.get('/strategy', requireAuth, (req: AuthedRequest, res: Response) => {
   res.json({
     success: true,
     data: ActuarialService.buildStrategy(profile),
-    ai: AiService.getCached(req.userId!, profile),
+    ai: await AiService.getCached(req.userId!, profile),
     aiProvider: configuredProvider(),
   });
-});
+}));
 
 // GET /api/v1/plan-options — 4 options per insurance type, quoted for this household, with a rule-based pick
-router.get('/plan-options', requireAuth, (req: AuthedRequest, res: Response) => {
-  const user = UserService.getUserProfile(req.userId!);
-  const profile = UserService.getStrategyProfile(req.userId!);
+router.get('/plan-options', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  const user = await UserService.getUserProfile(req.userId!);
+  const profile = user && UserService.toStrategyProfile(user);
   if (!user || !profile || !user.onboardingCompleted) {
     res.status(409).json({ success: false, error: 'Complete onboarding to see plan options.', code: 'ONBOARDING_REQUIRED' });
     return;
@@ -328,7 +329,7 @@ router.get('/plan-options', requireAuth, (req: AuthedRequest, res: Response) => 
     disclaimer: 'Plan types with indicative premiums from ShieldIQ rate tables, not insurer quotes. Insurer claim records are official IRDAI figures; get actual quotes before buying.',
     insurerRecords: { source: INSURER_RECORDS_SOURCE, life: LIFE_INSURER_RECORDS, health: HEALTH_INSURER_RECORDS },
   });
-});
+}));
 
 // Shared plumbing for paid AI endpoints: onboarding gate, usage limits, provider error mapping.
 const ONBOARDING_REQUIRED = { success: false, error: 'Complete onboarding to build your strategy.', code: 'ONBOARDING_REQUIRED' };
@@ -340,14 +341,14 @@ const DAY = 24 * HOUR;
  * per user per feature, per IP across features (new accounts don't reset it), and an app-wide daily cap on spend.
  */
 function aiGuard(req: AuthedRequest, feature: string, perUserPerHour: number) {
-  return () => {
+  return async () => {
     const limits: [key: string, max: number, windowMs: number, message: string][] = [
       [`ai:${feature}:${req.userId}`, perUserPerHour, HOUR, 'You have reached the hourly limit for this AI feature. Please try again later.'],
       [`ai:ip:${req.ip ?? 'unknown'}`, Number(process.env.AI_IP_HOURLY_LIMIT) || 60, HOUR, 'Too many AI requests from your network. Please try again later.'],
       ['ai:global', Number(process.env.AI_DAILY_CALL_LIMIT) || 500, DAY, 'AI features have reached today’s usage limit. Please try again tomorrow.'],
     ];
     for (const [key, max, windowMs, message] of limits) {
-      const retryAfter = UserService.hitRateLimit(key, max, windowMs);
+      const retryAfter = await UserService.hitRateLimit(key, max, windowMs);
       if (retryAfter !== null) throw new AiLimitError(message, retryAfter);
     }
   };
@@ -380,9 +381,9 @@ function aiRoute(handler: (req: AuthedRequest, res: Response) => Promise<void>) 
 }
 
 /** Profile + computed strategy for an onboarded user, or null after sending the 409. */
-function onboardedContext(req: AuthedRequest, res: Response) {
-  const user = UserService.getUserProfile(req.userId!);
-  const profile = UserService.getStrategyProfile(req.userId!);
+async function onboardedContext(req: AuthedRequest, res: Response) {
+  const user = await UserService.getUserProfile(req.userId!);
+  const profile = user && UserService.toStrategyProfile(user);
   if (!user || !profile || !user.onboardingCompleted) {
     res.status(409).json(ONBOARDING_REQUIRED);
     return null;
@@ -392,9 +393,9 @@ function onboardedContext(req: AuthedRequest, res: Response) {
 
 // POST /api/v1/strategy/ai — cached per profile; regenerates only on request
 router.post('/strategy/ai', requireAuth, aiRoute(async (req, res) => {
-  const ctx = onboardedContext(req, res);
+  const ctx = await onboardedContext(req, res);
   if (!ctx) return;
-  const cached = AiService.getCached(req.userId!, ctx.profile);
+  const cached = await AiService.getCached(req.userId!, ctx.profile);
   if (cached && !req.body?.refresh) {
     res.json({ success: true, ai: cached });
     return;
@@ -407,15 +408,15 @@ const chatSchema = z.object({ message: chatMessageSchema.shape.content });
 const CHAT_CONTEXT_MESSAGES = 12;
 
 // GET /api/v1/ai/chat — the user's saved conversation, oldest first
-router.get('/ai/chat', requireAuth, (req: AuthedRequest, res: Response) => {
-  res.json({ success: true, messages: UserService.listChat(req.userId!, CHAT_HISTORY_LIMIT) });
-});
+router.get('/ai/chat', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  res.json({ success: true, messages: await UserService.listChat(req.userId!, CHAT_HISTORY_LIMIT) });
+}));
 
 // DELETE /api/v1/ai/chat — clears the saved conversation
-router.delete('/ai/chat', requireAuth, (req: AuthedRequest, res: Response) => {
-  UserService.clearChat(req.userId!);
+router.delete('/ai/chat', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  await UserService.clearChat(req.userId!);
   res.json({ success: true });
-});
+}));
 
 /**
  * POST /api/v1/ai/chat — "Ask ShieldIQ". Streams server-sent events: {delta} pieces of the reply as they arrive,
@@ -428,10 +429,10 @@ router.post('/ai/chat', requireAuth, aiRoute(async (req, res) => {
     res.status(400).json({ error: 'Invalid chat request', details: parse.error.format() });
     return;
   }
-  const ctx = onboardedContext(req, res);
+  const ctx = await onboardedContext(req, res);
   if (!ctx) return;
   const question = parse.data.message;
-  const history = UserService.listChat(req.userId!, CHAT_CONTEXT_MESSAGES).map(({ role, content }) => ({ role, content }));
+  const history = (await UserService.listChat(req.userId!, CHAT_CONTEXT_MESSAGES)).map(({ role, content }) => ({ role, content }));
   const planOptions = PlansService.optionsFor(ctx.profile, ctx.strategy);
 
   // Stop paying for tokens nobody will read once the client disconnects.
@@ -449,7 +450,7 @@ router.post('/ai/chat', requireAuth, aiRoute(async (req, res) => {
     aiGuard(req, 'chat', 40),
     abort.signal
   );
-  UserService.saveChatTurn(req.userId!, question, data.answer);
+  await UserService.saveChatTurn(req.userId!, question, data.answer);
   send({ done: true, reply: data, provider });
   res.end();
 }));
@@ -468,7 +469,7 @@ router.post('/ai/explain', requireAuth, aiRoute(async (req, res) => {
     res.status(400).json({ error: 'Invalid explain request', details: parse.error.format() });
     return;
   }
-  const ctx = onboardedContext(req, res);
+  const ctx = await onboardedContext(req, res);
   if (!ctx) return;
   const { screen, inputs, result } = parse.data;
   const explained = await AiService.explain(req.userId!, ctx.profile, screen, inputs, result, aiGuard(req, 'explain', 30));
@@ -508,27 +509,26 @@ router.post('/ai/policy-analysis', requireAuth, express.json({ limit: '6mb' }), 
     res.status(400).json({ success: false, error: 'That file is not a valid PDF up to 4 MB.' });
     return;
   }
-  const user = UserService.getUserProfile(req.userId!);
-  const profile = UserService.getStrategyProfile(req.userId!);
-  const strategy = user?.onboardingCompleted && profile ? ActuarialService.buildStrategy(profile) : null;
+  const user = await UserService.getUserProfile(req.userId!);
+  const strategy = user?.onboardingCompleted ? ActuarialService.buildStrategy(UserService.toStrategyProfile(user)) : null;
   const result = await AiService.analyzePolicy({ base64: parse.data.data, filename: parse.data.filename }, strategy, aiGuard(req, 'policy', 10));
   res.json({ success: true, ...result });
 }));
 
 // GET /api/v1/plans
-router.get('/plans', requireAuth, (req: AuthedRequest, res: Response) => {
-  res.json({ success: true, data: UserService.listPlans(req.userId!) });
-});
+router.get('/plans', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  res.json({ success: true, data: await UserService.listPlans(req.userId!) });
+}));
 
 // POST /api/v1/plans
-router.post('/plans', requireAuth, (req: AuthedRequest, res: Response) => {
+router.post('/plans', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   const parse = planSchema.safeParse(req.body);
   if (!parse.success) {
     res.status(400).json({ error: 'Invalid plan payload', details: parse.error.format() });
     return;
   }
   // The snapshot is computed here from the stored profile, never taken from the client.
-  const profile = UserService.getStrategyProfile(req.userId!);
+  const profile = await UserService.getStrategyProfile(req.userId!);
   const s = profile && ActuarialService.buildStrategy(profile);
   const snapshot = s && {
     score: s.score,
@@ -536,16 +536,16 @@ router.post('/plans', requireAuth, (req: AuthedRequest, res: Response) => {
     healthGap: s.health.gap + (s.parentsHealth?.gap ?? 0),
     annualPremium: s.affordability.estimatedAnnualPremium,
   };
-  res.status(201).json({ success: true, data: UserService.createPlan(req.userId!, parse.data, snapshot) });
-});
+  res.status(201).json({ success: true, data: await UserService.createPlan(req.userId!, parse.data, snapshot) });
+}));
 
 // DELETE /api/v1/plans/:id
-router.delete('/plans/:id', requireAuth, (req: AuthedRequest, res: Response) => {
-  if (!UserService.deletePlan(req.userId!, String(req.params.id))) {
+router.delete('/plans/:id', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
+  if (!(await UserService.deletePlan(req.userId!, String(req.params.id)))) {
     res.status(404).json({ success: false, error: 'Plan not found' });
     return;
   }
   res.json({ success: true });
-});
+}));
 
 export const userRouter: Router = router;

@@ -24,7 +24,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                         {aiStrategy ? 'AI Protection Strategy' : 'Key Findings'}
                     </h3>
                     {aiStrategy && (
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
                             {providerLabel(aiStrategy.provider)} · {new Date(aiStrategy.createdAt).toLocaleDateString('en-IN')}
                         </span>
                     )}
@@ -41,7 +41,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${urgencyColor[p.urgency]}`}>{p.urgency}</span>
                                     </div>
                                     <p className="text-xs text-slate-300 leading-relaxed">{p.action}</p>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">{p.rationale}</p>
+                                    <p className="text-[11px] text-slate-400 leading-relaxed">{p.rationale}</p>
                                 </li>
                             ))}
                         </ol>
@@ -81,7 +81,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                     <Button
                         onClick={() => generateAiStrategy(Boolean(aiStrategy))}
                         disabled={isGeneratingAi || !strategy}
-                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-black uppercase tracking-widest text-[10px]"
+                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-black uppercase tracking-widest text-[10px] text-white"
                     >
                         {isGeneratingAi ? (
                             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Writing your strategy…</span>
@@ -92,9 +92,9 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                         )}
                     </Button>
                 ) : (
-                    strategy && <p className="text-[10px] text-slate-500 uppercase tracking-widest">AI strategy is not configured on this server.</p>
+                    strategy && <p className="text-[10px] text-slate-400 uppercase tracking-widest">AI strategy is not configured on this server.</p>
                 )}
-                <p className="text-[9px] text-slate-600 leading-relaxed">
+                <p className="text-[9px] text-slate-400 leading-relaxed">
                     Analytical guidance from your profile, not regulated financial advice. Only anonymised figures are sent to the AI provider.
                 </p>
             </div>

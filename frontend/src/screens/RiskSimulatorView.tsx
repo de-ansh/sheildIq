@@ -110,7 +110,7 @@ export const RiskSimulatorView: React.FC = () => {
                     </div>
                 </div>
 
-                <nav className="flex items-center bg-muted p-1 rounded-xl">
+                <nav className="flex flex-wrap items-center bg-muted p-1 rounded-xl">
                     {[
                         { id: "death", label: "Early Death", icon: Skull },
                         { id: "illness", label: "Critical Illness", icon: Stethoscope },
@@ -119,7 +119,7 @@ export const RiskSimulatorView: React.FC = () => {
                         <button
                             key={s.id}
                             onClick={() => setScenario(s.id as Scenario)}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-xs font-black transition-all uppercase tracking-widest ${scenario === s.id ? "bg-background shadow-sm text-blue-600" : "text-muted-foreground hover:bg-background/50"}`}
+                            className={`flex items-center gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs font-black transition-all uppercase tracking-widest ${scenario === s.id ? "bg-background shadow-sm text-blue-600" : "text-muted-foreground hover:bg-background/50"}`}
                         >
                             <s.icon className="w-4 h-4" />
                             {s.label}
@@ -128,7 +128,7 @@ export const RiskSimulatorView: React.FC = () => {
                 </nav>
 
                 <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-600/30 overflow-hidden font-black text-blue-600 flex items-center justify-center text-xs">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-600/30 overflow-hidden font-black text-blue-700 dark:text-blue-400 flex items-center justify-center text-xs">
                         {userInitials}
                     </div>
                 </div>
@@ -148,7 +148,7 @@ export const RiskSimulatorView: React.FC = () => {
                                 <Label>{scenario === 'death' ? 'Final Expenses (Immediate)' : 'Treatment Cost (Total)'}</Label>
                                 <span className="text-blue-600 font-mono font-bold">{formatINR(cost[0])}</span>
                             </div>
-                            <Slider
+                            <Slider aria-label={scenario === 'death' ? 'Final expenses' : 'Treatment cost'}
                                 value={cost}
                                 onValueChange={setCost}
                                 max={5000000}
@@ -182,7 +182,7 @@ export const RiskSimulatorView: React.FC = () => {
                                 <Label>Medical Inflation</Label>
                                 <span className="text-blue-600 font-mono font-bold">{inflation[0].toFixed(1)}%</span>
                             </div>
-                            <Slider
+                            <Slider aria-label="Medical inflation"
                                 value={inflation}
                                 onValueChange={setInflation}
                                 max={15}
@@ -219,7 +219,7 @@ export const RiskSimulatorView: React.FC = () => {
                         <Button
                             onClick={runSimulation}
                             disabled={isCalculating}
-                            className="w-full bg-slate-900 border-none dark:bg-slate-700 py-6 font-black uppercase tracking-widest text-[10px]"
+                            className="w-full bg-slate-900 border-none dark:bg-slate-700 py-6 font-black uppercase tracking-widest text-[10px] text-white"
                         >
                             {isCalculating ? (
                                 <span className="flex items-center gap-2">
@@ -243,9 +243,9 @@ export const RiskSimulatorView: React.FC = () => {
                             <CardContent className="p-8 flex flex-col md:flex-row justify-between items-center gap-8 group hover:border-blue-200 dark:hover:border-blue-800 transition-all">
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Payout Runs Out At</p>
-                                    <h3 className="text-6xl font-black text-red-500 font-mono tracking-tighter">
+                                    <h3 className="text-6xl font-black text-red-600 dark:text-red-400 font-mono tracking-tighter">
                                         {simResult ? simResult.depletionAge : '—'}
-                                        <span className="text-lg font-bold text-muted-foreground/30 ml-2 uppercase tracking-widest">Years Old</span>
+                                        <span className="text-lg font-bold text-muted-foreground ml-2 uppercase tracking-widest">Years Old</span>
                                     </h3>
                                     <p className="text-xs text-muted-foreground font-medium italic">
                                         {!simResult
@@ -331,7 +331,7 @@ export const RiskSimulatorView: React.FC = () => {
                             <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300" role="img"
                                 aria-label={`Current cover lasts ${simResult.yearsFunded} years; with the recommended cover it lasts ${recommendedYears.toFixed(1)} years`}>
                                 <path d={recommendedPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-blue-600" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-                                <path d={currentPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-red-500" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                                <path d={currentPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-red-600 dark:text-red-400" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                                 <line x1={(simResult.yearsFunded / chartYears) * 1000} y1="0" x2={(simResult.yearsFunded / chartYears) * 1000} y2="300" stroke="#ef4444" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
                             </svg>
                             )}
@@ -378,7 +378,7 @@ export const RiskSimulatorView: React.FC = () => {
                             <div className="flex gap-4 pt-4">
                                 <Button
                                     onClick={() => setCurrentScreen('calculator')}
-                                    className="bg-blue-600 hover:bg-blue-700 font-black px-10 py-6 uppercase tracking-widest text-[10px]"
+                                    className="bg-blue-600 hover:bg-blue-700 font-black px-10 py-6 uppercase tracking-widest text-[10px] text-white"
                                 >
                                     Adjust Target Cover
                                 </Button>
@@ -396,21 +396,21 @@ export const RiskSimulatorView: React.FC = () => {
             </main>
 
             {/* Sticky Footer */}
-            <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border px-10 py-4 flex justify-between items-center z-50">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">
+            <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border px-4 md:px-10 py-4 flex justify-between items-center gap-3 z-50">
+                <p className="hidden md:block text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">
                     Indicative estimate · {inflation[0].toFixed(1)}% inflation + 3% medical premium · 8% return on payouts
                 </p>
-                <div className="flex gap-3">
+                <div className="flex gap-3 w-full md:w-auto">
                     <Button
                         variant="outline"
                         onClick={() => setCurrentScreen('comparison')}
-                        className="font-black h-10 px-8 uppercase tracking-widest text-[10px]"
+                        className="flex-1 md:flex-none font-black h-10 px-3 md:px-8 uppercase md:tracking-widest text-[10px]"
                     >
                         Compare Variants
                     </Button>
                     <Button
                         onClick={() => setCurrentScreen('calculator')}
-                        className="bg-blue-600 hover:bg-blue-700 font-black h-10 px-8 uppercase tracking-widest text-[10px] text-white"
+                        className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 font-black h-10 px-3 md:px-8 uppercase md:tracking-widest text-[10px] text-white"
                     >
                         Recalibrate Policy Gap
                     </Button>

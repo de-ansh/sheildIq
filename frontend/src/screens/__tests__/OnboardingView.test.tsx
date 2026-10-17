@@ -38,5 +38,15 @@ describe('OnboardingView Component', () => {
     fireEvent.change(screen.getByLabelText(/Age of dependent 1/i), { target: { value: '6' } });
     fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
     expect(screen.getByText(/Protection & Lifestyle/i)).toBeInTheDocument();
+
+    // Each option toggles exactly once, whether the box itself or its label is clicked, and has an accessible name.
+    const tobacco = screen.getByRole('checkbox', { name: 'Tobacco/Smoking' });
+    fireEvent.click(tobacco);
+    expect(tobacco).toBeChecked();
+    fireEvent.click(screen.getByText('Tobacco/Smoking'));
+    expect(tobacco).not.toBeChecked();
+    const groupHealth = screen.getByRole('checkbox', { name: 'Group Health' });
+    fireEvent.click(groupHealth);
+    expect(groupHealth).toBeChecked();
   });
 });

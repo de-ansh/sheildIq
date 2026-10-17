@@ -78,9 +78,9 @@ export const PolicyAnalyzerView: React.FC = () => {
     const a = result?.analysis;
     const sections = a
         ? [
-            { title: 'Key Benefits', items: a.keyBenefits, icon: ShieldCheck, tone: 'text-emerald-600' },
+            { title: 'Key Benefits', items: a.keyBenefits, icon: ShieldCheck, tone: 'text-emerald-700 dark:text-emerald-400' },
             { title: 'Waiting Periods', items: a.waitingPeriods, icon: Clock, tone: 'text-blue-600' },
-            { title: 'Sub-limits & Co-pays', items: a.subLimits, icon: Gauge, tone: 'text-amber-600' },
+            { title: 'Sub-limits & Co-pays', items: a.subLimits, icon: Gauge, tone: 'text-amber-700 dark:text-amber-400' },
             { title: 'Exclusions', items: a.exclusions, icon: Ban, tone: 'text-slate-500' },
         ]
         : [];
@@ -118,7 +118,7 @@ export const PolicyAnalyzerView: React.FC = () => {
                             className="sr-only"
                             onChange={e => handleFile(e.target.files?.[0])}
                         />
-                        <Button asChild disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 font-bold shrink-0">
+                        <Button asChild disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 font-bold shrink-0 text-white">
                             <label htmlFor="policy-file" className="cursor-pointer">
                                 {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                                 {isLoading ? 'Reading policy…' : fileName ? 'Analyze Another' : 'Upload Policy'}
@@ -131,7 +131,7 @@ export const PolicyAnalyzerView: React.FC = () => {
 
             {a && !a.isInsurancePolicy && (
                 <Card className="p-6 flex items-center gap-3 text-sm">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" /> This document doesn't look like an insurance policy. Try the policy schedule or wording PDF.
+                    <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400" /> This document doesn't look like an insurance policy. Try the policy schedule or wording PDF.
                 </Card>
             )}
 
@@ -183,7 +183,7 @@ export const PolicyAnalyzerView: React.FC = () => {
                                 </div>
                             )}
                             {addMessage && (
-                                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+                                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                                     <CheckCircle2 className="w-4 h-4" /> {addMessage}
                                     <Button variant="link" size="sm" onClick={() => setCurrentScreen('dashboard')}>View dashboard</Button>
                                 </p>

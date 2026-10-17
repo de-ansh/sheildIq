@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { getDatabase, hashPassword, hashPasswordAsync, generateSalt } from '../db/database.js';
+import { hashPassword, hashPasswordAsync, generateSalt, one, query, run } from '../db/database.js';
 import { DEPENDENT_RELATIONS, householdOf, type CityTier, type Dependent, type StrategyProfile } from './actuarial.service.js';
 
 export interface UserProfileData {
@@ -125,7 +125,7 @@ const parseList = (value: unknown): string[] => {
   }
 };
 
-type UserRow = Record<string, string | number>;
+type UserRow = Record<string, unknown>;
 
 function toProfile(row: UserRow): UserProfileData {
   return {
@@ -176,9 +176,9 @@ function toPlan(row: UserRow): SavedPlanData {
 }
 
 function audit(userId: string | null, action: string, details?: string) {
-  getDatabase()
-    .prepare('INSERT INTO audit_logs (id, user_id, action, details, timestamp) VALUES (?, ?, ?, ?, ?)')
-    .run(crypto.randomUUID(), userId, action, details ?? null, new Date().toISOString());
+  return run('INSERT INTO audit_logs (id, user_id, action, details, timestamp) VALUES ($1, $2, $3, $4, $5)', [
+    crypto.randomUUID(), userId, action, details ?? null, new Date().toISOString(),
+  ]);
 }
 
 // Only a hash of the token is stored, so a leaked DB cannot be replayed as live sessions.
@@ -188,13 +188,13 @@ const hashToken = (token: string) => crypto.createHash('sha256').update(token).d
 const DUMMY_SALT = generateSalt();
 const DUMMY_HASH = hashPassword(crypto.randomBytes(16).toString('hex'), DUMMY_SALT);
 
-function createSession(userId: string): string {
+async function createSession(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   const now = Date.now();
-  const db = getDatabase();
-  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(new Date(now).toISOString());
-  db.prepare('INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    .run(hashToken(token), userId, new Date(now + SESSION_TTL_MS).toISOString(), new Date(now).toISOString());
+  await run('DELETE FROM sessions WHERE expires_at < $1', [new Date(now).toISOString()]);
+  await run('INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES ($1, $2, $3, $4)', [
+    hashToken(token), userId, new Date(now + SESSION_TTL_MS).toISOString(), new Date(now).toISOString(),
+  ]);
   return token;
 }
 
@@ -208,131 +208,125 @@ async function passwordMatches(row: UserRow, password: string): Promise<boolean>
 async function setPassword(userId: string, password: string) {
   const salt = generateSalt();
   const hash = await hashPasswordAsync(password, salt);
-  getDatabase()
-    .prepare('UPDATE users SET password_hash = ?, salt = ?, updated_at = ? WHERE id = ?')
-    .run(hash, salt, new Date().toISOString(), userId);
+  await run('UPDATE users SET password_hash = $1, salt = $2, updated_at = $3 WHERE id = $4', [hash, salt, new Date().toISOString(), userId]);
 }
+
+const isUniqueViolation = (err: unknown) => (err as { code?: string })?.code === '23505';
 
 export class UserService {
   static async register(email: string, password: string, name: string): Promise<{ token: string; user: UserProfileData } | null> {
-    const db = getDatabase();
     const normalized = email.toLowerCase();
-    if (db.prepare('SELECT id FROM users WHERE email = ?').get(normalized)) return null;
+    if (await one('SELECT id FROM users WHERE email = $1', [normalized])) return null;
 
     const id = `USR-${crypto.randomUUID()}`;
     const salt = generateSalt();
     const hash = await hashPasswordAsync(password, salt);
-    // Re-check after the await: another request may have registered the same email meanwhile.
-    if (db.prepare('SELECT id FROM users WHERE email = ?').get(normalized)) return null;
     const now = new Date().toISOString();
-    // Explicit blank profile: the column defaults describe the demo persona, not a new user.
-    db.prepare(
-      `INSERT INTO users (id, email, name, password_hash, salt, created_at, updated_at,
-        age, income, dependents, marital_status, occupation, city, onboarding_completed)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 30, 0, 0, 'Single', '', '', 0)`
-    ).run(id, normalized, name, hash, salt, now, now);
-    audit(id, 'REGISTER');
-
-    return { token: createSession(id), user: UserService.getUserProfile(id)! };
+    try {
+      await run(
+        'INSERT INTO users (id, email, name, password_hash, salt, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $6)',
+        [id, normalized, name, hash, salt, now]
+      );
+    } catch (err) {
+      // Two sign-ups with the same email at once: the unique index lets exactly one through.
+      if (isUniqueViolation(err)) return null;
+      throw err;
+    }
+    await audit(id, 'REGISTER');
+    return { token: await createSession(id), user: (await UserService.getUserProfile(id))! };
   }
 
   static async login(email: string, password: string): Promise<{ token: string; user: UserProfileData } | null> {
-    const row = getDatabase().prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase()) as
-      | UserRow
-      | undefined;
+    const row = await one<UserRow>('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
     const expected = Buffer.from(row ? String(row.password_hash) : DUMMY_HASH, 'hex');
     const actual = Buffer.from(await hashPasswordAsync(password, row ? String(row.salt) : DUMMY_SALT), 'hex');
     if (!crypto.timingSafeEqual(expected, actual) || !row) {
       if (!row) return null;
-      audit(String(row.id), 'LOGIN_FAILED');
+      await audit(String(row.id), 'LOGIN_FAILED');
       return null;
     }
 
-    audit(String(row.id), 'LOGIN');
-    return { token: createSession(String(row.id)), user: toProfile(row) };
+    await audit(String(row.id), 'LOGIN');
+    return { token: await createSession(String(row.id)), user: toProfile(row) };
   }
 
   /** Returns a one-time reset token, or null for unknown emails (callers must not reveal which). */
-  static requestPasswordReset(email: string): string | null {
-    const db = getDatabase();
-    const row = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase()) as UserRow | undefined;
+  static async requestPasswordReset(email: string): Promise<string | null> {
+    const row = await one<UserRow>('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
     if (!row) return null;
     const userId = String(row.id);
     const token = crypto.randomBytes(32).toString('hex');
     // One live reset link per user: issuing a new one invalidates older links.
-    db.prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?').run(userId, new Date().toISOString());
-    db.prepare('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
-      .run(hashToken(token), userId, new Date(Date.now() + RESET_TTL_MS).toISOString());
-    audit(userId, 'PASSWORD_RESET_REQUESTED');
+    await run('DELETE FROM password_resets WHERE user_id = $1 OR expires_at < $2', [userId, new Date().toISOString()]);
+    await run('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES ($1, $2, $3)', [
+      hashToken(token), userId, new Date(Date.now() + RESET_TTL_MS).toISOString(),
+    ]);
+    await audit(userId, 'PASSWORD_RESET_REQUESTED');
     return token;
   }
 
   static async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const db = getDatabase();
-    const row = db.prepare('SELECT user_id, expires_at FROM password_resets WHERE token_hash = ?').get(hashToken(token)) as
-      | UserRow
-      | undefined;
-    db.prepare('DELETE FROM password_resets WHERE token_hash = ?').run(hashToken(token));
+    // DELETE ... RETURNING consumes the token in one step, so it can never be used twice.
+    const row = await one<UserRow>('DELETE FROM password_resets WHERE token_hash = $1 RETURNING user_id, expires_at', [hashToken(token)]);
     if (!row || new Date(String(row.expires_at)).getTime() < Date.now()) return false;
     const userId = String(row.user_id);
     await setPassword(userId, newPassword);
-    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
-    audit(userId, 'PASSWORD_RESET');
+    await run('DELETE FROM sessions WHERE user_id = $1', [userId]);
+    await audit(userId, 'PASSWORD_RESET');
     return true;
   }
 
   /** Changes the password and signs out every other session. */
   static async changePassword(userId: string, currentToken: string, currentPassword: string, newPassword: string): Promise<boolean> {
-    const row = getDatabase().prepare('SELECT password_hash, salt FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+    const row = await one<UserRow>('SELECT password_hash, salt FROM users WHERE id = $1', [userId]);
     if (!row) return false;
     if (!(await passwordMatches(row, currentPassword))) {
-      audit(userId, 'PASSWORD_CHANGE_FAILED');
+      await audit(userId, 'PASSWORD_CHANGE_FAILED');
       return false;
     }
     await setPassword(userId, newPassword);
-    getDatabase().prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?').run(userId, hashToken(currentToken));
-    audit(userId, 'PASSWORD_CHANGE');
+    await run('DELETE FROM sessions WHERE user_id = $1 AND token != $2', [userId, hashToken(currentToken)]);
+    await audit(userId, 'PASSWORD_CHANGE');
     return true;
   }
 
   /** Everything stored about the user, for a data-access request. Never includes credentials. */
-  static exportData(userId: string) {
-    const profile = UserService.getUserProfile(userId);
+  static async exportData(userId: string) {
+    const profile = await UserService.getUserProfile(userId);
     if (!profile) return null;
-    const ai = getDatabase().prepare('SELECT provider, payload, created_at FROM ai_strategies WHERE user_id = ?').get(userId) as UserRow | undefined;
+    const ai = await one<UserRow>('SELECT provider, payload, created_at FROM ai_strategies WHERE user_id = $1', [userId]);
     const { isLoggedIn, ...storedProfile } = profile; // isLoggedIn is session state, not stored data
     return {
       exportedAt: new Date().toISOString(),
       profile: storedProfile,
-      savedPlans: UserService.listPlans(userId),
+      savedPlans: await UserService.listPlans(userId),
       aiStrategy: ai ? { provider: ai.provider, createdAt: ai.created_at, strategy: JSON.parse(String(ai.payload)) } : null,
-      chatHistory: UserService.listChat(userId, CHAT_HISTORY_LIMIT),
+      chatHistory: await UserService.listChat(userId, CHAT_HISTORY_LIMIT),
     };
   }
 
   /** The user's most recent chat messages, oldest first. */
-  static listChat(userId: string, limit: number): ChatEntry[] {
-    const rows = getDatabase()
-      .prepare('SELECT role, content, created_at FROM chat_messages WHERE user_id = ? ORDER BY id DESC LIMIT ?')
-      .all(userId, limit) as UserRow[];
+  static async listChat(userId: string, limit: number): Promise<ChatEntry[]> {
+    const rows = await query<UserRow>('SELECT role, content, created_at FROM chat_messages WHERE user_id = $1 ORDER BY id DESC LIMIT $2', [userId, limit]);
     return rows.reverse().map(r => ({ role: r.role as ChatEntry['role'], content: String(r.content), createdAt: String(r.created_at) }));
   }
 
   /** Stores one question and its answer together, keeping only the newest CHAT_HISTORY_LIMIT messages. */
-  static saveChatTurn(userId: string, question: string, answer: string): void {
-    const db = getDatabase();
-    const now = new Date().toISOString();
-    const insert = db.prepare('INSERT INTO chat_messages (user_id, role, content, created_at) VALUES (?, ?, ?, ?)');
-    insert.run(userId, 'user', question, now);
-    insert.run(userId, 'assistant', answer, now);
-    db.prepare(
-      `DELETE FROM chat_messages WHERE user_id = ? AND id NOT IN
-         (SELECT id FROM chat_messages WHERE user_id = ? ORDER BY id DESC LIMIT ?)`
-    ).run(userId, userId, CHAT_HISTORY_LIMIT);
+  static async saveChatTurn(userId: string, question: string, answer: string): Promise<void> {
+    // One statement, so a question is never stored without its answer.
+    await run(
+      `INSERT INTO chat_messages (user_id, role, content, created_at) VALUES ($1, 'user', $2, $4), ($1, 'assistant', $3, $4)`,
+      [userId, question, answer, new Date().toISOString()]
+    );
+    await run(
+      `DELETE FROM chat_messages WHERE user_id = $1 AND id NOT IN
+         (SELECT id FROM chat_messages WHERE user_id = $1 ORDER BY id DESC LIMIT $2)`,
+      [userId, CHAT_HISTORY_LIMIT]
+    );
   }
 
-  static clearChat(userId: string): void {
-    getDatabase().prepare('DELETE FROM chat_messages WHERE user_id = ?').run(userId);
+  static async clearChat(userId: string): Promise<void> {
+    await run('DELETE FROM chat_messages WHERE user_id = $1', [userId]);
   }
 
   /**
@@ -340,84 +334,86 @@ export class UserService {
    * cascade from the users row; the security log and login limiter are cleared explicitly.
    */
   static async deleteAccount(userId: string, password: string): Promise<boolean> {
-    const db = getDatabase();
-    const row = db.prepare('SELECT email, password_hash, salt FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+    const row = await one<UserRow>('SELECT email, password_hash, salt FROM users WHERE id = $1', [userId]);
     if (!row || !(await passwordMatches(row, password))) return false;
-    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
-    db.prepare('DELETE FROM audit_logs WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM auth_attempts WHERE key = ?').run(`login:${row.email}`);
-    audit(null, 'ACCOUNT_DELETED'); // anonymous record that an erasure happened
+    await run('DELETE FROM users WHERE id = $1', [userId]);
+    await run('DELETE FROM audit_logs WHERE user_id = $1', [userId]);
+    await run('DELETE FROM auth_attempts WHERE key = $1', [`login:${row.email}`]);
+    await audit(null, 'ACCOUNT_DELETED'); // anonymous record that an erasure happened
     return true;
   }
 
-  static logoutAll(userId: string): void {
-    getDatabase().prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
-    audit(userId, 'LOGOUT_ALL');
+  static async logoutAll(userId: string): Promise<void> {
+    await run('DELETE FROM sessions WHERE user_id = $1', [userId]);
+    await audit(userId, 'LOGOUT_ALL');
   }
 
   /** Counts an attempt for `key`; returns seconds to wait if over `max` in the window, else null. */
-  static hitRateLimit(key: string, max: number, windowMs: number): number | null {
-    const db = getDatabase();
+  static async hitRateLimit(key: string, max: number, windowMs: number): Promise<number | null> {
     const now = Date.now();
-    db.prepare('DELETE FROM auth_attempts WHERE reset_at < ?').run(now);
-    db.prepare(
-      `INSERT INTO auth_attempts (key, count, reset_at) VALUES (?, 1, ?)
-       ON CONFLICT(key) DO UPDATE SET count = count + 1`
-    ).run(key, now + windowMs);
-    const row = db.prepare('SELECT count, reset_at FROM auth_attempts WHERE key = ?').get(key) as UserRow;
+    // One atomic upsert: concurrent requests (or several app instances) can never both read a stale count.
+    // An expired window restarts at 1.
+    const row = (await one<UserRow>(
+      `INSERT INTO auth_attempts (key, count, reset_at) VALUES ($1, 1, $2)
+       ON CONFLICT (key) DO UPDATE SET
+         count = CASE WHEN auth_attempts.reset_at < $3 THEN 1 ELSE auth_attempts.count + 1 END,
+         reset_at = CASE WHEN auth_attempts.reset_at < $3 THEN $2 ELSE auth_attempts.reset_at END
+       RETURNING count, reset_at`,
+      [key, now + windowMs, now]
+    ))!;
     return Number(row.count) > max ? Math.ceil((Number(row.reset_at) - now) / 1000) : null;
   }
 
   /** Like hitRateLimit but read-only: seconds to wait if `key` already has `max` attempts in its window, else null. */
-  static rateLimitRetryAfter(key: string, max: number): number | null {
+  static async rateLimitRetryAfter(key: string, max: number): Promise<number | null> {
     const now = Date.now();
-    const row = getDatabase().prepare('SELECT count, reset_at FROM auth_attempts WHERE key = ? AND reset_at >= ?').get(key, now) as UserRow | undefined;
+    const row = await one<UserRow>('SELECT count, reset_at FROM auth_attempts WHERE key = $1 AND reset_at >= $2', [key, now]);
     return row && Number(row.count) >= max ? Math.ceil((Number(row.reset_at) - now) / 1000) : null;
   }
 
-  static logout(token: string): void {
-    getDatabase().prepare('DELETE FROM sessions WHERE token = ?').run(hashToken(token));
+  static async logout(token: string): Promise<void> {
+    await run('DELETE FROM sessions WHERE token = $1', [hashToken(token)]);
   }
 
   /** Returns the user id for a live session token, or null. */
-  static resolveSession(token: string): string | null {
-    const row = getDatabase().prepare('SELECT user_id, expires_at FROM sessions WHERE token = ?').get(hashToken(token)) as
-      | UserRow
-      | undefined;
+  static async resolveSession(token: string): Promise<string | null> {
+    const row = await one<UserRow>('SELECT user_id, expires_at FROM sessions WHERE token = $1', [hashToken(token)]);
     if (!row) return null;
     if (new Date(String(row.expires_at)).getTime() < Date.now()) {
-      UserService.logout(token);
+      await UserService.logout(token);
       return null;
     }
     return String(row.user_id);
   }
 
-  static getUserProfile(userId: string): UserProfileData | null {
-    const row = getDatabase().prepare('SELECT * FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+  static async getUserProfile(userId: string): Promise<UserProfileData | null> {
+    const row = await one<UserRow>('SELECT * FROM users WHERE id = $1', [userId]);
     return row ? toProfile(row) : null;
   }
 
-  static updateUserProfile(userId: string, data: ProfileUpdate): UserProfileData | null {
+  static async updateUserProfile(userId: string, data: ProfileUpdate): Promise<UserProfileData | null> {
     const entries = Object.entries(data).filter(
       ([key, value]) => value !== undefined && key in PROFILE_COLUMNS
     ) as [keyof ProfileUpdate, unknown][];
 
     if (entries.length > 0) {
       const now = new Date().toISOString();
-      const sets = entries.map(([key]) => `${PROFILE_COLUMNS[key]} = ?`).join(', ');
+      // Column names come from the PROFILE_COLUMNS whitelist, never from the request.
+      const sets = entries.map(([key], i) => `${PROFILE_COLUMNS[key]} = $${i + 1}`).join(', ');
+      const n = entries.length;
       const toColumnValue = (value: unknown) =>
         Array.isArray(value) ? JSON.stringify(value) : typeof value === 'boolean' ? Number(value) : (value as string | number);
-      getDatabase()
-        .prepare(`UPDATE users SET ${sets}, updated_at = ?, profile_reviewed_at = ? WHERE id = ?`)
-        .run(...entries.map(([, value]) => toColumnValue(value)), now, now, userId);
-      audit(userId, 'PROFILE_UPDATE', entries.map(([key]) => key).join(','));
+      await run(`UPDATE users SET ${sets}, updated_at = $${n + 1}, profile_reviewed_at = $${n + 1} WHERE id = $${n + 2}`, [
+        ...entries.map(([, value]) => toColumnValue(value)), now, userId,
+      ]);
+      await audit(userId, 'PROFILE_UPDATE', entries.map(([key]) => key).join(','));
     }
-    const profile = UserService.getUserProfile(userId);
+    const profile = await UserService.getUserProfile(userId);
     // With a dependents list, the stored count is derived from it so the two never disagree.
     if (profile && profile.dependentDetails.length > 0) {
       const count = householdOf(profile).count;
       if (count !== profile.dependents) {
-        getDatabase().prepare('UPDATE users SET dependents = ? WHERE id = ?').run(count, userId);
+        await run('UPDATE users SET dependents = $1 WHERE id = $2', [count, userId]);
         profile.dependents = count;
       }
     }
@@ -425,18 +421,16 @@ export class UserService {
   }
 
   /** Records acceptance of the disclaimer once; later calls keep the first time. */
-  static acknowledgeDisclaimer(userId: string): UserProfileData | null {
-    const changed = getDatabase()
-      .prepare('UPDATE users SET disclaimer_acknowledged_at = ? WHERE id = ? AND disclaimer_acknowledged_at IS NULL')
-      .run(new Date().toISOString(), userId).changes;
-    if (changed) audit(userId, 'DISCLAIMER_ACKNOWLEDGED');
+  static async acknowledgeDisclaimer(userId: string): Promise<UserProfileData | null> {
+    const changed = await run('UPDATE users SET disclaimer_acknowledged_at = $1 WHERE id = $2 AND disclaimer_acknowledged_at IS NULL', [
+      new Date().toISOString(), userId,
+    ]);
+    if (changed) await audit(userId, 'DISCLAIMER_ACKNOWLEDGED');
     return UserService.getUserProfile(userId);
   }
 
   /** The subset of the profile the strategy engine uses; deliberately excludes name, email and free-text city. */
-  static getStrategyProfile(userId: string): StrategyProfile | null {
-    const u = UserService.getUserProfile(userId);
-    if (!u) return null;
+  static toStrategyProfile(u: UserProfileData): StrategyProfile {
     return {
       age: u.age,
       income: u.income,
@@ -462,31 +456,31 @@ export class UserService {
     };
   }
 
-  static listPlans(userId: string): SavedPlanData[] {
-    return (
-      getDatabase()
-        .prepare('SELECT * FROM saved_plans WHERE user_id = ? ORDER BY last_modified DESC, rowid DESC')
-        .all(userId) as UserRow[]
-    ).map(toPlan);
+  static async getStrategyProfile(userId: string): Promise<StrategyProfile | null> {
+    const u = await UserService.getUserProfile(userId);
+    return u && UserService.toStrategyProfile(u);
   }
 
-  static createPlan(userId: string, plan: Omit<SavedPlanData, 'id' | 'lastModified' | 'snapshot'>, snapshot: PlanSnapshot | null = null): SavedPlanData {
+  static async listPlans(userId: string): Promise<SavedPlanData[]> {
+    return (await query<UserRow>('SELECT * FROM saved_plans WHERE user_id = $1 ORDER BY last_modified DESC, seq DESC', [userId])).map(toPlan);
+  }
+
+  static async createPlan(userId: string, plan: Omit<SavedPlanData, 'id' | 'lastModified' | 'snapshot'>, snapshot: PlanSnapshot | null = null): Promise<SavedPlanData> {
     const id = `SIQ-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
     const lastModified = new Date().toISOString().split('T')[0];
-    getDatabase()
-      .prepare(
-        `INSERT INTO saved_plans (id, user_id, name, category, coverage_amount, monthly_premium, status, description, last_modified, snapshot)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(id, userId, plan.name, plan.category, plan.coverageAmount, plan.monthlyPremium, plan.status, plan.description, lastModified, snapshot && JSON.stringify(snapshot));
-    audit(userId, 'PLAN_CREATE', id);
+    await run(
+      `INSERT INTO saved_plans (id, user_id, name, category, coverage_amount, monthly_premium, status, description, last_modified, snapshot)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [id, userId, plan.name, plan.category, plan.coverageAmount, plan.monthlyPremium, plan.status, plan.description, lastModified, snapshot && JSON.stringify(snapshot)]
+    );
+    await audit(userId, 'PLAN_CREATE', id);
     return { ...plan, id, lastModified, snapshot };
   }
 
   /** Deletes only if the plan belongs to the user. */
-  static deletePlan(userId: string, planId: string): boolean {
-    const result = getDatabase().prepare('DELETE FROM saved_plans WHERE id = ? AND user_id = ?').run(planId, userId);
-    if (result.changes > 0) audit(userId, 'PLAN_DELETE', planId);
-    return result.changes > 0;
+  static async deletePlan(userId: string, planId: string): Promise<boolean> {
+    const changed = await run('DELETE FROM saved_plans WHERE id = $1 AND user_id = $2', [planId, userId]);
+    if (changed > 0) await audit(userId, 'PLAN_DELETE', planId);
+    return changed > 0;
   }
 }

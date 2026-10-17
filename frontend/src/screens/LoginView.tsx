@@ -211,7 +211,7 @@ export const LoginView: React.FC = () => {
             </Card>
 
             <div className="fixed bottom-8 text-center w-full px-4">
-                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest leading-relaxed max-w-lg mx-auto">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed max-w-lg mx-auto">
                     This platform provides analytical insights and does not constitute insurance advisory.
                     © 2026 ShieldIQ Technologies. All rights reserved.
                 </p>

@@ -45,7 +45,7 @@ export const ExplainResult: React.FC<Props> = ({ screen, inputs, result }) => {
             {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
             {explanation && (
                 <div className={`rounded-2xl border p-5 space-y-4 ${isStale ? 'border-border opacity-60' : 'border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20'}`} aria-live="polite">
-                    {isStale && <p className="text-[11px] font-bold text-amber-600">Inputs changed since this explanation. Click explain again to update it.</p>}
+                    {isStale && <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400">Inputs changed since this explanation. Click explain again to update it.</p>}
                     <p className="text-sm leading-relaxed text-foreground">{explanation.data.summary}</p>
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">What drives it</p>

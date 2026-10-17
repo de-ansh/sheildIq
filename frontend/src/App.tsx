@@ -1,32 +1,40 @@
+import { lazy, Suspense } from "react";
 import { ThemeProvider } from "./components/theme-provider";
 import { AppContextProvider, useApp } from "./lib/AppContext";
 import { Navbar } from "./components/Navbar";
 import { LoginView } from "./screens/LoginView";
-import { OnboardingView } from "./screens/OnboardingView";
-import { DashboardView } from "./screens/DashboardView";
-import { LifeCalculatorView } from "./screens/LifeCalculatorView";
-import { HealthPlannerView } from "./screens/HealthPlannerView";
-import { CoverageAnalysisView } from "./screens/CoverageAnalysisView";
-import { ComparisonView } from "./screens/ComparisonView";
-import { RiskSimulatorView } from "./screens/RiskSimulatorView";
-import { PolicyDeepDiveView } from "./screens/PolicyDeepDiveView";
-import { AffordabilityAnalysisView } from "./screens/AffordabilityAnalysisView";
-import { DependencyModelingView } from "./screens/DependencyModelingView";
-import { SavedPlansView } from "./screens/SavedPlansView";
-import { SettingsView } from "./screens/SettingsView";
-import { ComplianceView } from "./screens/ComplianceView";
-import { SystemStatesView } from "./screens/SystemStatesView";
-import { PolicyAnalyzerView } from "./screens/PolicyAnalyzerView";
 import { AskShieldIQ } from "./components/AskShieldIQ";
+import { ScreenErrorBoundary } from "./components/ScreenErrorBoundary";
+
+// Each screen downloads the first time it is opened; only the login screen ships in the first bundle.
+const screen = <K extends string>(name: K, load: () => Promise<Record<K, React.ComponentType>>) =>
+  lazy(() => load().then(m => ({ default: m[name] })));
+const OnboardingView = screen("OnboardingView", () => import("./screens/OnboardingView"));
+const DashboardView = screen("DashboardView", () => import("./screens/DashboardView"));
+const LifeCalculatorView = screen("LifeCalculatorView", () => import("./screens/LifeCalculatorView"));
+const HealthPlannerView = screen("HealthPlannerView", () => import("./screens/HealthPlannerView"));
+const CoverageAnalysisView = screen("CoverageAnalysisView", () => import("./screens/CoverageAnalysisView"));
+const ComparisonView = screen("ComparisonView", () => import("./screens/ComparisonView"));
+const RiskSimulatorView = screen("RiskSimulatorView", () => import("./screens/RiskSimulatorView"));
+const PolicyDeepDiveView = screen("PolicyDeepDiveView", () => import("./screens/PolicyDeepDiveView"));
+const AffordabilityAnalysisView = screen("AffordabilityAnalysisView", () => import("./screens/AffordabilityAnalysisView"));
+const DependencyModelingView = screen("DependencyModelingView", () => import("./screens/DependencyModelingView"));
+const SavedPlansView = screen("SavedPlansView", () => import("./screens/SavedPlansView"));
+const SettingsView = screen("SettingsView", () => import("./screens/SettingsView"));
+const ComplianceView = screen("ComplianceView", () => import("./screens/ComplianceView"));
+const SystemStatesView = screen("SystemStatesView", () => import("./screens/SystemStatesView"));
+const PolicyAnalyzerView = screen("PolicyAnalyzerView", () => import("./screens/PolicyAnalyzerView"));
 
 function MainContent() {
-  const { currentScreen, user, aiProvider } = useApp();
+  const { currentScreen, setCurrentScreen, user, aiProvider } = useApp();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-blue-500 selection:text-white">
       {currentScreen !== "login" && <Navbar />}
 
       <main className="flex-1">
+        <ScreenErrorBoundary key={currentScreen} onHome={() => setCurrentScreen(user.isLoggedIn ? "dashboard" : "login")}>
+        <Suspense fallback={<p role="status" className="px-6 py-24 text-center text-sm text-muted-foreground">Loading…</p>}>
         {currentScreen === "login" && <LoginView />}
         {currentScreen === "onboarding" && <OnboardingView />}
         {currentScreen === "dashboard" && <DashboardView />}
@@ -43,6 +51,8 @@ function MainContent() {
         {currentScreen === "compliance" && <ComplianceView />}
         {currentScreen === "systemstates" && <SystemStatesView />}
         {currentScreen === "policyscan" && <PolicyAnalyzerView />}
+        </Suspense>
+        </ScreenErrorBoundary>
       </main>
 
       {/* Keyed by user so one account never sees another's conversation */}

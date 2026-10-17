@@ -105,13 +105,13 @@ export const SavedPlansView: React.FC = () => {
     const getStatusBadge = (status: SavedPlan['status']) => {
         switch (status) {
             case 'Adequate':
-                return <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-[10px]">Adequate</Badge>;
+                return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-none font-bold text-[10px]">Adequate</Badge>;
             case 'Gap Detected':
-                return <Badge className="bg-amber-500/10 text-amber-600 border-none font-bold text-[10px]">Gap Detected</Badge>;
+                return <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-none font-bold text-[10px]">Gap Detected</Badge>;
             case 'Incomplete':
                 return <Badge className="bg-blue-500/10 text-blue-600 border-none font-bold text-[10px]">Incomplete</Badge>;
             case 'Archived':
-                return <Badge className="bg-slate-500/10 text-slate-500 border-none font-bold text-[10px]">Archived</Badge>;
+                return <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-none font-bold text-[10px]">Archived</Badge>;
         }
     };
 
@@ -135,7 +135,7 @@ export const SavedPlansView: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <Button
                         variant="outline"
                         onClick={handleExportCsv}
@@ -187,7 +187,7 @@ export const SavedPlansView: React.FC = () => {
                                     <Clock className="w-4 h-4 text-blue-600" /> Last Modified: {activePlan.lastModified}
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-600" /> Coverage: {formatINR(activePlan.coverageAmount)}
+                                    <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> Coverage: {formatINR(activePlan.coverageAmount)}
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <Calendar className="w-4 h-4 text-indigo-600" /> Premium: {formatINR(activePlan.monthlyPremium)}/mo
@@ -220,7 +220,7 @@ export const SavedPlansView: React.FC = () => {
                         <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Progress Over Time</h3>
                         <p className="text-xs text-muted-foreground">How your score and gaps changed between saved plans.</p>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="relative overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-left">
@@ -242,7 +242,7 @@ export const SavedPlansView: React.FC = () => {
                                             <td className="px-6 py-3 text-right">
                                                 {h.score}
                                                 {change !== 0 && (
-                                                    <span className={`ml-2 text-xs ${change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    <span className={`ml-2 text-xs ${change > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>
                                                         {change > 0 ? `▲ ${change}` : `▼ ${-change}`}
                                                     </span>
                                                 )}
@@ -288,7 +288,7 @@ export const SavedPlansView: React.FC = () => {
 
             {/* Catalog Table */}
             <Card className="border-border shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="relative overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/40 border-b border-border text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                             <tr>

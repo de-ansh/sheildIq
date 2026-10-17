@@ -162,7 +162,7 @@ export const HealthPlannerView: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Still Needed</p>
-                                    <p className={`text-2xl font-black font-mono ${plan && plan.personalCoverNeeded > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    <p className={`text-2xl font-black font-mono ${plan && plan.personalCoverNeeded > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-500'}`}>
                                         {plan ? formatINR(plan.personalCoverNeeded) : '—'}
                                     </p>
                                 </div>
@@ -207,7 +207,7 @@ export const HealthPlannerView: React.FC = () => {
                                 {[
                                     { label: 'Coverage Adequacy Score', value: plan ? `${plan.adequacyScore} / 100` : '—', color: 'text-blue-600' },
                                     { label: 'Uncovered Exposure', value: plan ? formatINR(plan.personalCoverNeeded) : '—', color: 'text-foreground' },
-                                    { label: 'Reliance on Employer Cover', value: plan ? `${plan.employerDependencyShare}%` : '—', color: plan && plan.employerDependencyShare >= 50 ? 'text-amber-600' : 'text-foreground' },
+                                    { label: 'Reliance on Employer Cover', value: plan ? `${plan.employerDependencyShare}%` : '—', color: plan && plan.employerDependencyShare >= 50 ? 'text-amber-700 dark:text-amber-400' : 'text-foreground' },
                                     { label: 'Base Policy Deductible for Top-Up', value: plan ? formatINR(plan.basePolicy) : '—', color: 'text-foreground' },
                                 ].map(item => (
                                     <div key={item.label} className="flex justify-between items-center p-4 bg-muted/30 border border-border rounded-xl">
@@ -233,7 +233,7 @@ export const HealthPlannerView: React.FC = () => {
                                 {plan?.notes.map(note => (
                                     <p key={note} className="flex gap-2"><Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />{note}</p>
                                 ))}
-                                <p className="text-xs text-slate-500">Premiums are indicative market averages, not quotes.</p>
+                                <p className="text-xs text-slate-400">Premiums are indicative market averages, not quotes.</p>
                             </div>
                         </div>
                     </Card>

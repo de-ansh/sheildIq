@@ -48,7 +48,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
             title: title || "All Systems Operational",
             description: description || `ShieldIQ API ${health?.version ?? ''} is up. Last checked ${health?.timestamp ? new Date(health.timestamp).toLocaleString('en-IN') : 'just now'}.`,
             actionLabel: "Back to Dashboard",
-            iconColor: "text-emerald-500"
+            iconColor: "text-emerald-700 dark:text-emerald-400"
         },
         loading: {
             icon: Loader2,
@@ -78,7 +78,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
             title: title || "Periodic Model Calibration",
             description: description || "ShieldIQ is being updated and will be back shortly.",
             actionLabel: "Check Health Status",
-            iconColor: "text-amber-500"
+            iconColor: "text-amber-700 dark:text-amber-400"
         }
     };
 
@@ -99,7 +99,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
         <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-6 font-sans">
             {/* Interactive State Switcher (when rendered standalone) */}
             {!propType && (
-                <div className="mb-8 p-1.5 rounded-2xl bg-muted border border-border flex items-center gap-1 shadow-sm">
+                <div className="mb-8 max-w-full p-1.5 rounded-2xl bg-muted border border-border flex flex-wrap justify-center items-center gap-1 shadow-sm">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground self-center mr-1">Preview states:</span>
                     {(['live', 'loading', 'error', 'empty', 'maintenance'] as const).map(t => (
                         <button
@@ -134,7 +134,7 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
                 <div className="pt-4 flex flex-col gap-3">
                     <Button
                         onClick={handleActionClick}
-                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-black uppercase tracking-widest text-[10px]"
+                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-black uppercase tracking-widest text-[10px] text-white"
                     >
                         {state.actionLabel}
                     </Button>
@@ -147,9 +147,9 @@ export const SystemStatesView: React.FC<SystemStateProps> = ({
                     </Button>
                 </div>
 
-                <div className="pt-4 flex items-center justify-center gap-2 opacity-50">
+                <div className="pt-4 flex items-center justify-center gap-2">
                     <ShieldAlert className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.4em]">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em]">
                         ShieldIQ Integrity Protection
                     </span>
                 </div>

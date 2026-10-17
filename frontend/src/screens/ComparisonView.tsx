@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, ChevronRight, FileText, Star, Check, Minus, Info, ShieldCheck, HeartPulse, Activity, Accessibility } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
-import { ShieldIQApi, type InsuranceType, type InsurerRecords, type PlanTypeOptions, type SavedPlan } from '@/lib/api';
+import { ShieldIQApi, type InsuranceType, type InsurerRecords, type InsurerService, type PlanTypeOptions, type SavedPlan } from '@/lib/api';
 import { formatINR } from '@/lib/utils';
 
 const TYPE_ICON: Record<InsuranceType, React.ComponentType<{ className?: string }>> = {
@@ -58,17 +58,17 @@ export const ComparisonView: React.FC = () => {
                         Four ways to buy each type of cover, quoted for your age, family, city and lifestyle, with the one that fits you best highlighted.
                     </p>
                 </header>
-                <Button onClick={() => window.print()} className="font-bold h-11 bg-blue-600 hover:bg-blue-700 print:hidden">
+                <Button onClick={() => window.print()} className="font-bold h-11 bg-blue-600 hover:bg-blue-700 print:hidden text-white">
                     <FileText className="w-4 h-4 mr-2" /> Print Summary
                 </Button>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                <TabsList className="bg-muted p-1 rounded-xl h-14 border border-border">
-                    <TabsTrigger value="options" className="px-8 rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <TabsList className="bg-muted p-1 rounded-xl h-14 border border-border max-w-full">
+                    <TabsTrigger value="options" className="px-3 sm:px-8 rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                         <Star className="w-4 h-4 mr-2" /> Plan Options
                     </TabsTrigger>
-                    <TabsTrigger value="saved" className="px-8 rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                    <TabsTrigger value="saved" className="px-3 sm:px-8 rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                         <Bookmark className="w-4 h-4 mr-2" /> Saved Strategies
                     </TabsTrigger>
                 </TabsList>
@@ -140,10 +140,10 @@ export const ComparisonView: React.FC = () => {
                                         <p className="text-xs text-foreground/80">{o.structure}</p>
                                         <ul className="space-y-1.5 text-xs">
                                             {o.features.map(f => (
-                                                <li key={f} className="flex gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />{f}</li>
+                                                <li key={f} className="flex gap-2"><Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />{f}</li>
                                             ))}
                                             {o.tradeOffs.map(t => (
-                                                <li key={t} className="flex gap-2 text-muted-foreground"><Minus className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />{t}</li>
+                                                <li key={t} className="flex gap-2 text-muted-foreground"><Minus className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />{t}</li>
                                             ))}
                                         </ul>
                                         <div className="mt-auto space-y-2">
@@ -157,7 +157,7 @@ export const ComparisonView: React.FC = () => {
                             </div>
 
                             {/* Side-by-side table */}
-                            <Card className="overflow-x-auto border-border">
+                            <Card className="relative overflow-x-auto border-border">
                                 <table className="w-full text-left text-sm">
                                     <caption className="sr-only">{current.label} options compared</caption>
                                     <thead className="bg-muted border-b border-border">
@@ -205,7 +205,7 @@ export const ComparisonView: React.FC = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <Badge className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-widest border-none ${plan.status === 'Adequate' ? 'bg-emerald-50 text-emerald-600' : plan.status === 'Incomplete' || plan.status === 'Archived' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-600'}`}>
+                                <Badge className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-widest border-none ${plan.status === 'Adequate' ? 'bg-emerald-50 text-emerald-700 dark:text-emerald-400' : plan.status === 'Incomplete' || plan.status === 'Archived' ? 'bg-slate-100 text-slate-600 dark:text-slate-400' : 'bg-amber-50 text-amber-700 dark:text-amber-400'}`}>
                                     {plan.status}
                                 </Badge>
                             </div>
@@ -220,78 +220,99 @@ export const ComparisonView: React.FC = () => {
     );
 };
 
-/** Official IRDAI claim records for insurers selling this type of cover, best first. */
+interface RecordColumn<R> {
+    header: string;
+    value: (r: R) => string;
+    /** True when this value is clearly weaker than the other insurers listed. */
+    weak?: (r: R, all: R[]) => boolean;
+    muted?: boolean;
+}
+
+const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+// Shared service columns: complaints well above the group, solvency close to IRDAI's 1.5 minimum.
+const serviceColumns = <R extends InsurerService>(): RecordColumn<R>[] => [
+    { header: 'Complaints / 10k Policies', value: r => r.complaintsPer10kPolicies.toFixed(1), weak: (r, all) => r.complaintsPer10kPolicies > 2 * median(all.map(x => x.complaintsPer10kPolicies)) },
+    { header: 'Solvency', value: r => r.solvencyRatio.toFixed(2), weak: r => r.solvencyRatio < 1.8 },
+    { header: 'Offices', value: r => r.offices.toLocaleString('en-IN'), muted: true },
+];
+
+const RecordsTable = <R extends InsurerService>({ caption, rows, columns }: { caption: string; rows: R[]; columns: RecordColumn<R>[] }) => (
+    <table className="w-full text-left text-sm">
+        <caption className="sr-only">{caption}</caption>
+        <thead className="border-b border-border">
+            <tr>
+                <th scope="col" className="px-4 py-3 text-[10px] font-black uppercase text-muted-foreground tracking-widest">Insurer</th>
+                {columns.map(c => <th key={c.header} scope="col" className="px-4 py-3 text-[10px] font-black uppercase text-muted-foreground tracking-widest">{c.header}</th>)}
+            </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+            {rows.map(r => (
+                <tr key={r.insurer}>
+                    <th scope="row" className="px-4 py-2 font-bold whitespace-nowrap">{r.insurer}</th>
+                    {columns.map(c => {
+                        const weak = c.weak?.(r, rows);
+                        return (
+                            <td key={c.header} className={`px-4 py-2 font-mono ${weak ? 'text-amber-700 dark:text-amber-400 font-bold' : c.muted ? 'text-muted-foreground' : ''}`}>
+                                {c.value(r)}{weak && <span className="sr-only"> (weaker than peers)</span>}
+                            </td>
+                        );
+                    })}
+                </tr>
+            ))}
+        </tbody>
+    </table>
+);
+
+const LIFE_COLUMNS: RecordColumn<InsurerRecords['life'][number]>[] = [
+    { header: 'Claims Paid (by number)', value: r => `${r.paidByNumberPct.toFixed(2)}%` },
+    { header: 'Claims Paid (by amount)', value: r => `${r.paidByAmountPct.toFixed(2)}%`, weak: r => r.paidByAmountPct < 90 },
+    { header: 'Paid Within 30 Days', value: r => `${r.settledWithin30DaysPct.toFixed(1)}%`, weak: r => r.settledWithin30DaysPct < 90 },
+    ...serviceColumns<InsurerRecords['life'][number]>(),
+    { header: 'Claims Handled', value: r => r.claimsHandled.toLocaleString('en-IN'), muted: true },
+];
+
+const HEALTH_COLUMNS: RecordColumn<InsurerRecords['health'][number]>[] = [
+    { header: 'Claims Paid', value: r => `${r.paidPct.toFixed(2)}%` },
+    { header: 'Claims Rejected', value: r => `${r.repudiatedPct.toFixed(2)}%`, weak: r => r.repudiatedPct > 10 },
+    { header: 'Payout Ratio', value: r => `${r.incurredClaimsRatioPct.toFixed(1)}%` },
+    ...serviceColumns<InsurerRecords['health'][number]>(),
+    { header: 'Claims Handled', value: r => r.claimsHandled.toLocaleString('en-IN'), muted: true },
+];
+
+/** Official IRDAI claim and service records for insurers selling this type of cover, best claim record first. */
 const InsurerClaimRecords: React.FC<{ type: InsuranceType; records: InsurerRecords }> = ({ type, records }) => {
     const { source } = records;
-    const cite = (
-        <p className="text-[11px] text-muted-foreground">
-            Source: {source.publisher}, {source.documents}, {source.period}.{' '}
-            <a href={source.url} target="_blank" rel="noreferrer" className="underline">irdai.gov.in</a>
-        </p>
-    );
-    const th = "px-4 py-3 text-[10px] font-black uppercase text-muted-foreground tracking-widest";
-    if (type === 'term_life') {
+    if (type !== 'term_life' && type !== 'health') {
         return (
-            <Card className="overflow-x-auto border-border p-6 space-y-4">
-                <div className="space-y-1">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Life Insurers' Claim Records</h3>
-                    <p className="text-xs text-muted-foreground">Share of individual death claims each insurer paid. "By amount" is lower when large claims are refused, so check both.</p>
-                </div>
-                <table className="w-full text-left text-sm">
-                    <caption className="sr-only">Life insurers' death claims paid, {source.period}</caption>
-                    <thead className="border-b border-border">
-                        <tr>{['Insurer', 'Claims Paid (by number)', 'Claims Paid (by amount)', 'Claims Handled'].map(h => <th key={h} scope="col" className={th}>{h}</th>)}</tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                        {records.life.map(r => (
-                            <tr key={r.insurer}>
-                                <th scope="row" className="px-4 py-2 font-bold">{r.insurer}</th>
-                                <td className="px-4 py-2 font-mono">{r.paidByNumberPct.toFixed(2)}%</td>
-                                <td className={`px-4 py-2 font-mono ${r.paidByAmountPct < 90 ? 'text-amber-600 font-bold' : ''}`}>{r.paidByAmountPct.toFixed(2)}%</td>
-                                <td className="px-4 py-2 font-mono text-muted-foreground">{r.claimsHandled.toLocaleString('en-IN')}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {cite}
-            </Card>
+            <p className="text-xs text-muted-foreground">
+                IRDAI does not publish insurer-wise claim figures for {type === 'critical_illness' ? 'critical illness' : 'personal accident'} cover.
+                When choosing, look at the insurer's claim and service record under Term Life or Health.
+            </p>
         );
     }
-    if (type === 'health') {
-        return (
-            <Card className="overflow-x-auto border-border p-6 space-y-4">
-                <div className="space-y-1">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Health Insurers' Claim Records</h3>
-                    <p className="text-xs text-muted-foreground">
-                        Standalone health insurers. Payout ratio is claims paid as a share of premiums earned. General insurers also sell health
-                        cover, but IRDAI reports their claims combined with motor and other lines.
-                    </p>
-                </div>
-                <table className="w-full text-left text-sm">
-                    <caption className="sr-only">Health insurers' claims paid and rejected, {source.period}</caption>
-                    <thead className="border-b border-border">
-                        <tr>{['Insurer', 'Claims Paid', 'Claims Rejected', 'Payout Ratio', 'Claims Handled'].map(h => <th key={h} scope="col" className={th}>{h}</th>)}</tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                        {records.health.map(r => (
-                            <tr key={r.insurer}>
-                                <th scope="row" className="px-4 py-2 font-bold">{r.insurer}</th>
-                                <td className="px-4 py-2 font-mono">{r.paidPct.toFixed(2)}%</td>
-                                <td className={`px-4 py-2 font-mono ${r.repudiatedPct > 10 ? 'text-amber-600 font-bold' : ''}`}>{r.repudiatedPct.toFixed(2)}%</td>
-                                <td className="px-4 py-2 font-mono">{r.incurredClaimsRatioPct.toFixed(1)}%</td>
-                                <td className="px-4 py-2 font-mono text-muted-foreground">{r.claimsHandled.toLocaleString('en-IN')}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {cite}
-            </Card>
-        );
-    }
+    const life = type === 'term_life';
     return (
-        <p className="text-xs text-muted-foreground">
-            IRDAI does not publish insurer-wise claim figures for {type === 'critical_illness' ? 'critical illness' : 'personal accident'} cover.
-            When choosing, look at the insurer's overall claim record under Term Life or Health.
-        </p>
+        <Card className="relative overflow-x-auto border-border p-6 space-y-4">
+            <div className="space-y-1">
+                <h3 className="text-lg font-black tracking-tight uppercase">{life ? "Life Insurers' Claim & Service Records" : "Health Insurers' Claim & Service Records"}</h3>
+                <p className="text-xs text-muted-foreground">
+                    {life
+                        ? 'Claims paid, how fast death claims are settled, complaints, financial strength and branch reach. "By amount" is lower when large claims are refused, so check both.'
+                        : 'Standalone health insurers: claims paid and rejected, complaints, financial strength and branch reach. Payout ratio is claims paid as a share of premiums earned. General insurers also sell health cover, but IRDAI reports their claims combined with motor and other lines.'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    <span className="font-bold text-amber-700 dark:text-amber-400">Amber</span> marks a weak spot:{' '}
+                    {life ? 'under 90% paid by amount or within 30 days, ' : 'over 10% of claims rejected, '}
+                    complaints more than twice the typical insurer here, or solvency below 1.8 (IRDAI's minimum is 1.5).
+                </p>
+            </div>
+            {life
+                ? <RecordsTable caption={`Life insurers' claim and service records, ${source.period}`} rows={records.life} columns={LIFE_COLUMNS} />
+                : <RecordsTable caption={`Health insurers' claim and service records, ${source.period}`} rows={records.health} columns={HEALTH_COLUMNS} />}
+            <p className="text-[11px] text-muted-foreground">
+                Source: {source.publisher}, {source.documents}, {source.period}.{' '}
+                <a href={source.url} target="_blank" rel="noreferrer" className="underline">irdai.gov.in</a>
+            </p>
+        </Card>
     );
 };

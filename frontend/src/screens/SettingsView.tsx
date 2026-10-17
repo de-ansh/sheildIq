@@ -152,7 +152,7 @@ export const SettingsView: React.FC = () => {
             {/* Saved Banner */}
             {saveResult && (
                 <div role="status" className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in border ${saveResult.ok ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-700 dark:text-red-400'}`}>
-                    {saveResult.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5" />}
+                    {saveResult.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" /> : <AlertTriangle className="w-5 h-5" />}
                     <span className="text-sm font-bold">{saveResult.text}</span>
                 </div>
             )}
@@ -366,7 +366,7 @@ export const SettingsView: React.FC = () => {
                                             </div>
                                         </div>
                                         {passwordMessage && (
-                                            <p role="status" className={`text-xs font-medium ${passwordMessage.ok ? 'text-emerald-600' : 'text-red-600'}`}>
+                                            <p role="status" className={`text-xs font-medium ${passwordMessage.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>
                                                 {passwordMessage.text}
                                             </p>
                                         )}
@@ -399,7 +399,7 @@ export const SettingsView: React.FC = () => {
                                             <h4 className="text-sm font-bold text-foreground">Two-Factor Authentication (MFA)</h4>
                                             <p className="text-xs text-muted-foreground">Authenticator app support is not available yet.</p>
                                         </div>
-                                        <Badge className="bg-slate-500/10 text-slate-500 border-none font-bold text-xs">
+                                        <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-none font-bold text-xs">
                                             Not Enabled
                                         </Badge>
                                     </div>
@@ -456,7 +456,7 @@ export const SettingsView: React.FC = () => {
                                             </Button>
                                         </div>
                                         {dataMessage && (
-                                            <p role="status" className={`text-xs font-medium ${dataMessage.ok ? 'text-emerald-600' : 'text-red-600'}`}>{dataMessage.text}</p>
+                                            <p role="status" className={`text-xs font-medium ${dataMessage.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>{dataMessage.text}</p>
                                         )}
                                     </div>
                                 </div>

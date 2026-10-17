@@ -1,0 +1,39 @@
+# Backend + Postgres. Start with:  docker compose up --build
+# API on http://localhost:5001 (run the frontend with `pnpm dev` in frontend/; it proxies /api here).
+# Postgres on localhost:5432 (db/user: shieldiq) for any database tool. Data survives restarts in the pgdata volume.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: shieldiq
+      POSTGRES_USER: shieldiq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shieldiq-dev} # set a real password outside local development
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shieldiq -d shieldiq"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # AI keys and the rest of backend/.env; the values below take precedence.
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgres://shieldiq:${POSTGRES_PASSWORD:-shieldiq-dev}@postgres:5432/shieldiq
+      PORT: 5001
+      # Demo account (alex.vance@shieldiq.internal / Password123!) for local use; set SEED_DEMO=false to skip it.
+      SEED_DEMO: ${SEED_DEMO:-true}
+    ports:
+      - "${BACKEND_PORT:-5001}:5001"
+
+volumes:
+  pgdata:

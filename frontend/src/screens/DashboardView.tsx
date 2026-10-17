@@ -2,49 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-    LayoutDashboard,
-    PieChart,
-    FileText,
-    Settings,
-    ShieldCheck,
-    ArrowRight,
-    ShieldAlert,
-    ArrowRightLeft,
-    Activity,
-    Hospital,
-    TrendingUp,
-    AlertTriangle,
-    ChevronRight,
-    LogOut,
-    CheckCircle2,
-    FileSearch
-} from "lucide-react";
+import { FileText, ArrowRight, Activity, TrendingUp, AlertTriangle, ChevronRight } from "lucide-react";
 import { useApp, ScreenId } from '@/lib/AppContext';
 import { formatINR, reviewOverdueMonths } from '@/lib/utils';
 import { ShieldIQApi, type PlanTypeOptions } from '@/lib/api';
 import { AiStrategyPanel } from '@/components/AiStrategyPanel';
 
-interface NavItem {
-    id: ScreenId | 'reports' | 'settings';
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-}
-
-const navItems: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'analysis', label: 'Coverage Analysis', icon: ShieldAlert },
-    { id: 'comparison', label: 'Policy Compare', icon: ArrowRightLeft },
-    { id: 'simulator', label: 'Risk Simulator', icon: Activity },
-    { id: 'calculator', label: 'Life Calculator', icon: PieChart },
-    { id: 'healthplanner', label: 'Health Planner', icon: Hospital },
-    { id: 'policyscan', label: 'Policy Scan', icon: FileSearch },
-    { id: 'reports', label: 'My Reports', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
-];
-
 export const DashboardView: React.FC = () => {
-    const { user, currentScreen, setCurrentScreen, logout, isBackendConnected, strategy } = useApp();
+    const { user, setCurrentScreen, strategy } = useApp();
     const [planTypes, setPlanTypes] = useState<PlanTypeOptions[] | null>(null);
 
     // Recommended plan per insurance type; reloaded whenever the strategy (i.e. the profile) changes.
@@ -53,108 +18,20 @@ export const DashboardView: React.FC = () => {
         ShieldIQApi.getPlanOptions().then(res => setPlanTypes(res && res.success ? res.data : null));
     }, [strategy]);
 
-    const handleNavClick = (id: NavItem['id']) => {
-        if (id === 'reports') {
-            setCurrentScreen('savedplans');
-        } else if (id === 'settings') {
-            setCurrentScreen('settings');
-        } else {
-            setCurrentScreen(id);
-        }
-    };
-
     const declaredCover = user.existingLifeCover + user.existingHealthCover;
-    const scoreColor = !strategy ? 'text-muted-foreground' : strategy.score >= 65 ? 'text-emerald-500' : strategy.score >= 40 ? 'text-amber-500' : 'text-red-500';
+    const scoreColor = !strategy ? 'text-muted-foreground' : strategy.score >= 65 ? 'text-emerald-700 dark:text-emerald-400' : strategy.score >= 40 ? 'text-amber-700 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
     const scoreBar = !strategy ? 'bg-muted' : strategy.score >= 65 ? 'bg-emerald-500' : strategy.score >= 40 ? 'bg-amber-500' : 'bg-red-500';
 
     return (
-        <div className="flex h-screen bg-background font-sans">
-            {/* Sidebar */}
-            <aside className="w-72 border-r border-border flex flex-col p-6 bg-muted/30">
-                <div className="flex items-center gap-3 mb-10 px-2">
-                    <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-600/20">
-                        <ShieldCheck className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-black text-foreground tracking-tight leading-none">
-                            ShieldIQ <span className="text-blue-600 text-[10px] align-top">PRO</span>
-                        </h1>
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 font-bold">
-                            <span className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                            {isBackendConnected ? 'LIVE ENGINE' : 'OFFLINE MODE'}
-                        </span>
-                    </div>
-                </div>
-
-                <nav className="flex-1 space-y-1 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const isActive = currentScreen === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => handleNavClick(item.id)}
-                                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-bold transition-all text-left ${isActive
-                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10'
-                                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                                    }`}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                {item.label}
-                            </button>
-                        );
-                    })}
-                </nav>
-
-                <div className="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800 space-y-2">
-                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                            {strategy ? `${strategy.rating} · ${strategy.score}/100` : 'Profile incomplete'}
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                            {strategy
-                                ? `Life ${formatINR(user.existingLifeCover)} · Health ${formatINR(user.existingHealthCover)} declared.`
-                                : 'Finish onboarding to get your protection score.'}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center justify-between px-2">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-600/10 border-2 border-blue-500/30 flex items-center justify-center font-bold text-blue-600 text-sm">
-                                {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-black text-foreground leading-none truncate max-w-[120px]">
-                                    {user.name}
-                                </p>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 truncate max-w-[120px]">
-                                    {user.occupation || '—'}
-                                </p>
-                            </div>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={logout}
-                            title="Sign Out"
-                            className="text-slate-400 hover:text-red-500"
-                        >
-                            <LogOut className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-12 space-y-8">
-                <header className="flex justify-between items-end">
+        <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
+                <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                     <div className="space-y-1">
                         <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">Analytical Dashboard</h2>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
                             Real-time clarity for {user.name}{user.city ? ` • ${user.city}` : ''} • {user.cityTier}
                         </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-3">
                         <Button
                             variant="outline"
                             onClick={() => setCurrentScreen('comparison')}
@@ -164,7 +41,7 @@ export const DashboardView: React.FC = () => {
                         </Button>
                         <Button
                             onClick={() => setCurrentScreen('calculator')}
-                            className="font-bold bg-blue-600 hover:bg-blue-700"
+                            className="font-bold bg-blue-600 hover:bg-blue-700 text-white"
                         >
                             New Risk Audit
                         </Button>
@@ -187,8 +64,8 @@ export const DashboardView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Life Cover Need</span>
-                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Life Cover Need</span>
+                            <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
@@ -203,7 +80,7 @@ export const DashboardView: React.FC = () => {
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Coverage Gap</span>
-                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
@@ -220,7 +97,7 @@ export const DashboardView: React.FC = () => {
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Your Current Cover</span>
-                            <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-none font-black text-[9px] uppercase tracking-widest">
+                            <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-none font-black text-[9px] uppercase tracking-widest">
                                 Declared
                             </Badge>
                         </CardHeader>
@@ -253,7 +130,7 @@ export const DashboardView: React.FC = () => {
                 {/* Main Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <Card className="lg:col-span-2 border-border shadow-xl min-h-[460px] flex flex-col">
-                        <CardHeader className="p-8 pb-0 flex flex-row items-center justify-between space-y-0">
+                        <CardHeader className="p-6 sm:p-8 pb-0 sm:pb-0 flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
                             <CardTitle className="text-lg font-black text-foreground uppercase tracking-tight">Protection Strategy Overview</CardTitle>
                             <Button
                                 variant="ghost"
@@ -309,7 +186,7 @@ export const DashboardView: React.FC = () => {
                                 <Button
                                     size="sm"
                                     onClick={() => setCurrentScreen('simulator')}
-                                    className="bg-blue-600 hover:bg-blue-700 text-xs font-bold"
+                                    className="bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white"
                                 >
                                     Launch Simulator
                                 </Button>
@@ -370,11 +247,10 @@ export const DashboardView: React.FC = () => {
                             System Status
                         </button>
                     </div>
-                    <p className="text-[9px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto italic">
+                    <p className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto italic">
                         ShieldIQ Platform • Analytical Intelligence for Human Risk Management • © 2026
                     </p>
                 </footer>
-            </main>
         </div>
     );
 };

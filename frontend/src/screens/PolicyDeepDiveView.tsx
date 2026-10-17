@@ -31,7 +31,7 @@ export const PolicyDeepDiveView: React.FC = () => {
     return (
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 bg-background text-foreground font-sans">
             {/* Policy Switcher Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border">
+            <div className="flex items-center gap-2 relative overflow-x-auto pb-2 border-b border-border">
                 {categories.map(category => (
                     <button
                         key={category}
@@ -44,7 +44,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                     </button>
                 ))}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 -mt-4">
+            <div className="flex items-center gap-2 relative overflow-x-auto pb-2 -mt-4">
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mr-2 shrink-0">Plan:</span>
                 {policies.filter(p => p.category === activePolicy.category).map(p => {
                     const isSelected = p.id === activePolicy.id;
@@ -70,7 +70,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                         <Badge variant="outline" className="border-blue-200 dark:border-blue-800 text-blue-600 bg-blue-50 dark:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]">
                             {activePolicy.category} · Sample Plan
                         </Badge>
-                        <Badge className="bg-emerald-500 text-white border-none font-bold text-[10px] tracking-widest uppercase">
+                        <Badge className="bg-emerald-700 text-white border-none font-bold text-[10px] tracking-widest uppercase">
                             Clarity Score {activePolicy.clarityScore ?? '—'}/100
                         </Badge>
                     </div>
@@ -85,7 +85,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                     </div>
                     <p className="text-[10px] text-muted-foreground">Sample plan; premium quoted for a reference 35-year-old. See Compare for your personal quotes.</p>
                 </header>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                     <Button
                         variant="outline"
                         onClick={() => setCurrentScreen('savedplans')}
@@ -138,7 +138,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-6">
                                     <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                                         Inclusions & Features
                                     </h4>
                                     <ul className="space-y-4">
@@ -152,12 +152,12 @@ export const PolicyDeepDiveView: React.FC = () => {
                                 </div>
                                 <div className="space-y-6">
                                     <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                        <XCircle className="w-4 h-4 text-red-500" />
+                                        <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
                                         Exclusion Clauses
                                     </h4>
                                     <ul className="space-y-4">
                                         {exclusions.map((item, i) => (
-                                            <li key={i} className="flex gap-3 text-sm font-medium text-muted-foreground italic opacity-80">
+                                            <li key={i} className="flex gap-3 text-sm font-medium text-muted-foreground italic">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-muted mt-1.5 shrink-0" />
                                                 {item}
                                             </li>
@@ -172,7 +172,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                                     <div className="bg-blue-600 p-2 rounded-xl h-fit">
                                         <Zap className="w-5 h-5 text-white" />
                                     </div>
-                                    <p className="text-sm text-blue-900/70 dark:text-blue-200/60 leading-relaxed font-medium italic">
+                                    <p className="text-sm text-blue-900/90 dark:text-blue-200/60 leading-relaxed font-medium italic">
                                         "The clauses defined in {activePolicy.title} feature zero hidden deductible riders. We suggest utilizing the multi-tier benefit rider to index sum assured alongside inflation."
                                     </p>
                                 </div>
@@ -185,7 +185,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                 <div className="space-y-8">
                     <Card className="bg-primary text-primary-foreground p-8 border-none shadow-2xl">
                         <CardHeader className="p-0 mb-6">
-                            <h3 className="text-xs font-black text-blue-400 dark:text-blue-300 uppercase tracking-[0.2em]">Compliance Score</h3>
+                            <h3 className="text-xs font-black text-blue-400 dark:text-blue-700 uppercase tracking-[0.2em]">Compliance Score</h3>
                         </CardHeader>
                         <CardContent className="p-0 space-y-6">
                             <div className="flex items-center gap-6">
@@ -234,7 +234,7 @@ export const PolicyDeepDiveView: React.FC = () => {
                     </Card>
 
                     <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 p-6 rounded-2xl flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                         <p className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase leading-relaxed font-mono">
                             Disclaimer: Analytical simulation only. Claims are subject to specific policy wordings and underwriting at the time of issuance.
                         </p>

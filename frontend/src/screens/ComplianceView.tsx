@@ -61,7 +61,7 @@ export const ComplianceView: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <Button
                         variant="outline"
                         onClick={() => window.print()}
@@ -84,7 +84,7 @@ export const ComplianceView: React.FC = () => {
             {/* Document Metadata Bar */}
             <div className="p-4 rounded-2xl bg-muted/30 border border-border flex flex-wrap items-center justify-between gap-4 font-mono text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                     <span>Terms of Use & Methodology</span>
                 </div>
                 <div className="flex items-center gap-6">
@@ -245,9 +245,9 @@ export const ComplianceView: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-mono font-bold text-muted-foreground">
                                     Status: {hasAcknowledged ? (
-                                        <span className="text-emerald-500 font-black">Acknowledged</span>
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-black">Acknowledged</span>
                                     ) : (
-                                        <span className="text-amber-500 font-black">Pending Acknowledgement</span>
+                                        <span className="text-amber-700 dark:text-amber-400 font-black">Pending Acknowledgement</span>
                                     )}
                                 </span>
                             </div>

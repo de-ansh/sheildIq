@@ -10,10 +10,10 @@ import { formatINR } from '@/lib/utils';
 import { AiStrategyPanel } from '@/components/AiStrategyPanel';
 
 const ratingBadge: Record<string, string> = {
-    Optimal: 'bg-emerald-500',
+    Optimal: 'bg-emerald-700',
     Adequate: 'bg-blue-600',
-    Vulnerable: 'bg-amber-500',
-    'High Risk': 'bg-red-500',
+    Vulnerable: 'bg-amber-700',
+    'High Risk': 'bg-red-600',
 };
 
 export const CoverageAnalysisView: React.FC = () => {
@@ -74,7 +74,7 @@ export const CoverageAnalysisView: React.FC = () => {
                         Your life and health protection measured against what your household actually needs.
                     </p>
                 </header>
-                <div className="flex gap-3 print:hidden">
+                <div className="flex flex-wrap gap-3 print:hidden">
                     <Button variant="outline" onClick={() => window.print()} className="h-12 px-6 font-bold">
                         <Download className="w-4 h-4 mr-2" /> Print Report
                     </Button>
@@ -84,7 +84,7 @@ export const CoverageAnalysisView: React.FC = () => {
                 </div>
             </div>
             {saveMessage && (
-                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-600"><CheckCircle2 className="w-4 h-4" />{saveMessage}</p>
+                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="w-4 h-4" />{saveMessage}</p>
             )}
 
             {/* Global Status Bar */}
@@ -98,7 +98,7 @@ export const CoverageAnalysisView: React.FC = () => {
                     <div className="flex justify-between items-end">
                         <div className="space-y-1">
                             <h3 className="text-sm font-black text-muted-foreground uppercase tracking-widest">Protection Score</h3>
-                            <p className="text-sm font-medium text-muted-foreground">60% life adequacy, 40% health adequacy</p>
+                            <p className="text-sm font-medium text-muted-foreground">Weighted 55% life, 35% health, 5% critical illness, 5% accident cover</p>
                         </div>
                         <div className="text-right flex items-baseline gap-2">
                             <span className="text-5xl font-black text-blue-600 font-mono">{strategy.score}</span>
@@ -120,9 +120,9 @@ export const CoverageAnalysisView: React.FC = () => {
                             <div key={cat.label} className="space-y-3">
                                 <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                                     <span>{cat.label}</span>
-                                    <span className={cat.val < 50 ? "text-amber-500" : "text-foreground"}>{cat.val}%</span>
+                                    <span className={cat.val < 50 ? "text-amber-700 dark:text-amber-400" : "text-foreground"}>{cat.val}%</span>
                                 </div>
-                                <Progress value={cat.val} className={`h-1.5 ${cat.val < 50 ? "bg-amber-500/10" : ""}`} />
+                                <Progress value={cat.val} aria-label={cat.label} className={`h-1.5 ${cat.val < 50 ? "bg-amber-500/10" : ""}`} />
                                 <p className="text-[10px] font-medium text-muted-foreground">{cat.detail}</p>
                             </div>
                         ))}
@@ -154,7 +154,7 @@ export const CoverageAnalysisView: React.FC = () => {
                             </div>
                             <div className="flex justify-between gap-2 px-2 pt-3">
                                 {bars.map(bar => (
-                                    <span key={bar.label} className="flex-1 text-center text-[10px] font-black text-muted-foreground uppercase tracking-widest">{bar.label}</span>
+                                    <span key={bar.label} className="flex-1 min-w-0 break-words text-center text-[10px] font-black text-muted-foreground uppercase sm:tracking-widest">{bar.label}</span>
                                 ))}
                             </div>
                         </CardContent>
@@ -173,7 +173,7 @@ export const CoverageAnalysisView: React.FC = () => {
                                 <div key={label} className="p-4 bg-muted/30 border border-border rounded-xl space-y-2">
                                     <div className="flex justify-between items-center gap-2">
                                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
-                                        <Badge className={`${c.gap > 0 ? 'bg-amber-500' : 'bg-emerald-500'} text-white border-none font-black`}>
+                                        <Badge className={`${c.gap > 0 ? 'bg-amber-700' : 'bg-emerald-700'} text-white border-none font-black`}>
                                             {c.gap > 0 ? `${formatINR(c.gap)} Gap` : 'Covered'}
                                         </Badge>
                                     </div>
@@ -192,7 +192,7 @@ export const CoverageAnalysisView: React.FC = () => {
                                         A separate senior policy for {strategy.parentsHealth.count === 1 ? `your parent (age ${strategy.parentsHealth.eldestAge})` : `your ${strategy.parentsHealth.count} parents (eldest ${strategy.parentsHealth.eldestAge})`}.
                                     </p>
                                 </div>
-                                <Badge className={`${strategy.parentsHealth.gap > 0 ? 'bg-amber-500' : 'bg-emerald-500'} text-white border-none font-black shrink-0`}>
+                                <Badge className={`${strategy.parentsHealth.gap > 0 ? 'bg-amber-700' : 'bg-emerald-700'} text-white border-none font-black shrink-0`}>
                                     {strategy.parentsHealth.gap > 0 ? `${formatINR(strategy.parentsHealth.gap)} Gap` : 'Covered'}
                                 </Badge>
                             </div>
@@ -218,7 +218,7 @@ export const CoverageAnalysisView: React.FC = () => {
                                 <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Affordability</h3>
                                 <p className="text-sm text-muted-foreground font-medium">What closing every gap would cost against your income.</p>
                             </div>
-                            <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${budgetFit >= 100 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50 text-emerald-600' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50 text-amber-600'}`}>
+                            <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${budgetFit >= 100 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50 text-amber-700 dark:text-amber-400'}`}>
                                 <div className={`w-2 h-2 rounded-full ${budgetFit >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">{budgetFit >= 100 ? 'Within Budget' : 'Over Budget'}</span>
                             </div>

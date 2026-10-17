@@ -28,8 +28,12 @@ describe('ComparisonView plan options', () => {
         disclaimer: 'Plan types with indicative premiums, not insurer quotes.',
         insurerRecords: {
           source: { period: 'FY 2024-25', publisher: 'IRDAI', documents: 'Handbook 2024-25', url: 'https://irdai.gov.in/handbook-of-indian-insurance' },
-          life: [{ insurer: 'Axis Max Life', claimsHandled: 20225, paidByNumberPct: 99.7, paidByAmountPct: 97.39 }, { insurer: 'Shriram Life', claimsHandled: 4852, paidByNumberPct: 98.31, paidByAmountPct: 81.71 }],
-          health: [{ insurer: 'Care Health', claimsHandled: 1508929, paidPct: 95.19, repudiatedPct: 3.1, incurredClaimsRatioPct: 64.53 }],
+          life: [
+            { insurer: 'Axis Max Life', claimsHandled: 20225, paidByNumberPct: 99.7, paidByAmountPct: 97.39, settledWithin30DaysPct: 94.4, complaintsPer10kPolicies: 9.2, solvencyRatio: 2.01, offices: 404 },
+            { insurer: 'Shriram Life', claimsHandled: 4852, paidByNumberPct: 98.31, paidByAmountPct: 81.71, settledWithin30DaysPct: 100, complaintsPer10kPolicies: 16.4, solvencyRatio: 1.79, offices: 537 },
+            { insurer: 'Bharti AXA Life', claimsHandled: 2085, paidByNumberPct: 99.18, paidByAmountPct: 98.41, settledWithin30DaysPct: 94, complaintsPer10kPolicies: 51.8, solvencyRatio: 1.67, offices: 212 },
+          ],
+          health: [{ insurer: 'Care Health', claimsHandled: 1508929, paidPct: 95.19, repudiatedPct: 3.1, incurredClaimsRatioPct: 64.53, complaintsPer10kPolicies: 37.3, solvencyRatio: 1.68, offices: 269 }],
         },
         data: [
           type('term_life', 'Term Life', ['Pure Level Term', 'Term + Riders', 'Increasing Cover', 'Return of Premium'], 1),
@@ -48,16 +52,21 @@ describe('ComparisonView plan options', () => {
     expect(within(recommendedCard as HTMLElement).getByRole('heading', { name: 'Term + Riders' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /Term Life options compared/ })).toBeInTheDocument();
     // Official claim records for life insurers; a low by-amount figure is highlighted.
-    const life = screen.getByRole('table', { name: /Life insurers' death claims paid, FY 2024-25/ });
-    expect(within(life).getByRole('row', { name: /Axis Max Life 99.70% 97.39%/ })).toBeInTheDocument();
-    expect(within(life).getByText('81.71%')).toHaveClass('text-amber-600');
+    const life = screen.getByRole('table', { name: /Life insurers' claim and service records, FY 2024-25/ });
+    expect(within(life).getByRole('row', { name: /Axis Max Life 99.70% 97.39% 94.4% 9.2 2.01 404/ })).toBeInTheDocument();
+    expect(within(life).getByText('81.71%')).toHaveClass('text-amber-700');
+    // Service weak spots: complaints over twice the median (16.4) and solvency close to IRDAI's 1.5 minimum.
+    expect(within(life).getByText('51.8')).toHaveClass('text-amber-700');
+    expect(within(life).getByText('9.2')).not.toHaveClass('text-amber-700');
+    expect(within(life).getByText('1.67')).toHaveClass('text-amber-700');
+    expect(within(life).getByText('2.01')).not.toHaveClass('text-amber-700');
     expect(screen.getByRole('link', { name: 'irdai.gov.in' })).toHaveAttribute('href', 'https://irdai.gov.in/handbook-of-indian-insurance');
 
     fireEvent.click(screen.getByRole('tab', { name: /Health/ }));
     expect(screen.getByText('Health reason')).toBeInTheDocument();
     const healthPick = screen.getByText('Recommended for you').closest('div.p-5')!;
     expect(within(healthPick as HTMLElement).getByRole('heading', { name: 'Top-Up Only' })).toBeInTheDocument();
-    expect(screen.getByRole('table', { name: /Health insurers' claims paid and rejected/ })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /Health insurers' claim and service records/ })).toBeInTheDocument();
     expect(screen.getByText(/not insurer quotes/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /Critical Illness/ }));
