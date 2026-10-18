@@ -341,7 +341,7 @@ export const RiskSimulatorView: React.FC = () => {
                         </div>
                     </Card>
 
-                    <Card className="bg-slate-950 text-white p-10 border-none relative overflow-hidden">
+                    <Card className="dark bg-slate-950 text-white p-10 border-none relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10">
                             <BrainCircuit className="w-48 h-48 text-blue-500" />
                         </div>
@@ -364,7 +364,7 @@ export const RiskSimulatorView: React.FC = () => {
                                     {simResult?.recommendation}
                                 </p>
                             </div>
-                            <div className="rounded-2xl bg-white p-1 text-slate-900 dark:bg-slate-900 dark:text-white">
+                            <div>
                                 <ExplainResult
                                     screen="risk-simulator"
                                     inputs={{ scenario, cost: cost[0], recoveryYears: scenario === 'death' ? 0 : years, inflationPct: inflation[0], monthlyExpenses, coverThatPaysOut: existingCoverTotal, age: user.age, annualIncome: user.income }}
