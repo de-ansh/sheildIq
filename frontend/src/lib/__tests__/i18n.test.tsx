@@ -36,7 +36,7 @@ describe('Key Findings in Hindi', () => {
     expect(life.detail).not.toContain('बचत घटाकर'); // no savings, so no savings clause
     expect(localizeInsight({ code: 'something_new', title: 'English title', detail: 'English detail' }, 'hi')).toEqual({ title: 'English title', detail: 'English detail' });
     expect(localizeInsight({ code: 'life_gap', title: 'English title', detail: 'English detail' }, 'en').title).toBe('English title');
-    expect(LOCALIZED_INSIGHT_CODES).toHaveLength(16);
+    expect(LOCALIZED_INSIGHT_CODES).toHaveLength(17);
   });
 });
 

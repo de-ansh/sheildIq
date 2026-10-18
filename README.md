@@ -124,3 +124,8 @@ DATABASE_URL=postgres://shieldiq:shieldiq-dev@localhost:5432/shieldiq pnpm exec 
 Insurer claim and service records (claims paid, speed, complaints, solvency, offices) come from the IRDAI Handbook on
 Indian Insurance Statistics and Annual Report for FY 2024-25. They are kept in
 `backend/src/services/insurer-records.ts`; the comment at the top of that file explains how to refresh them each year.
+
+Compare ranks insurers for each household from these records (`backend/src/services/insurer-ranking.ts`): three-year
+figures (FY 2022-23 to 2024-25) scored on fixed scales, with weights that shift for large cover, dependent parents and
+smaller cities. Ask ShieldIQ explains that same ranking. It is presented as a ranking of published records, not advice to
+buy from a particular insurer; have it reviewed against IRDAI's rules on insurance advice before launch.

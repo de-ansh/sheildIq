@@ -357,7 +357,7 @@ export const LifeCalculatorView: React.FC = () => {
             )}
 
             {/* Action Footer */}
-            <div className="bg-slate-900 dark:bg-blue-950 p-10 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-8 mt-12 shadow-2xl">
+            <div className="dark bg-slate-900 dark:bg-blue-950 p-10 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-8 mt-12 shadow-2xl">
                 <div className="space-y-2">
                     <h3 className="text-2xl font-black tracking-tight">Ready to secure this coverage?</h3>
                     <p className="opacity-70 font-medium">Save this calculation to your plans, or compare policies that could close the gap.</p>

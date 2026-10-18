@@ -17,7 +17,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
     const { t, tServer, lang } = useI18n();
 
     return (
-        <Card className="p-8 border-none bg-slate-950 text-white space-y-6 shadow-2xl relative overflow-hidden">
+        <Card className="dark p-8 border-none bg-slate-950 text-white space-y-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                 <Brain className="w-32 h-32 text-blue-500" />
             </div>

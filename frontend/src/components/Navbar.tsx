@@ -167,7 +167,7 @@ export const Navbar: React.FC = () => {
   const { t, lang, setLang } = useI18n();
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/80 px-6 py-3 transition-colors">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/80 px-6 py-3 transition-colors">
       <div className="max-w-[120rem] mx-auto">
       <div className="flex items-center justify-between gap-4">
         {/* Brand Logo */}

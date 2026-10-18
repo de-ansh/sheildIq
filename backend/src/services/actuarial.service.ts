@@ -1,3 +1,4 @@
+import { premiumTax, type PremiumTax } from './tax.js';
 // All amounts are INR. Assumptions are deliberately simple, documented, and returned to the client.
 
 export const ASSUMPTIONS = {
@@ -129,6 +130,8 @@ export interface StrategyProfile {
   liquidSavings: number;
   /** Partner's annual gross income; 0 for single-income households. */
   spouseIncome: number;
+  /** Partner's age; 0 when not given. */
+  spouseAge: number;
   /** People who rely on the earner besides a non-earning spouse. Empty on profiles saved before this existed. */
   dependentDetails: Dependent[];
   /** Health cover the user's dependent parents already hold. */
@@ -143,6 +146,11 @@ export interface StrategyProfile {
   homeLoanYearsLeft: number;
   employerBenefits: string[];
   lifestyleRisks: string[];
+  /** The user's own diagnosed conditions; empty when none or not answered. */
+  healthConditions: HealthCondition[];
+  /** 0 when not given. */
+  heightCm: number;
+  weightKg: number;
 }
 
 export interface Insight {
@@ -203,6 +211,8 @@ export interface StrategyResult {
     estimatedAnnualPremium: number;
     premiumToIncomeRatio: number;
     emergencyFundTarget: number;
+    /** Old-regime tax relief on the recommended premiums (none under the default new regime). */
+    tax: PremiumTax;
   };
   score: number;
   rating: PortfolioHealthResult['rating'];
@@ -285,7 +295,7 @@ export function pickPlans(
   let termPremium = 0;
   if (lifeGap > 0) {
     termCover = roundUpTo(lifeGap, 500000);
-    const basic = (termCover / 100000) * termRatePerLakh(p.age, isTobacco(p.lifestyleRisks));
+    const basic = (termCover / 100000) * termRatePerLakh(p.age, isTobacco(p.lifestyleRisks)) * medicalLoading(p);
     // Riders protect dependents if illness stops premium payments; worth it only within budget.
     const ridersFit = householdOf(p).count > 0 && basic * STRUCTURE.termRiders + healthPremium + otherPremiums <= premiumBudget;
     termId = ridersFit ? 'TL-RIDERS' : 'TL-BASIC';
@@ -310,6 +320,30 @@ function rate(score: number): PortfolioHealthResult['rating'] {
 }
 
 export const isTobacco = (risks: string[]) => risks.some(r => /tobacco|smok/i.test(r));
+
+export const HEALTH_CONDITIONS = ['diabetes', 'hypertension', 'heart', 'thyroid', 'asthma', 'cancer'] as const;
+export type HealthCondition = (typeof HEALTH_CONDITIONS)[number];
+export const CONDITION_LABELS: Record<HealthCondition, string> = {
+  diabetes: 'diabetes', hypertension: 'high blood pressure', heart: 'heart disease', thyroid: 'thyroid disorder', asthma: 'asthma', cancer: 'cancer history',
+};
+// Indicative underwriting loadings on term and critical-illness rates for a controlled condition; insurers vary,
+// and may ask for medical tests first. Heart disease and cancer history are often postponed or declined.
+const CONDITION_LOADING: Record<HealthCondition, number> = { diabetes: 1.5, hypertension: 1.25, heart: 2, thyroid: 1, asthma: 1.1, cancer: 2 };
+export const SEVERE_CONDITIONS: readonly HealthCondition[] = ['heart', 'cancer'];
+// Beyond about 3x the standard rate insurers decline rather than load further.
+const MAX_MEDICAL_LOADING = 3;
+
+/** Body-mass index, or null when height or weight wasn't given. */
+export function bmiOf(p: Pick<StrategyProfile, 'heightCm' | 'weightKg'>): number | null {
+  return p.heightCm > 0 && p.weightKg > 0 ? Math.round((p.weightKg / (p.heightCm / 100) ** 2) * 10) / 10 : null;
+}
+
+/** Multiplier on standard term and critical-illness rates for the user's conditions and BMI (1 = standard). */
+export function medicalLoading(p: Pick<StrategyProfile, 'healthConditions' | 'heightCm' | 'weightKg'>): number {
+  const bmi = bmiOf(p);
+  const bmiLoad = bmi === null ? 1 : bmi >= 35 ? 1.5 : bmi >= 30 ? 1.25 : bmi < 18.5 ? 1.1 : 1;
+  return Math.min(MAX_MEDICAL_LOADING, p.healthConditions.reduce((m, c) => m * CONDITION_LOADING[c], bmiLoad));
+}
 
 /** Indicative annual term premium per ₹1L of cover (Indian market, non-smoker), by entry age. */
 export function termRatePerLakh(age: number, tobacco: boolean): number {
@@ -495,7 +529,8 @@ export class ActuarialService {
     const adults = p.maritalStatus === 'Married' ? 2 : 1;
     // Onboarding records employer benefit types but not amounts, so no employer health cover is assumed.
     const health = ActuarialService.planHealthCover(
-      { adults, children: floaterChildren, cityTier: p.cityTier, employerCover: 0, existingCover: p.existingHealthCover, risks: p.lifestyleRisks },
+      // The user's own conditions count as a chronic condition on the family policy (more cover, pre-existing waiting period).
+      { adults, children: floaterChildren, cityTier: p.cityTier, employerCover: 0, existingCover: p.existingHealthCover, risks: p.healthConditions.length > 0 ? [...p.lifestyleRisks, 'Chronic Condition'] : p.lifestyleRisks },
       p.age
     );
     const healthGap = health.personalCoverNeeded;
@@ -578,6 +613,27 @@ export class ActuarialService {
     }
     if (tobacco) {
       insights.push({ severity: 'warning', code: 'tobacco', title: 'Tobacco use increases premiums', detail: 'Term premiums are roughly 80% higher for tobacco users. Quitting for 12+ months can qualify you for non-smoker rates.' });
+    }
+    const loading = medicalLoading(p);
+    const bmi = bmiOf(p);
+    if (p.healthConditions.length > 0 || loading > 1) {
+      const names = p.healthConditions.map(c => CONDITION_LABELS[c]);
+      const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+      const severe = p.healthConditions.some(c => SEVERE_CONDITIONS.includes(c));
+      const loadingPct = Math.round((loading - 1) * 100);
+      const weight = bmi !== null && (bmi >= 30 || bmi < 18.5) ? `a BMI of ${bmi}` : '';
+      const declare = [list, weight].filter(Boolean).join(' and ');
+      insights.push({
+        severity: 'warning',
+        code: 'medical',
+        params: { conditions: p.healthConditions.join(','), bmi: weight ? bmi! : '', loadingPct, severe: severe ? 1 : 0, ped: p.healthConditions.length > 0 ? 1 : 0 },
+        title: 'Declare your health conditions',
+        detail:
+          `Tell insurers about your ${declare}: non-disclosure is a leading reason claims are rejected, even years later. ` +
+          `Expect medical tests${loadingPct > 0 ? ` and term and critical-illness premiums about ${loadingPct}% above standard rates (included in these estimates)` : ''}.` +
+          (p.healthConditions.length > 0 ? ' A new health policy covers these conditions only after a waiting period of up to 3 years; some plans shorten it for an extra premium.' : '') +
+          (severe ? ' Heart disease or cancer history can lead insurers to postpone or decline cover: apply to more than one, and keep any employer group cover.' : ''),
+      });
     }
     if (p.lifestyleRisks.some(r => /hobb/i.test(r))) {
       insights.push({ severity: 'info', code: 'hobbies', title: 'Declare high-risk hobbies', detail: 'Undeclared hazardous activities are a common reason for claim rejection; check exclusions before buying.' });
@@ -689,6 +745,10 @@ export class ActuarialService {
         estimatedAnnualPremium,
         premiumToIncomeRatio: pct(estimatedAnnualPremium, p.income),
         emergencyFundTarget: p.monthlyExpenses * ASSUMPTIONS.emergencyFundMonths,
+        tax: premiumTax({
+          income: p.income, age: p.age, termPremium: picks.termPremium, healthPremium: picks.healthPremium,
+          parentsPremium, eldestParentAge: parentsHealth?.eldestAge ?? null,
+        }),
       },
       score,
       rating: rate(score),

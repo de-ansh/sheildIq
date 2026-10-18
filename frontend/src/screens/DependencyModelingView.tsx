@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi } from '@/lib/api';
+import { FamilyPlan } from '@/components/FamilyPlan';
 import { formatINR } from '@/lib/utils';
 import { EDUCATION_PER_CHILD, householdOf, inEducation } from '@/lib/household';
 
@@ -115,6 +116,8 @@ export const DependencyModelingView: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
+            <FamilyPlan />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border">
                 <div className="space-y-1">
@@ -123,7 +126,7 @@ export const DependencyModelingView: React.FC = () => {
                             Based on your profile
                         </Badge>
                     </div>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Dependency Modeling</h1>
+                    <h2 className="text-3xl font-black tracking-tight text-foreground pt-6">If You Weren't There: Dependency Modeling</h2>
                     <p className="text-muted-foreground text-sm font-medium">
                         How {user.name}'s family obligations change from age {user.age} to retirement, against {formatINR(cover)} of life cover and savings.
                     </p>

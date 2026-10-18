@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bookmark, ChevronRight, FileText, Star, Check, Minus, Info, ShieldCheck, HeartPulse, Activity, Accessibility } from "lucide-react";
+import { Bookmark, ChevronRight, FileText, Star, Check, Minus, Info, ShieldCheck, HeartPulse, Activity, Accessibility, TriangleAlert } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
-import { ShieldIQApi, type InsuranceType, type InsurerRecords, type InsurerService, type PlanTypeOptions, type SavedPlan } from '@/lib/api';
+import { ShieldIQApi, type InsuranceType, type GeneralHealthInsurer, type InsurerRank, type InsurerRecords, type InsurerService, type PlanTypeOptions, type RankingAdjustment, type RankingMeasure, type SavedPlan } from '@/lib/api';
 import { formatINR } from '@/lib/utils';
 
 const TYPE_ICON: Record<InsuranceType, React.ComponentType<{ className?: string }>> = {
@@ -236,7 +236,7 @@ const serviceColumns = <R extends InsurerService>(): RecordColumn<R>[] => [
     { header: 'Offices', value: r => r.offices.toLocaleString('en-IN'), muted: true },
 ];
 
-const RecordsTable = <R extends InsurerService>({ caption, rows, columns }: { caption: string; rows: R[]; columns: RecordColumn<R>[] }) => (
+const RecordsTable = <R extends { insurer: string }>({ caption, rows, columns }: { caption: string; rows: R[]; columns: RecordColumn<R>[] }) => (
     <table className="w-full text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="border-b border-border">
@@ -264,6 +264,7 @@ const RecordsTable = <R extends InsurerService>({ caption, rows, columns }: { ca
 );
 
 const LIFE_COLUMNS: RecordColumn<InsurerRecords['life'][number]>[] = [
+    { header: 'Score', value: r => String(r.score) },
     { header: 'Claims Paid (by number)', value: r => `${r.paidByNumberPct.toFixed(2)}%` },
     { header: 'Claims Paid (by amount)', value: r => `${r.paidByAmountPct.toFixed(2)}%`, weak: r => r.paidByAmountPct < 90 },
     { header: 'Paid Within 30 Days', value: r => `${r.settledWithin30DaysPct.toFixed(1)}%`, weak: r => r.settledWithin30DaysPct < 90 },
@@ -272,6 +273,7 @@ const LIFE_COLUMNS: RecordColumn<InsurerRecords['life'][number]>[] = [
 ];
 
 const HEALTH_COLUMNS: RecordColumn<InsurerRecords['health'][number]>[] = [
+    { header: 'Score', value: r => String(r.score) },
     { header: 'Claims Paid', value: r => `${r.paidPct.toFixed(2)}%` },
     { header: 'Claims Rejected', value: r => `${r.repudiatedPct.toFixed(2)}%`, weak: r => r.repudiatedPct > 10 },
     { header: 'Payout Ratio', value: r => `${r.incurredClaimsRatioPct.toFixed(1)}%` },
@@ -279,19 +281,142 @@ const HEALTH_COLUMNS: RecordColumn<InsurerRecords['health'][number]>[] = [
     { header: 'Claims Handled', value: r => r.claimsHandled.toLocaleString('en-IN'), muted: true },
 ];
 
-/** Official IRDAI claim and service records for insurers selling this type of cover, best claim record first. */
+// Claims ratio outside 55-100% is worth a second look: very low pays out little; over 100% loses money (premiums may rise).
+const GENERAL_COLUMNS: RecordColumn<GeneralHealthInsurer>[] = [
+    { header: 'Ownership', value: r => (r.governmentOwned ? 'Government' : 'Private'), muted: true },
+    { header: 'Retail Health Premium', value: r => `₹${r.retailHealthPremiumCr.toLocaleString('en-IN')} Cr`, muted: true },
+    { header: 'Claims Ratio', value: r => `${r.retailClaimsRatioPct.toFixed(1)}%`, weak: r => r.retailClaimsRatioPct > 100 || r.retailClaimsRatioPct < 55 },
+    { header: 'Claims Ratio (3 yrs)', value: r => `${r.retailClaimsRatioPct3y.toFixed(1)}%`, weak: r => r.retailClaimsRatioPct3y > 100 || r.retailClaimsRatioPct3y < 55 },
+    { header: 'Solvency', value: r => r.solvencyRatio.toFixed(2), weak: r => r.solvencyRatio < 1.5 },
+    { header: 'Offices', value: r => r.offices.toLocaleString('en-IN'), muted: true },
+];
+
+/** General insurers' retail health figures: shown for reference, never ranked against standalone health insurers. */
+const GeneralHealthInsurers: React.FC<{ rows: GeneralHealthInsurer[]; source: InsurerRecords['source'] }> = ({ rows, source }) => (
+    <Card className="relative overflow-x-auto border-border p-6 space-y-4">
+        <div className="space-y-1">
+            <h3 className="text-lg font-black tracking-tight uppercase">General Insurers That Also Sell Health Cover</h3>
+            <p className="text-xs text-muted-foreground">
+                HDFC ERGO, ICICI Lombard, the government-owned insurers and others sell health policies too. IRDAI doesn't publish their health
+                claim settlement or rejection rates, so they aren't ranked above. Shown here: their retail (individual and family) health business,
+                largest first.
+            </p>
+            <p className="text-xs text-muted-foreground">
+                <span className="font-bold">Claims ratio</span> is health claims as a share of premiums earned ({source.threeYearPeriod} for the 3-year figure).{' '}
+                <span className="font-bold text-amber-700 dark:text-amber-400">Amber</span>: a ratio over 100% (paying out more than it earns, so premiums
+                may rise) or under 55% (paying out little of what it collects), or solvency below IRDAI's 1.5 minimum.
+            </p>
+        </div>
+        <RecordsTable caption={`General insurers' retail health business, ${source.period}`} rows={rows} columns={GENERAL_COLUMNS} />
+    </Card>
+);
+
+const MEASURE_TEXT: Record<RankingMeasure, (v: number) => string> = {
+    claimValuePaid: v => `Paid ${v.toFixed(1)}% of claim value`,
+    claimsPaid: v => `Paid ${v.toFixed(1)}% of claims`,
+    paidWithin30Days: v => `${v.toFixed(0)}% of death claims paid within 30 days`,
+    claimsRejected: v => `Rejected ${v.toFixed(1)}% of claims`,
+    complaints: v => `${v.toFixed(1)} complaints per 10,000 policies`,
+    solvency: v => `Solvency ${v.toFixed(2)} (IRDAI minimum 1.5)`,
+    offices: v => `${v.toLocaleString('en-IN')} offices`,
+};
+
+const ADJUSTMENT_TEXT: Record<RankingAdjustment, string> = {
+    largeCover: 'Your cover need is over ₹1 Cr, so the share of claim value paid counts more: large claims are the ones most often refused.',
+    parents: 'You cover parents, so rejected claims count more: older members claim more and face more pre-existing-disease rejections.',
+    conditions: 'You have a pre-existing condition, so rejected claims count more.',
+    smallerCity: 'You live outside a metro, so branch reach counts too.',
+};
+
+// Which household adjustments change each ranking (largeCover only weighs life claims, parents only health).
+const APPLIES: Record<'life' | 'health', RankingAdjustment[]> = { life: ['largeCover', 'smallerCity'], health: ['parents', 'conditions', 'smallerCity'] };
+
+const SHORTLIST = {
+    life: {
+        method: 'claim value paid, claims paid, payout within 30 days, complaints and financial strength',
+        // Core claim figures shown for every pick, so a pick's strengths list never hides how it pays claims.
+        claimIds: ['claimValuePaid', 'claimsPaid'] as RankingMeasure[],
+        claims: (r: InsurerRecords['life'][number]) => `Paid ${r.threeYear.paidByAmountPct.toFixed(1)}% of claim value, ${r.threeYear.paidByNumberPct.toFixed(1)}% of claims`,
+    },
+    health: {
+        method: 'claims paid, claims rejected, complaints and financial strength',
+        claimIds: ['claimsPaid', 'claimsRejected'] as RankingMeasure[],
+        claims: (r: InsurerRecords['health'][number]) => `Paid ${r.threeYear.paidPct.toFixed(1)}% of claims, rejected ${r.threeYear.repudiatedPct.toFixed(1)}%`,
+    },
+};
+
+/** The top three insurers of a ranking, with their claim record, what they do well and what to watch. */
+const InsurerShortlist: React.FC<{ title: string; kind: 'life' | 'health'; records: InsurerRecords }> = ({ title, kind, records }) => {
+    const { source } = records;
+    const cfg = SHORTLIST[kind];
+    const rows: (InsurerRank & { insurer: string; claims: string })[] = kind === 'life'
+        ? records.life.map(r => ({ ...r, claims: SHORTLIST.life.claims(r) }))
+        : records.health.map(r => ({ ...r, claims: SHORTLIST.health.claims(r) }));
+    return (
+        <Card className="border-blue-500/30 p-6 space-y-4">
+            <div className="space-y-1">
+                <h3 className="text-lg font-black tracking-tight uppercase">{title}</h3>
+                <p className="text-xs text-muted-foreground">
+                    Ranked on {source.publisher}'s published records for {source.threeYearPeriod} ({cfg.method}; solvency and offices
+                    from {source.period}), scored 0-100 on fixed scales.
+                </p>
+                {records.adjustments.filter(a => APPLIES[kind].includes(a)).map(a => <p key={a} className="text-xs font-bold text-blue-600">{ADJUSTMENT_TEXT[a]}</p>)}
+            </div>
+            <ol className="grid gap-3 md:grid-cols-3">
+                {rows.slice(0, 3).map(r => (
+                    <li key={r.insurer} className="rounded-2xl border border-border p-4 space-y-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <p className="font-black"><span className="text-muted-foreground">{r.rank}.</span> {r.insurer}</p>
+                            <p className="font-mono text-sm font-bold text-blue-600">{r.score}<span className="text-muted-foreground">/100</span></p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{r.claims}</p>
+                        <ul className="space-y-1 text-xs">
+                            {r.strengths.filter(x => !cfg.claimIds.includes(x.id)).map(x => (
+                                <li key={x.id} className="flex gap-1.5"><Check className="w-3.5 h-3.5 shrink-0 text-green-600" aria-hidden="true" />{MEASURE_TEXT[x.id](x.value)}</li>
+                            ))}
+                            {r.watchOut && (
+                                <li className="flex gap-1.5 text-amber-700 dark:text-amber-400">
+                                    <TriangleAlert className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                    <span><span className="sr-only">Watch out: </span>{MEASURE_TEXT[r.watchOut.id](r.watchOut.value)}</span>
+                                </li>
+                            )}
+                        </ul>
+                    </li>
+                ))}
+            </ol>
+            <p className="text-[11px] text-muted-foreground">
+                A ranking of published records, not advice to buy from a particular insurer. Scores a few points apart are close.
+                Compare policy terms and get quotes before buying.
+            </p>
+        </Card>
+    );
+};
+
+/** The household's insurer shortlist and the full official records for this type of cover, best first. */
 const InsurerClaimRecords: React.FC<{ type: InsuranceType; records: InsurerRecords }> = ({ type, records }) => {
     const { source } = records;
-    if (type !== 'term_life' && type !== 'health') {
+    if (type === 'personal_accident') {
         return (
             <p className="text-xs text-muted-foreground">
-                IRDAI does not publish insurer-wise claim figures for {type === 'critical_illness' ? 'critical illness' : 'personal accident'} cover.
+                IRDAI does not publish insurer-wise claim figures for personal accident cover, so ShieldIQ doesn't rank insurers for it.
                 When choosing, look at the insurer's claim and service record under Term Life or Health.
             </p>
         );
     }
+    if (type === 'critical_illness') {
+        // No CI-specific figures: a rider is paid by the term insurer, a standalone policy usually by a health insurer.
+        return (
+            <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">IRDAI does not publish insurer-wise critical illness figures. The insurer that pays depends on how you buy it:</p>
+                <InsurerShortlist title="As a rider on a term plan: top 3 life insurers" kind="life" records={records} />
+                <InsurerShortlist title="As a standalone policy: top 3 health insurers" kind="health" records={records} />
+            </div>
+        );
+    }
     const life = type === 'term_life';
     return (
+        <>
+        <InsurerShortlist title={life ? 'Top 3 life insurers for you' : 'Top 3 health insurers for you'} kind={life ? 'life' : 'health'} records={records} />
         <Card className="relative overflow-x-auto border-border p-6 space-y-4">
             <div className="space-y-1">
                 <h3 className="text-lg font-black tracking-tight uppercase">{life ? "Life Insurers' Claim & Service Records" : "Health Insurers' Claim & Service Records"}</h3>
@@ -299,6 +424,9 @@ const InsurerClaimRecords: React.FC<{ type: InsuranceType; records: InsurerRecor
                     {life
                         ? 'Claims paid, how fast death claims are settled, complaints, financial strength and branch reach. "By amount" is lower when large claims are refused, so check both.'
                         : 'Standalone health insurers: claims paid and rejected, complaints, financial strength and branch reach. Payout ratio is claims paid as a share of premiums earned. General insurers also sell health cover, but IRDAI reports their claims combined with motor and other lines.'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    All insurers, highest score first. The score uses {source.threeYearPeriod} figures; the other columns show {source.period}.
                 </p>
                 <p className="text-xs text-muted-foreground">
                     <span className="font-bold text-amber-700 dark:text-amber-400">Amber</span> marks a weak spot:{' '}
@@ -314,5 +442,7 @@ const InsurerClaimRecords: React.FC<{ type: InsuranceType; records: InsurerRecor
                 <a href={source.url} target="_blank" rel="noreferrer" className="underline">irdai.gov.in</a>
             </p>
         </Card>
+        {!life && records.generalHealth && records.generalHealth.length > 0 && <GeneralHealthInsurers rows={records.generalHealth} source={source} />}
+        </>
     );
 };

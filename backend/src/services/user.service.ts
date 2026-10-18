@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { hashPassword, hashPasswordAsync, generateSalt, one, query, run } from '../db/database.js';
-import { DEPENDENT_RELATIONS, householdOf, type CityTier, type Dependent, type StrategyProfile } from './actuarial.service.js';
+import { DEPENDENT_RELATIONS, HEALTH_CONDITIONS, householdOf, type CityTier, type Dependent, type HealthCondition, type StrategyProfile } from './actuarial.service.js';
 
 export interface UserProfileData {
   id: string;
@@ -20,6 +20,7 @@ export interface UserProfileData {
   existingHealthCover: number;
   liquidSavings: number;
   spouseIncome: number;
+  spouseAge: number;
   dependentDetails: Dependent[];
   parentsHealthCover: number;
   loanEmi: number;
@@ -28,6 +29,9 @@ export interface UserProfileData {
   existingPaCover: number;
   employerBenefits: string[];
   lifestyleRisks: string[];
+  healthConditions: HealthCondition[];
+  heightCm: number;
+  weightKg: number;
   onboardingCompleted: boolean;
   /** When the user last saved their financial profile (drives the yearly review prompt). */
   profileReviewedAt: string;
@@ -74,8 +78,8 @@ export type ProfileUpdate = Partial<
   Pick<
     UserProfileData,
     | 'name' | 'age' | 'income' | 'dependents' | 'maritalStatus' | 'occupation' | 'city' | 'cityTier'
-    | 'homeLoan' | 'otherLoans' | 'monthlyExpenses' | 'existingLifeCover' | 'existingHealthCover' | 'liquidSavings' | 'spouseIncome' | 'dependentDetails' | 'parentsHealthCover' | 'loanEmi' | 'homeLoanYearsLeft' | 'existingCiCover' | 'existingPaCover'
-    | 'employerBenefits' | 'lifestyleRisks' | 'onboardingCompleted' | 'language'
+    | 'homeLoan' | 'otherLoans' | 'monthlyExpenses' | 'existingLifeCover' | 'existingHealthCover' | 'liquidSavings' | 'spouseIncome' | 'spouseAge' | 'dependentDetails' | 'parentsHealthCover' | 'loanEmi' | 'homeLoanYearsLeft' | 'existingCiCover' | 'existingPaCover'
+    | 'employerBenefits' | 'lifestyleRisks' | 'healthConditions' | 'heightCm' | 'weightKg' | 'onboardingCompleted' | 'language'
   >
 >;
 
@@ -99,6 +103,7 @@ const PROFILE_COLUMNS: Record<keyof ProfileUpdate, string> = {
   existingHealthCover: 'existing_health_cover',
   liquidSavings: 'liquid_savings',
   spouseIncome: 'spouse_income',
+  spouseAge: 'spouse_age',
   dependentDetails: 'dependent_details',
   parentsHealthCover: 'parents_health_cover',
   loanEmi: 'loan_emi',
@@ -107,6 +112,9 @@ const PROFILE_COLUMNS: Record<keyof ProfileUpdate, string> = {
   existingPaCover: 'existing_pa_cover',
   employerBenefits: 'employer_benefits',
   lifestyleRisks: 'lifestyle_risks',
+  healthConditions: 'health_conditions',
+  heightCm: 'height_cm',
+  weightKg: 'weight_kg',
   onboardingCompleted: 'onboarding_completed',
   language: 'language',
 };
@@ -152,6 +160,7 @@ function toProfile(row: UserRow): UserProfileData {
     existingHealthCover: Number(row.existing_health_cover),
     liquidSavings: Number(row.liquid_savings),
     spouseIncome: Number(row.spouse_income),
+    spouseAge: Number(row.spouse_age ?? 0),
     dependentDetails: parseDependents(row.dependent_details),
     parentsHealthCover: Number(row.parents_health_cover),
     loanEmi: Number(row.loan_emi),
@@ -160,6 +169,9 @@ function toProfile(row: UserRow): UserProfileData {
     existingPaCover: Number(row.existing_pa_cover),
     employerBenefits: parseList(row.employer_benefits),
     lifestyleRisks: parseList(row.lifestyle_risks),
+    healthConditions: parseList(row.health_conditions).filter((c): c is HealthCondition => (HEALTH_CONDITIONS as readonly string[]).includes(c)),
+    heightCm: Number(row.height_cm ?? 0),
+    weightKg: Number(row.weight_kg ?? 0),
     onboardingCompleted: Number(row.onboarding_completed) === 1,
     profileReviewedAt: String(row.profile_reviewed_at ?? row.created_at),
     disclaimerAcknowledgedAt: row.disclaimer_acknowledged_at ? String(row.disclaimer_acknowledged_at) : null,
@@ -455,6 +467,7 @@ export class UserService {
       existingHealthCover: u.existingHealthCover,
       liquidSavings: u.liquidSavings,
       spouseIncome: u.spouseIncome,
+      spouseAge: u.spouseAge,
       dependentDetails: u.dependentDetails,
       parentsHealthCover: u.parentsHealthCover,
       loanEmi: u.loanEmi,
@@ -463,6 +476,9 @@ export class UserService {
       existingPaCover: u.existingPaCover,
       employerBenefits: u.employerBenefits,
       lifestyleRisks: u.lifestyleRisks,
+      healthConditions: u.healthConditions,
+      heightCm: u.heightCm,
+      weightKg: u.weightKg,
     };
   }
 

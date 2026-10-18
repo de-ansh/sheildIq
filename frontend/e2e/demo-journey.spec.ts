@@ -57,7 +57,7 @@ test('health planner recalculates when the family changes', async ({ page }) => 
 });
 
 test('dependency modeling sliders change the projection', async ({ page }) => {
-  await nav(page, 'Dependencies');
+  await nav(page, 'Family');
   await expect(page.getByText(/If you died today/).first()).toBeVisible();
   const metric = page.getByText('Total Lifetime Liability').locator('xpath=..').locator('div.font-mono').first();
   const before = await metric.textContent();
@@ -76,6 +76,11 @@ test('affordability shows the real ratios', async ({ page }) => {
   const s = (await api(page, '/strategy')).data;
   await expect(page.getByText(`${s.affordability.liabilityToIncome}x`).first()).toBeVisible();
   await expect(page.getByText(`${inr(s.affordability.estimatedAnnualPremium)}/yr`).first()).toBeVisible();
+  // Tax card: the old-regime health saving at the demo's marginal rate (₹24L income: 31.2%).
+  const tax = page.getByText('Tax on Your Premiums', { exact: true }).locator('xpath=ancestor::div[contains(@class,"p-8")][1]');
+  expect(s.affordability.tax.marginalRatePct).toBe(31.2);
+  await expect(tax).toContainText(`saving ${inr(s.affordability.tax.healthSaving)}`);
+  await expect(tax).toContainText('section 126, formerly 80D');
 });
 
 test('compare shows 4 priced options per type and official insurer records', async ({ page }) => {
@@ -94,6 +99,12 @@ test('compare shows 4 priced options per type and official insurer records', asy
   const life = page.getByRole('table', { name: /Life insurers' claim and service records/ });
   await expect(life.getByRole('row')).toHaveCount(insurerRecords.life.length + 1);
   await expect(life).toContainText('LIC');
+  // The shortlist is the API's top three in rank order, and the table follows the same order.
+  const shortlist = page.getByRole('heading', { name: 'Top 3 life insurers for you' }).locator('xpath=ancestor::div[contains(@class,"p-6")][1]');
+  const top3 = insurerRecords.life.slice(0, 3) as { insurer: string; score: number }[];
+  await expect(shortlist.locator('ol > li')).toHaveCount(3);
+  for (const [i, r] of top3.entries()) await expect(shortlist.locator('ol > li').nth(i)).toContainText(`${i + 1}. ${r.insurer}${r.score}/100`);
+  await expect(life.getByRole('row').nth(1)).toContainText(top3[0].insurer);
   await page.getByRole('tab', { name: /Saved Strategies/ }).click();
   await expect(page.getByText(/Life cover ₹/).first()).toBeVisible();
 });
@@ -143,4 +154,18 @@ test('system status and compliance pages tell the truth', async ({ page }) => {
   await btn(page, 'Disclaimer & Compliance Disclosure').click();
   await expect(page.getByText('Data Protection & Security').first()).toBeVisible();
   expect(await page.locator('main').innerText()).not.toMatch(/SOC 2|zero-knowledge|end-to-end encrypted|mortality tables, published/i);
+});
+
+test('family plan lists each member and every policy from the API', async ({ page }) => {
+  await nav(page, 'Family');
+  const { data } = await api(page, '/family-plan');
+  await expect(page.getByRole('heading', { name: 'Family Plan', level: 1 })).toBeVisible();
+  // One card per member (the demo: you, a non-earning partner and children), one detail card per policy.
+  for (const name of ['You', 'Partner']) await expect(page.getByRole('heading', { name, level: 2, exact: true })).toBeVisible();
+  const details = page.getByRole('heading', { name: 'Policies in detail' }).locator('xpath=..').locator(':scope > ul > li');
+  await expect(details).toHaveCount(data.policies.length);
+  await expect(page.getByText(inr(data.totalAnnualPremium) + '/yr').first()).toBeVisible();
+  // Feature checklist for the family health policy.
+  await expect(page.getByText('Check in the policy wording').first()).toBeVisible();
+  await expect(page.getByText(/Restoration \(sum insured refilled/)).toBeVisible();
 });

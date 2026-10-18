@@ -8,6 +8,7 @@ import {
   roundUpTo,
   STRUCTURE,
   termRatePerLakh,
+  medicalLoading,
   type StrategyProfile,
   type StrategyResult,
 } from './actuarial.service.js';
@@ -196,7 +197,7 @@ export interface PlanTypeOptions {
   recommendationReason: string;
 }
 
-const HIGH_RISK_JOB = /driver|construction|field|police|army|defen[cs]e|pilot|factory|delivery|mining|electrician|rider/i;
+export const HIGH_RISK_JOB = /driver|construction|field|police|army|defen[cs]e|pilot|factory|delivery|mining|electrician|rider/i;
 const round100 = (n: number) => Math.round(n / 100) * 100;
 
 export class PlansService {
@@ -215,7 +216,8 @@ export class PlansService {
 
     // ---- Term life: sized to the gap (a ₹25L minimum shows a meaningful quote when there is no gap)
     const termCover = s.life.gap > 0 ? roundUpTo(s.life.gap, 500000) : 2500000;
-    const termRate = termRatePerLakh(p.age, tobacco);
+    const loading = medicalLoading(p);
+    const termRate = termRatePerLakh(p.age, tobacco) * loading;
     const term = products('term_life').map(x => quote(x, termCover, (termCover / 100000) * termRate * x.multiplier));
     // Recommendations come from the strategy engine so Affordability and Plan Options agree.
     const termPick = s.picks.termId;
@@ -257,7 +259,7 @@ export class PlansService {
     // ---- Critical illness
     // Quote the gap left after cover already held; with no gap, quote the full suggestion for reference.
     const ciCover = s.criticalIllness.gap || s.criticalIllness.recommended;
-    const ciRate = criticalIllnessRatePerLakh(p.age, tobacco);
+    const ciRate = criticalIllnessRatePerLakh(p.age, tobacco) * loading;
     const ci = products('critical_illness').map(x => quote(x, ciCover, (ciCover / 100000) * ciRate * x.multiplier));
     const ciStandalone = ci.find(o => o.id === 'CI-LUMPSUM')!;
     const ciAffordable = ciStandalone.annualPremium <= p.income * 0.03;

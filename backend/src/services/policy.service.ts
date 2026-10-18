@@ -27,7 +27,7 @@ const CATEGORY: Record<InsuranceType, PolicyDetail['category']> = {
 // Catalog prices are quoted for a reference household; signed-in users get personal quotes from /plan-options.
 const REFERENCE_PROFILE: StrategyProfile = {
   age: 35, income: 2000000, dependents: 2, maritalStatus: 'Married', occupation: 'Salaried professional', cityTier: 'Tier 1 (Metro)',
-  homeLoan: 3000000, otherLoans: 0, monthlyExpenses: 70000, existingLifeCover: 0, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0, employerBenefits: [], lifestyleRisks: [],
+  homeLoan: 3000000, otherLoans: 0, monthlyExpenses: 70000, existingLifeCover: 0, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0, employerBenefits: [], lifestyleRisks: [], spouseAge: 0, healthConditions: [], heightCm: 0, weightKg: 0,
 };
 
 const quotedByProductId = new Map(

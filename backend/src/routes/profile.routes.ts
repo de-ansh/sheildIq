@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { LANGUAGES, UserService } from '../services/user.service.js';
-import { CITY_TIERS, DEPENDENT_RELATIONS } from '../services/actuarial.service.js';
+import { CITY_TIERS, DEPENDENT_RELATIONS, HEALTH_CONDITIONS } from '../services/actuarial.service.js';
 import { SESSION_COOKIE, asyncHandler, rateLimitAuth, requireAuth, type AuthedRequest } from './middleware.js';
 
 const router = Router();
@@ -24,6 +24,7 @@ const profileSchema = z
     existingHealthCover: money,
     liquidSavings: money,
     spouseIncome: money,
+    spouseAge: z.number().int().refine(v => v === 0 || (v >= 18 && v <= 100), 'Spouse age must be 18-100'), // 0 = not given
     dependentDetails: z.array(z.object({ relation: z.enum(DEPENDENT_RELATIONS), age: z.number().int().min(0).max(110) })).max(12),
     parentsHealthCover: money,
     loanEmi: money,
@@ -32,6 +33,10 @@ const profileSchema = z
     existingPaCover: money,
     employerBenefits: z.array(z.string().max(50)).max(10),
     lifestyleRisks: z.array(z.string().max(50)).max(10),
+    healthConditions: z.array(z.enum(HEALTH_CONDITIONS)).max(HEALTH_CONDITIONS.length).transform(list => [...new Set(list)]),
+    // 0 = not given
+    heightCm: z.number().int().refine(v => v === 0 || (v >= 100 && v <= 230), 'Height must be 100-230 cm'),
+    weightKg: z.number().int().refine(v => v === 0 || (v >= 25 && v <= 250), 'Weight must be 25-250 kg'),
     language: z.enum(LANGUAGES),
   })
   .partial();

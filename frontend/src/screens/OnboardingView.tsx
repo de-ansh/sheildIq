@@ -15,7 +15,7 @@ import {
     Lock,
     Loader2
 } from "lucide-react";
-import { useApp } from '@/lib/AppContext';
+import { HEALTH_CONDITIONS, useApp, type HealthCondition } from '@/lib/AppContext';
 import type { AiProfileDraft, CityTier } from '@/lib/api';
 import { DescribeYourself } from '@/components/DescribeYourself';
 import { householdOf, type DependentRelation } from '@/lib/household';
@@ -27,6 +27,7 @@ const RELATIONS: DependentRelation[] = ['child', 'parent', 'sibling'];
 const TIERS = ['Tier 1 (Metro)', 'Tier 2 (Emerging Metro)', 'Tier 3 (Urban Center)'] as const;
 const BENEFITS = ['Group Term Life', 'Group Health', 'Critical Illness', 'Accident Cover', 'OPD Benefits'] as const;
 const RISKS = ['Tobacco/Smoking', 'High-Risk Hobbies', "Frequent Int'l Travel"] as const;
+const validBody = (cm: number, kg: number) => (cm === 0 || (Number.isInteger(cm) && cm >= 100 && cm <= 230)) && (kg === 0 || (Number.isInteger(kg) && kg >= 25 && kg <= 250));
 const MAX_DEPENDENTS = 12;
 
 export const OnboardingView: React.FC = () => {
@@ -52,6 +53,7 @@ export const OnboardingView: React.FC = () => {
         existingHealthCover: user.existingHealthCover,
         liquidSavings: user.liquidSavings,
         spouseIncome: user.spouseIncome,
+        spouseAge: user.spouseAge,
         // Older profiles only stored a count: pre-fill their children (ages blank) so editing never drops them.
         dependentDetails: (user.dependentDetails.length > 0
             ? user.dependentDetails
@@ -63,6 +65,9 @@ export const OnboardingView: React.FC = () => {
         existingPaCover: user.existingPaCover,
         employerBenefits: user.employerBenefits,
         lifestyleRisks: user.lifestyleRisks,
+        healthConditions: user.healthConditions,
+        heightCm: user.heightCm,
+        weightKg: user.weightKg,
     });
     const [stepError, setStepError] = useState<string | null>(null);
 
@@ -94,6 +99,15 @@ export const OnboardingView: React.FC = () => {
         });
     };
 
+    const toggleCondition = (condition: HealthCondition) => {
+        setFormData(prev => ({
+            ...prev,
+            healthConditions: prev.healthConditions.includes(condition)
+                ? prev.healthConditions.filter(c => c !== condition)
+                : [...prev.healthConditions, condition],
+        }));
+    };
+
     // Returns an error for the first step whose required answers are missing, checking steps 1..upTo.
     const validate = (upTo: number): { step: number; error: MessageKey } | null => {
         const { age, income, cityTier, monthlyExpenses } = formData;
@@ -106,21 +120,29 @@ export const OnboardingView: React.FC = () => {
         if (upTo >= 2 && !(Number.isInteger(formData.homeLoanYearsLeft) && formData.homeLoanYearsLeft >= 0 && formData.homeLoanYearsLeft <= 40)) {
             return { step: 2, error: 'onb.errLoanYears' };
         }
+        if (upTo >= 2 && formData.maritalStatus === 'Married' && formData.spouseAge !== 0 && !(Number.isInteger(formData.spouseAge) && formData.spouseAge >= 18 && formData.spouseAge <= 100)) {
+            return { step: 2, error: 'onb.errPartnerAge' };
+        }
         if (upTo >= 2 && formData.dependentDetails.some(d => d.age === null || !Number.isInteger(d.age) || d.age < 0 || d.age > 110)) {
             return { step: 2, error: 'onb.errDependentAge' };
         }
+        if (upTo >= 3 && !validBody(formData.heightCm, formData.weightKg)) return { step: 3, error: 'onb.errBody' };
         return null;
     };
 
     // Only fields the AI actually found are applied; everything stays editable before saving.
     const applyDraft = (draft: AiProfileDraft) => {
-        const lists = ['notes', 'employerBenefits', 'lifestyleRisks', 'dependentDetails', 'dependents'];
-        const found = Object.entries(draft).filter(([key, value]) => value !== null && !lists.includes(key));
+        const lists = ['notes', 'employerBenefits', 'lifestyleRisks', 'healthConditions', 'dependentDetails', 'dependents'];
+        const found = Object.entries(draft).filter(([key, value]) => value != null && !lists.includes(key));
         setFormData(prev => ({
             ...prev,
             ...Object.fromEntries(found),
             employerBenefits: draft.employerBenefits.length ? draft.employerBenefits : prev.employerBenefits,
             lifestyleRisks: draft.lifestyleRisks.length ? draft.lifestyleRisks : prev.lifestyleRisks,
+            // ?? []: a backend from before this field existed omits it.
+            healthConditions: draft.healthConditions?.length
+                ? draft.healthConditions.filter((c): c is HealthCondition => (HEALTH_CONDITIONS as readonly string[]).includes(c))
+                : prev.healthConditions,
             dependentDetails: draft.dependentDetails.length ? draft.dependentDetails : prev.dependentDetails,
         }));
         setStepError(null);
@@ -323,6 +345,18 @@ export const OnboardingView: React.FC = () => {
                                             <p id="spouse-income-help" className="text-xs text-muted-foreground">
                                                 {t('onb.partnerIncomeHelp')}
                                             </p>
+                                            <Label htmlFor="spouse-age-input" className="font-bold text-foreground block pt-2">{t('onb.partnerAge')}</Label>
+                                            <Input
+                                                id="spouse-age-input"
+                                                type="number"
+                                                inputMode="numeric"
+                                                min={18}
+                                                max={100}
+                                                value={formData.spouseAge || ''}
+                                                onChange={(e) => updateField('spouseAge', Number(e.target.value))}
+                                                placeholder={t('onb.partnerAgePlaceholder')}
+                                                className="bg-muted/30 font-mono"
+                                            />
                                         </div>
                                     )}
 
@@ -577,6 +611,55 @@ export const OnboardingView: React.FC = () => {
                                             ))}
                                         </div>
                                     </div>
+
+                                    <div className="pt-6 border-t border-border"><fieldset className="space-y-4">
+                                        <legend className="font-bold text-foreground text-sm">{t('onb.health')}</legend>
+                                        <p className="text-xs text-muted-foreground">{t('onb.healthHelp')}</p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {HEALTH_CONDITIONS.map(condition => (
+                                                <label
+                                                    key={condition}
+                                                    className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-full border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                                                >
+                                                    <Checkbox
+                                                        checked={formData.healthConditions.includes(condition)}
+                                                        onCheckedChange={() => toggleCondition(condition)}
+                                                    />
+                                                    <span className="text-xs font-bold text-muted-foreground">{t(`condition.${condition}`)}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="height-input" className="font-bold text-foreground">{t('onb.height')}</Label>
+                                                <Input
+                                                    id="height-input"
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={100}
+                                                    max={230}
+                                                    value={formData.heightCm || ''}
+                                                    onChange={(e) => updateField('heightCm', Number(e.target.value))}
+                                                    placeholder={t('onb.heightPlaceholder')}
+                                                    className="bg-muted/30 font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="weight-input" className="font-bold text-foreground">{t('onb.weight')}</Label>
+                                                <Input
+                                                    id="weight-input"
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={25}
+                                                    max={250}
+                                                    value={formData.weightKg || ''}
+                                                    onChange={(e) => updateField('weightKg', Number(e.target.value))}
+                                                    placeholder={t('onb.weightPlaceholder')}
+                                                    className="bg-muted/30 font-mono"
+                                                />
+                                            </div>
+                                        </div>
+                                    </fieldset></div>
                                 </div>
                             </div>
                         )}

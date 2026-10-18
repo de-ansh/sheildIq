@@ -5,7 +5,7 @@ import { PlansService, PLAN_PRODUCTS } from '../services/plans.service.js';
 const family: StrategyProfile = {
   age: 34, income: 2400000, dependents: 2, maritalStatus: 'Married', occupation: 'Engineer', cityTier: 'Tier 1 (Metro)',
   homeLoan: 4500000, otherLoans: 500000, monthlyExpenses: 85000, existingLifeCover: 15000000, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0,
-  employerBenefits: [], lifestyleRisks: [],
+  employerBenefits: [], lifestyleRisks: [], spouseAge: 0, healthConditions: [], heightCm: 0, weightKg: 0,
 };
 const options = (p: StrategyProfile) => PlansService.optionsFor(p, ActuarialService.buildStrategy(p));
 const byType = (p: StrategyProfile, type: string) => options(p).find(t => t.type === type)!;
@@ -127,5 +127,16 @@ describe('Affordability and Plan Options price the gaps identically', () => {
     const term = types[0].options.find(o => o.recommended)!;
     const health = types[1].options.find(o => o.recommended)!;
     expect(s.affordability.estimatedAnnualPremium).toBe(term.annualPremium + health.annualPremium);
+  });
+});
+
+describe('medical loading in plan quotes', () => {
+  it('scales term and critical illness quotes, not accident cover', () => {
+    const diabetic = { ...family, healthConditions: ['diabetes' as const] };
+    for (const [type, ratio] of [['term_life', 1.5], ['critical_illness', 1.5], ['personal_accident', 1]] as const) {
+      const a = byType(family, type).options[0].annualPremium;
+      const b = byType(diabetic, type).options[0].annualPremium;
+      expect(b / a, type).toBeCloseTo(ratio, 1);
+    }
   });
 });

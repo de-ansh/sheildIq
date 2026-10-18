@@ -25,6 +25,7 @@ test('a new user is onboarded and every answer reaches their strategy', async ({
     await btn(page, /Continue/, false).click();
     await btn(page, 'Married').click();
     await page.fill('#spouse-income-input', '900000');
+    await page.fill('#spouse-age-input', '31');
     await btn(page, '+ Add Dependent').click();
     await page.getByLabel('Age of dependent 1').fill('6');
     await btn(page, '+ Add Dependent').click();
@@ -45,6 +46,12 @@ test('a new user is onboarded and every answer reaches their strategy', async ({
     const tobacco = page.getByRole('checkbox', { name: 'Tobacco/Smoking' });
     await tobacco.click(); // the box itself must toggle exactly once
     await expect(tobacco).toBeChecked();
+    await page.getByRole('checkbox', { name: 'Diabetes' }).click();
+    await page.fill('#height-input', '40'); // cm typo: blocked with a clear message
+    await page.fill('#weight-input', '82');
+    await btn(page, /Generate Policy Gap/, false).click();
+    await expect(page.getByText(/Enter height in cm \(100–230\)/)).toBeVisible();
+    await page.fill('#height-input', '165');
     await btn(page, /Generate Policy Gap/, false).click();
     await expect(page.getByText('Life Cover Need')).toBeVisible();
   });
@@ -58,6 +65,7 @@ test('a new user is onboarded and every answer reaches their strategy', async ({
       existingCiCover: 1000000, existingPaCover: 2500000, onboardingCompleted: true,
     });
     expect(u.lifestyleRisks).toContain('Tobacco/Smoking');
+    expect(u).toMatchObject({ healthConditions: ['diabetes'], heightCm: 165, weightKg: 82, spouseAge: 31 });
   });
 
   await test.step('the strategy and screens reflect those answers', async () => {
@@ -70,6 +78,10 @@ test('a new user is onboarded and every answer reaches their strategy', async ({
     expect(s.criticalIllness.existing).toBe(1000000);
     expect(s.parentsHealth.existing).toBe(200000);
     expect(s.insights.some((i: { title: string }) => /Tobacco/.test(i.title))).toBe(true);
+    // Diabetes (1.5x) and a BMI of 30.1 (1.25x) load term cover; the finding says so.
+    const medical = s.insights.find((i: { code: string }) => i.code === 'medical');
+    expect(medical.params).toMatchObject({ conditions: 'diabetes', bmi: 30.1, loadingPct: 88, ped: 1 });
+    expect(s.health.notes.join(' ')).toMatch(/waiting period/);
     await expect(page.getByText(inr(s.life.totalNeed)).first()).toBeVisible();
 
     await nav(page, 'Risk Sim');
