@@ -16,6 +16,11 @@ const TIER_HI: Record<string, string> = {
   'Tier 3 (Urban Center)': 'टियर 3 (शहरी केंद्र)',
 };
 
+const CONDITION_HI: Record<string, string> = {
+  diabetes: 'डायबिटीज़', hypertension: 'हाई ब्लड प्रेशर', heart: 'दिल की बीमारी', thyroid: 'थायरॉइड', asthma: 'अस्थमा', cancer: 'कैंसर के इतिहास',
+};
+const joinHi = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} और ${items.at(-1)}` : items[0] ?? '');
+
 /** Hindi text for each finding the strategy engine produces, built from the same values as the English. */
 const HI: Record<string, (p: P) => { title: string; detail: string }> = {
   life_gap: p => ({
@@ -84,6 +89,19 @@ const HI: Record<string, (p: P) => { title: string; detail: string }> = {
       `के लिए लगभग ${s(p.recommended)} की अलग वरिष्ठ नागरिक स्वास्थ्य पॉलिसी होनी चाहिए; उनके पास ${s(p.held)} है। ` +
       `लगभग ${s(p.premium)} सालाना खर्च मानें, और पहले से मौजूद बीमारियों के वेटिंग पीरियड ध्यान से देखें।`,
   }),
+  medical: p => {
+    const conditions = s(p.conditions).split(',').filter(Boolean).map(c => CONDITION_HI[c] ?? c);
+    const declare = joinHi([...conditions, ...(p.bmi ? [`${s(p.bmi)} BMI`] : [])]);
+    const pct = Number(p.loadingPct);
+    return {
+      title: 'अपनी सेहत की पूरी जानकारी दें',
+      detail:
+        `बीमा कंपनी को अपनी ${declare} के बारे में ज़रूर बताएँ: जानकारी छिपाना क्लेम रिजेक्ट होने की एक बड़ी वजह है, सालों बाद भी। ` +
+        `मेडिकल जाँच की उम्मीद रखें${pct > 0 ? ` और टर्म व गंभीर बीमारी कवर का प्रीमियम सामान्य से लगभग ${pct}% ज़्यादा (इन अनुमानों में शामिल)` : ''}।` +
+        (Number(p.ped) ? ' नई हेल्थ पॉलिसी इन बीमारियों को 3 साल तक के वेटिंग पीरियड के बाद ही कवर करती है; कुछ प्लान अतिरिक्त प्रीमियम पर इसे घटा देते हैं।' : '') +
+        (Number(p.severe) ? ' दिल की बीमारी या कैंसर के इतिहास पर कंपनियाँ कवर टाल या मना कर सकती हैं: एक से ज़्यादा कंपनियों में आवेदन करें, और कंपनी से मिला ग्रुप कवर बनाए रखें।' : ''),
+    };
+  },
   sole_provider: () => ({
     title: 'आश्रितों के अकेले कमाने वाले',
     detail: 'जीवनसाथी की आय न होने पर, एक अभिभावक (गार्डियन) नामित करें और टर्म प्लान में मासिक आय वाले भुगतान विकल्प पर विचार करें।',

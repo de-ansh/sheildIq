@@ -21,6 +21,9 @@ export type ScreenId =
   | 'systemstates'
   | 'policyscan';
 
+export const HEALTH_CONDITIONS = ['diabetes', 'hypertension', 'heart', 'thyroid', 'asthma', 'cancer'] as const;
+export type HealthCondition = (typeof HEALTH_CONDITIONS)[number];
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -38,6 +41,8 @@ export interface UserProfile {
   existingHealthCover: number;
   liquidSavings: number;
   spouseIncome: number;
+  /** 0 when not given. */
+  spouseAge: number;
   dependentDetails: Dependent[];
   parentsHealthCover: number;
   loanEmi: number;
@@ -46,6 +51,11 @@ export interface UserProfile {
   existingPaCover: number;
   employerBenefits: string[];
   lifestyleRisks: string[];
+  /** The user's own diagnosed conditions. */
+  healthConditions: HealthCondition[];
+  /** 0 when not given. */
+  heightCm: number;
+  weightKg: number;
   onboardingCompleted: boolean;
   /** ISO time the financial profile was last saved; '' when unknown. */
   profileReviewedAt: string;
@@ -117,6 +127,7 @@ const defaultUser: UserProfile = {
   existingHealthCover: 500000,
   liquidSavings: 1000000,
   spouseIncome: 0,
+  spouseAge: 0,
   dependentDetails: [],
   parentsHealthCover: 0,
   loanEmi: 45000,
@@ -125,6 +136,9 @@ const defaultUser: UserProfile = {
   existingPaCover: 0,
   employerBenefits: ['Group Term Life', 'OPD Benefits'],
   lifestyleRisks: [],
+  healthConditions: [],
+  heightCm: 0,
+  weightKg: 0,
   onboardingCompleted: true,
   profileReviewedAt: '',
   language: 'en',

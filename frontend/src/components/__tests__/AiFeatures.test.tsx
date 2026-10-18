@@ -12,7 +12,7 @@ const user = {
   name: 'Priya Sharma', email: 'p@example.com', age: 34, income: 2400000, dependents: 2, maritalStatus: 'Married',
   city: 'Pune', cityTier: 'Tier 1 (Metro)', occupation: 'Engineer', homeLoan: 0, otherLoans: 0, monthlyExpenses: 80000,
   existingLifeCover: 10000000, existingHealthCover: 500000, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0,
-  employerBenefits: [], lifestyleRisks: [], onboardingCompleted: true,
+  employerBenefits: [], lifestyleRisks: [], healthConditions: [], heightCm: 0, weightKg: 0, onboardingCompleted: true,
 };
 
 const signedIn = (extra: Record<string, unknown>, overrides: Partial<typeof user> = {}) =>
@@ -80,7 +80,7 @@ describe('AI features', () => {
           homeLoan: null, otherLoans: null, monthlyExpenses: null, existingLifeCover: null, existingHealthCover: null,
           liquidSavings: null, spouseIncome: null, parentsHealthCover: null,
           dependentDetails: [{ relation: 'child', age: 9 }, { relation: 'parent', age: null }],
-          employerBenefits: [], lifestyleRisks: [], notes: ['Assumed spouse is dependent.'],
+          employerBenefits: [], lifestyleRisks: [], healthConditions: ['diabetes', 'flu'], notes: ['Assumed spouse is dependent.'],
         },
       },
     }, { onboardingCompleted: false, income: 0, occupation: '' });

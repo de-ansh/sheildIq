@@ -37,7 +37,10 @@ export const HealthPlannerView: React.FC = () => {
     const [cityTier, setCityTier] = useState<CityTier>(user.cityTier);
     const [employerCover, setEmployerCover] = useState(0);
     const [existingCover, setExistingCover] = useState(user.existingHealthCover);
-    const [risks, setRisks] = useState<string[]>(user.lifestyleRisks.filter(r => RISK_OPTIONS.some(o => o.id === r)));
+    const [risks, setRisks] = useState<string[]>([
+        ...user.lifestyleRisks.filter(r => RISK_OPTIONS.some(o => o.id === r)),
+        ...(user.healthConditions.length > 0 ? ['Chronic Condition'] : []),
+    ]);
     const [plan, setPlan] = useState<HealthPlanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -219,7 +222,7 @@ export const HealthPlannerView: React.FC = () => {
                         </Card>
                     </div>
 
-                    <Card className="bg-slate-950 text-white p-8 border-none overflow-hidden relative">
+                    <Card className="dark bg-slate-950 text-white p-8 border-none overflow-hidden relative">
                         <div className="relative z-10 space-y-6">
                             <div className="flex items-center gap-2">
                                 <Zap className="w-5 h-5 text-blue-400" />

@@ -204,6 +204,10 @@ async function migrate(db: Driver) {
 
     -- Added after the first Postgres release: existing databases gain the column in place.
     ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'en';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS health_conditions TEXT NOT NULL DEFAULT '[]';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS height_cm INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS weight_kg INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS spouse_age INTEGER NOT NULL DEFAULT 0;
   `);
 }
 

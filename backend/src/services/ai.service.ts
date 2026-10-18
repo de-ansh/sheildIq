@@ -1,10 +1,12 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { one, run } from '../db/database.js';
-import { CITY_TIERS, DEPENDENT_RELATIONS, formatINR, type StrategyProfile, type StrategyResult } from './actuarial.service.js';
+import { CITY_TIERS, DEPENDENT_RELATIONS, HEALTH_CONDITIONS, formatINR, type HealthCondition, type StrategyProfile, type StrategyResult } from './actuarial.service.js';
 import type { PlanTypeOptions } from './plans.service.js';
 import type { Language } from './user.service.js';
-import { HEALTH_INSURER_RECORDS, INSURER_RECORDS_SOURCE, LIFE_INSURER_RECORDS } from './insurer-records.js';
+import { GENERAL_HEALTH_INSURER_RECORDS, INSURER_RECORDS_SOURCE } from './insurer-records.js';
+import { rankInsurers } from './insurer-ranking.js';
+import { planFamily } from './family.service.js';
 
 export type AiProvider = 'gemini' | 'openai';
 export class AiNotConfiguredError extends Error {}
@@ -243,7 +245,6 @@ async function streamText(
 }
 
 // Compact once: the records are static for the life of the process.
-const INSURER_RECORDS_JSON = JSON.stringify({ life: LIFE_INSURER_RECORDS, health: HEALTH_INSURER_RECORDS });
 
 /** The chat answer streams first; follow-up questions come after a line of three dashes. */
 export const CHAT_SEPARATOR = /\n-{3,}[ \t]*\n/;
@@ -383,6 +384,7 @@ const aiProfileSchema = z.object({
   existingHealthCover: money,
   liquidSavings: money,
   spouseIncome: money,
+  spouseAge: z.number().int().min(18).max(100).nullable().catch(null),
   dependentDetails: z
     .array(z.object({ relation: z.enum(DEPENDENT_RELATIONS), age: z.number().int().min(0).max(110).nullable() }))
     .max(12),
@@ -393,6 +395,10 @@ const aiProfileSchema = z.object({
   existingPaCover: money,
   employerBenefits: z.array(z.string()).transform(list => list.filter(b => (EMPLOYER_BENEFITS as readonly string[]).includes(b))),
   lifestyleRisks: z.array(z.string()).transform(list => list.filter(r => (LIFESTYLE_RISKS as readonly string[]).includes(r))),
+  healthConditions: z.array(z.string()).transform(list => [...new Set(list)].filter((c): c is HealthCondition => (HEALTH_CONDITIONS as readonly string[]).includes(c))),
+  // An implausible reading is dropped rather than failing the whole draft.
+  heightCm: z.number().int().min(100).max(230).nullable().catch(null),
+  weightKg: z.number().int().min(25).max(250).nullable().catch(null),
   notes: z.array(z.string().max(300)).max(6),
 });
 export type AiProfileDraft = z.infer<typeof aiProfileSchema>;
@@ -424,9 +430,13 @@ const profileJsonSchema = obj({
   existingCiCover: nullable('number', 'Personal critical illness cover (standalone or rider) in rupees, excluding employer cover; null if not stated.'),
   existingPaCover: nullable('number', 'Personal accident / disability cover in rupees, excluding employer cover; null if not stated.'),
   spouseIncome: nullable('number', 'Partner\'s ANNUAL gross income in rupees if they work; 0 if they explicitly do not work; null if not mentioned.'),
+  spouseAge: nullable('integer', "Partner's age in years, or null if not stated."),
   liquidSavings: nullable('number', 'Savings and investments the family could draw on (bank FDs, mutual funds, stocks) in rupees; exclude the home, PF/EPF and other locked retirement funds. Null if not stated.'),
   employerBenefits: { type: 'array', items: { type: 'string', enum: [...EMPLOYER_BENEFITS] }, description: 'Employer-provided benefits mentioned. Group Health = employer hospitalisation insurance; OPD Benefits = outpatient consultations only.' },
   lifestyleRisks: { type: 'array', items: { type: 'string', enum: [...LIFESTYLE_RISKS] }, description: 'Risks explicitly mentioned.' },
+  healthConditions: { type: 'array', items: { type: 'string', enum: [...HEALTH_CONDITIONS] }, description: "The user's OWN diagnosed conditions they explicitly mention (hypertension = high BP; heart = heart disease; cancer = current or past cancer). Not family members' conditions. Empty if none mentioned." },
+  heightCm: nullable('integer', 'Their height in centimetres (convert feet/inches: 5\'8" = 173). Null if not stated.'),
+  weightKg: nullable('integer', 'Their weight in kilograms (convert pounds ÷ 2.2). Null if not stated.'),
   notes: strList('Up to 4 short notes on assumptions you made or ambiguities the user should check.'),
 });
 
@@ -550,7 +560,9 @@ You are "Ask ShieldIQ", answering this user's questions about protecting their h
 - If the question is about something else entirely, say briefly that you can only help with insurance and protection planning.
 - If a question needs a number that is not given, explain what it depends on instead of inventing it, and point to the screen that computes it (Life Calculator, Risk Simulator, Health Planner, Affordability).
 - When asked which plan to choose, use the quoted plan options below (plan types with estimated premiums, not specific insurer products) and their recommendation reasons.
-- When asked about choosing an insurer, use only the official insurer records below. Name the insurers and quote their figures exactly, saying they are IRDAI ${INSURER_RECORDS_SOURCE.period} data. Weigh several measures together (claims paid by amount, speed, complaints, solvency) and explain the trade-offs; suggest a shortlist of two or three rather than declaring one best. Use life records for term cover and health records for health cover. Do not rate insurers that are not in the records.
+- When asked about choosing an insurer, use only the ranked insurer records below: life for term cover, health for health cover; for critical illness, life insurers when bought as a rider on a term plan, health insurers for a standalone policy; IRDAI publishes no insurer-wise accident-cover figures. Present the top three of the relevant ranking in its order, with each one's score, strengths and watch-out, quoting figures exactly and saying they are IRDAI data (three-year figures cover ${INSURER_RECORDS_SOURCE.threeYearPeriod}). Never reorder the ranking or rank by your own judgment; if the user asks about another listed insurer, give its rank and figures. Describe it as a ranking of published claim and service records, not advice to buy from a particular insurer. Do not rate insurers that are not in the records.
+- General insurers that sell health cover (HDFC ERGO, ICICI Lombard, the government-owned insurers and others) are in a separate unranked list: IRDAI publishes only their retail health claims ratio, solvency and offices, not claim settlement or rejection rates, so never place them in or against the ranking. You may quote their figures and explain them: a claims ratio over 100% means retail health paid out more than it earned (premiums may rise); a solvency ratio below 1.5 is below IRDAI's minimum.
+- For questions about a family member (partner, children, parents, siblings), use the family plan below: which policies cover whom, how to buy them, the features to look for, and what each person does not need. Quote its figures.
 - The plan premiums above are ShieldIQ estimates for plan types, never an insurer's quote: never attach them to a named insurer. Tell the user to get actual quotes before buying.
 - Keep answers under about 180 words. This is guidance, not regulated financial advice; say so only when the user is about to make a purchase decision.
 - Write plain text: short paragraphs or "- " bullet lines; no markdown headings, bold or tables.
@@ -562,8 +574,14 @@ ${context(profile, strategy)}
 Quoted plan options for this user (JSON):
 ${JSON.stringify(plans)}
 
-Official insurer records, ${INSURER_RECORDS_SOURCE.publisher} ${INSURER_RECORDS_SOURCE.period} (JSON; solvency minimum is 1.5; complaints are per 10,000 policies):
-${INSURER_RECORDS_JSON}
+Family plan for this household (JSON; 'covers' lists member ids; premiums are ShieldIQ estimates; inStrategy=false means not yet counted in the Affordability totals):
+${JSON.stringify(planFamily(profile, strategy))}
+
+General insurers' retail health business, ${INSURER_RECORDS_SOURCE.publisher} ${INSURER_RECORDS_SOURCE.period} (JSON, unranked, largest first; premium in Rs Cr; claims ratios in %):
+${JSON.stringify(GENERAL_HEALTH_INSURER_RECORDS)}
+
+Insurer records ranked for this user by ShieldIQ from ${INSURER_RECORDS_SOURCE.publisher} ${INSURER_RECORDS_SOURCE.period} data (JSON; three-year figures cover ${INSURER_RECORDS_SOURCE.threeYearPeriod}; best first; score 0-100 on fixed scales; 'adjustments' are why this user's weights differ: largeCover weighs claim value paid more, parents weighs rejections more, smallerCity adds branch reach; solvency minimum is 1.5; complaints are per 10,000 policies):
+${JSON.stringify(rankInsurers(profile, strategy))}
 
 Conversation so far:
 ${transcript}

@@ -28,7 +28,7 @@ function* profiles(): Generator<StrategyProfile> {
               for (const liquidSavings of SAVINGS)
               for (const spouseIncome of SPOUSE)
               yield {
-                age, income, ...family, ...debt, cityTier, lifestyleRisks, liquidSavings, spouseIncome, dependentDetails: [], parentsHealthCover: 0, loanEmi: debt.homeLoan > 0 ? 75000 : 0, homeLoanYearsLeft: debt.homeLoan > 0 ? 15 : 0, existingCiCover: 0, existingPaCover: 0,
+                age, income, ...family, ...debt, cityTier, lifestyleRisks, liquidSavings, spouseIncome, dependentDetails: [], parentsHealthCover: 0, loanEmi: debt.homeLoan > 0 ? 75000 : 0, homeLoanYearsLeft: debt.homeLoan > 0 ? 15 : 0, existingCiCover: 0, existingPaCover: 0, spouseAge: 0, healthConditions: [], heightCm: 0, weightKg: 0,
                 occupation: 'x', monthlyExpenses: Math.round(income / 24), existingLifeCover: 5000000, existingHealthCover: 500000,
                 employerBenefits: [],
               };
@@ -47,7 +47,12 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
 
       for (const [k, v] of Object.entries(s.life)) finiteNonNegative(`life.${k} ${ctx}`, v);
       for (const k of ['recommendedCover', 'basePolicy', 'superTopUp', 'estimatedAnnualPremium', 'gap'] as const) finiteNonNegative(`health.${k}`, s.health[k]);
-      for (const [k, v] of Object.entries(s.affordability)) if (k !== 'annualSurplus') finiteNonNegative(`affordability.${k}`, v);
+      const { tax, ...afford } = s.affordability;
+      for (const [k, v] of Object.entries(afford)) if (k !== 'annualSurplus') finiteNonNegative(`affordability.${k}`, v);
+      for (const [k, v] of Object.entries(tax)) if (k !== 'year') finiteNonNegative(`tax.${k}`, v as number);
+      // Relief never exceeds the deduction (top marginal rate is under 50%) and deductions never exceed premiums.
+      expect(tax.healthSaving + tax.lifeSavingUpTo).toBeLessThanOrEqual((tax.healthDeduction + tax.lifeDeduction) * 0.5);
+      expect(tax.healthDeduction + tax.healthAboveLimit).toBe(s.picks.healthPremium + (s.parentsHealth?.estimatedAnnualPremium ?? 0));
       // The surplus may be negative (that is what it reports), but it must add up exactly.
       expect(s.affordability.annualSurplus).toBe(p.income - p.monthlyExpenses * 12 - p.loanEmi * 12 - s.affordability.estimatedAnnualPremium);
 
@@ -117,7 +122,7 @@ describe('Strategy invariants across ' + [...profiles()].length + ' households',
   it('prices older and tobacco-using applicants at least as high', () => {
     const p: StrategyProfile = {
       age: 25, income: 2000000, maritalStatus: 'Married', dependents: 2, cityTier: 'Tier 1 (Metro)', homeLoan: 0, otherLoans: 0,
-      occupation: 'x', monthlyExpenses: 50000, existingLifeCover: 0, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0, employerBenefits: [], lifestyleRisks: [],
+      occupation: 'x', monthlyExpenses: 50000, existingLifeCover: 0, existingHealthCover: 0, liquidSavings: 0, spouseIncome: 0, dependentDetails: [], parentsHealthCover: 0, loanEmi: 0, homeLoanYearsLeft: 0, existingCiCover: 0, existingPaCover: 0, employerBenefits: [], lifestyleRisks: [], spouseAge: 0, healthConditions: [], heightCm: 0, weightKg: 0,
     };
     // Same gap at each age so only the rate changes.
     const ratePerGap = (age: number, risks: string[] = []) => {

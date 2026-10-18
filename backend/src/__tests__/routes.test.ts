@@ -459,6 +459,36 @@ describe('AI features', () => {
     expect((await request(app).get('/api/v1/ai/chat').set(auth)).body.messages).toHaveLength(2); // only the first turn
   });
 
+  it('health conditions and BMI: validated, saved, and change the quotes and findings', async () => {
+    const auth = await onboarded('medical@example.com');
+    const termQuote = async () => (await request(app).get('/api/v1/plan-options').set(auth)).body.data.find((t: { type: string }) => t.type === 'term_life').options[0].annualPremium;
+    const before = await termQuote();
+    for (const bad of [{ healthConditions: ['flu'] }, { heightCm: 20 }, { weightKg: 400 }]) {
+      expect((await request(app).put('/api/v1/user/profile').set(auth).send(bad)).status, JSON.stringify(bad)).toBe(400);
+    }
+    const saved = await request(app).put('/api/v1/user/profile').set(auth).send({ healthConditions: ['diabetes', 'diabetes'], heightCm: 170, weightKg: 70 });
+    expect(saved.body.user).toMatchObject({ healthConditions: ['diabetes'], heightCm: 170, weightKg: 70 });
+    expect(await termQuote()).toBeGreaterThan(before * 1.4); // diabetes loading ~1.5x
+    const insights = (await request(app).get('/api/v1/strategy').set(auth)).body.data.insights;
+    expect(insights.find((i: { code: string }) => i.code === 'medical')).toMatchObject({ params: { conditions: 'diabetes', ped: 1, severe: 0, loadingPct: 50 } });
+  });
+
+  it('family plan: needs onboarding, uses the partner\'s age, and lists each member', async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({ email: 'family@example.com', password: 'longenough', name: 'F' });
+    const auth = sessionCookie(reg);
+    expect((await request(app).get('/api/v1/family-plan').set(auth)).status).toBe(409);
+    expect((await request(app).put('/api/v1/user/profile').set(auth).send({ spouseAge: 12 })).status).toBe(400);
+    await request(app).post('/api/v1/user/onboarding').set(auth).send({
+      age: 36, income: 2000000, dependents: 3, cityTier: 'Tier 2 (Emerging Metro)', monthlyExpenses: 60000, maritalStatus: 'Married',
+      spouseIncome: 800000, spouseAge: 33, dependentDetails: [{ relation: 'child', age: 4 }, { relation: 'parent', age: 70 }],
+    });
+    const res = await request(app).get('/api/v1/family-plan').set(auth);
+    expect(res.status).toBe(200);
+    expect(res.body.data.members.map((m: { id: string }) => m.id)).toEqual(['you', 'spouse', 'child-1', 'parent-1']);
+    expect(res.body.data.members[1]).toMatchObject({ age: 33, ageAssumed: false, earning: true });
+    expect(res.body.data.policies.map((x: { id: string }) => x.id)).toEqual(expect.arrayContaining(['spouse-term', 'family-health', 'parents-health']));
+  });
+
   it('language: saved on the profile, sent to the AI, and cached separately per language', async () => {
     const auth = await onboarded('hindi@example.com');
     const reviewedAt = (await request(app).get('/api/v1/user/profile').set(auth)).body.user.profileReviewedAt;
@@ -513,7 +543,7 @@ describe('AI features', () => {
     vi.stubGlobal('fetch', gemini({
       age: 32, income: 1800000, maritalStatus: 'Married', dependents: 2, occupation: 'Analyst', cityTier: 'Tier 1 (Metro)',
       homeLoan: 3000000, otherLoans: null, monthlyExpenses: 60000, existingLifeCover: 5000000, existingHealthCover: null, liquidSavings: null, spouseIncome: null, dependentDetails: [], parentsHealthCover: null, loanEmi: null, homeLoanYearsLeft: null, existingCiCover: null, existingPaCover: null,
-      employerBenefits: ['Group Health', 'Free Lunch'], lifestyleRisks: ['Tobacco/Smoking'], notes: ['Assumed spouse is dependent.'],
+      employerBenefits: ['Group Health', 'Free Lunch'], lifestyleRisks: ['Tobacco/Smoking'], healthConditions: ['diabetes', 'flu'], heightCm: 172, weightKg: 4000, notes: ['Assumed spouse is dependent.'],
     }));
     const reg = await request(app).post('/api/v1/auth/register').send({ email: 'describe@example.com', password: 'longenough', name: 'D' });
     const auth = sessionCookie(reg);
@@ -521,7 +551,7 @@ describe('AI features', () => {
     const res = await request(app).post('/api/v1/ai/parse-profile').set(auth)
       .send({ description: "I'm 32, married, one kid, earn 18 lakh, 30L home loan." });
     expect(res.status).toBe(200);
-    expect(res.body.draft).toMatchObject({ age: 32, income: 1800000, otherLoans: null, employerBenefits: ['Group Health'] });
+    expect(res.body.draft).toMatchObject({ age: 32, income: 1800000, otherLoans: null, employerBenefits: ['Group Health'], healthConditions: ['diabetes'], heightCm: 172, weightKg: null });
     // Nothing is saved until onboarding is submitted
     expect((await request(app).get('/api/v1/user/profile').set(auth)).body.user.income).toBe(0);
     expect((await request(app).post('/api/v1/ai/parse-profile').set(auth).send({ description: 'too short' })).status).toBe(400);
@@ -575,6 +605,12 @@ describe('Plan options endpoint', () => {
     expect(res.body.insurerRecords.source).toMatchObject({ publisher: 'IRDAI', period: 'FY 2024-25' });
     expect(res.body.insurerRecords.life.find((r: { insurer: string }) => r.insurer === 'LIC')).toMatchObject({ paidByNumberPct: 97.59 });
     expect(res.body.insurerRecords.health.length).toBeGreaterThan(0);
+    // Ranked for this household: Tier 2 adds branch reach to the weights.
+    expect(res.body.insurerRecords.adjustments).toContain('smallerCity');
+    expect(res.body.insurerRecords.generalHealth.find((r: { insurer: string }) => r.insurer === 'ICICI Lombard')).toMatchObject({ retailClaimsRatioPct: 68.3, governmentOwned: false });
+    expect(res.body.insurerRecords.life[0]).toMatchObject({ rank: 1, score: expect.any(Number), strengths: expect.any(Array) });
+    const scores = res.body.insurerRecords.life.map((r: { score: number }) => r.score);
+    expect(scores).toEqual([...scores].sort((a: number, b: number) => b - a));
     expect(JSON.stringify(res.body.data)).not.toMatch(/claimSettlementRatio|\(sample\)/);
     expect((await request(app).get('/api/v1/policies')).body.count).toBe(16);
   });

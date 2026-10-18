@@ -132,6 +132,16 @@ export interface Strategy {
     estimatedAnnualPremium: number;
     premiumToIncomeRatio: number;
     emergencyFundTarget: number;
+    /** Old-regime tax relief on the recommended premiums. Absent from older servers. */
+    tax?: {
+      year: string;
+      marginalRatePct: number;
+      healthDeduction: number;
+      healthSaving: number;
+      lifeDeduction: number;
+      lifeSavingUpTo: number;
+      healthAboveLimit: number;
+    };
   };
   score: number;
   rating: 'Optimal' | 'Adequate' | 'Vulnerable' | 'High Risk';
@@ -226,6 +236,7 @@ export interface AiProfileDraft {
   existingHealthCover: number | null;
   liquidSavings: number | null;
   spouseIncome: number | null;
+  spouseAge: number | null;
   dependentDetails: { relation: 'child' | 'parent' | 'sibling'; age: number | null }[];
   parentsHealthCover: number | null;
   loanEmi: number | null;
@@ -234,6 +245,9 @@ export interface AiProfileDraft {
   existingPaCover: number | null;
   employerBenefits: string[];
   lifestyleRisks: string[];
+  healthConditions: string[];
+  heightCm: number | null;
+  weightKg: number | null;
   notes: string[];
 }
 
@@ -282,11 +296,77 @@ export interface PlanOption {
   recommended: boolean;
 }
 
-/** Official IRDAI claim records, ranked best first. */
+export type FamilyCoverType = 'term_life' | 'health' | 'critical_illness' | 'personal_accident';
+
+/** What each household member should hold (backend family.service.ts). */
+export interface FamilyPlan {
+  members: {
+    id: string;
+    role: 'you' | 'spouse' | 'child' | 'parent' | 'sibling';
+    age: number | null;
+    ageAssumed: boolean;
+    earning: boolean;
+    notNeeded: { type: FamilyCoverType; reason: string }[];
+    notes: string[];
+  }[];
+  policies: {
+    id: string;
+    type: FamilyCoverType;
+    buyAs: 'own_policy' | 'family_floater' | 'senior_policy';
+    covers: string[];
+    cover: number;
+    existing: number;
+    annualPremium: number;
+    status: 'buy' | 'covered';
+    priority: 'essential' | 'recommended' | 'optional';
+    inStrategy: boolean;
+    reason: string;
+    lookFor: { feature: string; why: string }[];
+  }[];
+  totalAnnualPremium: number;
+  additionalAnnualPremium: number;
+  shareOfHouseholdIncome: number;
+}
+
+export type RankingMeasure = 'claimValuePaid' | 'claimsPaid' | 'paidWithin30Days' | 'claimsRejected' | 'complaints' | 'solvency' | 'offices';
+export type RankingAdjustment = 'largeCover' | 'parents' | 'conditions' | 'smallerCity';
+
+/** Where an insurer stands in ShieldIQ's ranking of IRDAI records for this household. */
+export interface InsurerRank {
+  /** 0-100 on fixed scales. */
+  score: number;
+  rank: number;
+  strengths: { id: RankingMeasure; value: number }[];
+  watchOut: { id: RankingMeasure; value: number } | null;
+}
+
+/** Official IRDAI claim records, ranked best first for this household. */
 export interface InsurerRecords {
-  source: { period: string; publisher: string; documents: string; url: string };
-  life: (InsurerService & { claimsHandled: number; paidByNumberPct: number; paidByAmountPct: number; settledWithin30DaysPct: number })[];
-  health: (InsurerService & { claimsHandled: number; paidPct: number; repudiatedPct: number; incurredClaimsRatioPct: number })[];
+  source: { period: string; threeYearPeriod: string; publisher: string; documents: string; url: string };
+  life: (InsurerService & InsurerRank & {
+    claimsHandled: number; paidByNumberPct: number; paidByAmountPct: number; settledWithin30DaysPct: number;
+    threeYear: { paidByNumberPct: number; paidByAmountPct: number; settledWithin30DaysPct: number; complaintsPer10kPolicies: number };
+  })[];
+  health: (InsurerService & InsurerRank & {
+    claimsHandled: number; paidPct: number; repudiatedPct: number; incurredClaimsRatioPct: number;
+    threeYear: { paidPct: number; repudiatedPct: number; complaintsPer10kPolicies: number };
+  })[];
+  /** Why this household's weights differ from the defaults. */
+  adjustments: RankingAdjustment[];
+  /** General insurers' retail health business: unranked (IRDAI gives no claim settlement figures for them). Absent from older servers. */
+  generalHealth?: GeneralHealthInsurer[];
+}
+
+export interface GeneralHealthInsurer {
+  insurer: string;
+  retailHealthPremiumCr: number;
+  /** Retail health claims incurred as % of premium earned. */
+  retailClaimsRatioPct: number;
+  retailClaimsRatioPct3y: number;
+  /** Below 1.5 is under IRDAI's minimum; can be negative. */
+  solvencyRatio: number;
+  offices: number;
+  governmentOwned: boolean;
 }
 
 /** Service measures IRDAI publishes for every insurer. */
@@ -379,6 +459,7 @@ export const ShieldIQApi = {
     }
   },
 
+  getFamilyPlan: (): ApiResult<{ data: FamilyPlan; disclaimer: string }> => request('/family-plan'),
   getPlanOptions: (): ApiResult<{ data: PlanTypeOptions[]; disclaimer: string; insurerRecords: InsurerRecords }> => request('/plan-options'),
 
   streamChat,

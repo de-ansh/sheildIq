@@ -242,7 +242,7 @@ export const AffordabilityAnalysisView: React.FC = () => {
 
             {/* Cost Levers & Premium Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <Card className="lg:col-span-5 bg-slate-950 text-white p-8 border-none relative overflow-hidden flex flex-col justify-between">
+                <Card className="dark lg:col-span-5 bg-slate-950 text-white p-8 border-none relative overflow-hidden flex flex-col justify-between">
                     <div className="space-y-6">
                         <div className="flex items-center gap-2 text-blue-400">
                             <Lightbulb className="w-5 h-5" />
@@ -311,6 +311,55 @@ export const AffordabilityAnalysisView: React.FC = () => {
                         </Button>
                     </div>
                 </Card>
+
+                {a?.tax && a.estimatedAnnualPremium > 0 && (
+                    <Card className="lg:col-span-12 border-border shadow-sm p-8 space-y-5">
+                        <div>
+                            <CardTitle className="text-lg font-black uppercase tracking-tight">Tax on Your Premiums</CardTitle>
+                            <CardDescription className="text-xs text-muted-foreground">
+                                Tax year {a.tax.year}. Deductions for insurance premiums exist only under the old tax regime.
+                            </CardDescription>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="p-5 rounded-xl border border-border space-y-1">
+                                <h4 className="text-sm font-bold">New regime (the default)</h4>
+                                <p className="text-2xl font-black font-mono">{formatINR(a.estimatedAnnualPremium)}/yr</p>
+                                <p className="text-xs text-muted-foreground">No deduction: this is the real cost of the recommended cover.</p>
+                            </div>
+                            <div className="p-5 rounded-xl border border-border space-y-1">
+                                <h4 className="text-sm font-bold">Old regime</h4>
+                                <p className="text-2xl font-black font-mono">
+                                    {a.tax.lifeSavingUpTo > 0 && `${formatINR(Math.max(0, a.estimatedAnnualPremium - a.tax.healthSaving - a.tax.lifeSavingUpTo))}–`}
+                                    {formatINR(a.estimatedAnnualPremium - a.tax.healthSaving)}/yr
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {a.tax.marginalRatePct === 0
+                                        ? 'Your taxable income falls within the rebate, so premiums save no tax.'
+                                        : `At your ${a.tax.marginalRatePct}% marginal rate (including cess):`}
+                                </p>
+                                {a.tax.marginalRatePct > 0 && (
+                                    <ul className="text-xs text-muted-foreground space-y-1 pt-1">
+                                        <li>
+                                            <span className="font-bold text-foreground">Health premiums</span> (section 126, formerly 80D): {formatINR(a.tax.healthDeduction)} deductible,
+                                            saving {formatINR(a.tax.healthSaving)}.{a.tax.healthAboveLimit > 0 && ` ${formatINR(a.tax.healthAboveLimit)} is above the limits and saves nothing.`}
+                                        </li>
+                                        {a.tax.lifeDeduction > 0 && (
+                                            <li>
+                                                <span className="font-bold text-foreground">Term premium</span> (section 123, formerly 80C): saves up to {formatINR(a.tax.lifeSavingUpTo)}, but
+                                                only if your ₹1.5L limit isn't already used by EPF, PPF or home-loan principal, as it often is.
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                            Pick a regime for your whole tax position, not for insurance alone: the new regime's lower rates usually outweigh these deductions
+                            unless you claim several others. Health limits: ₹25,000 for you, your spouse and children (₹50,000 if you're 60+), plus ₹25,000 for
+                            parents (₹50,000 if either is 60+). Estimates only; check with a tax adviser.
+                        </p>
+                    </Card>
+                )}
             </div>
         </div>
     );

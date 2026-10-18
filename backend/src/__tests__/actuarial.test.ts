@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ActuarialService, incomeToReplace, type StrategyProfile } from '../services/actuarial.service.js';
+import { ActuarialService, incomeToReplace, medicalLoading, bmiOf, type StrategyProfile } from '../services/actuarial.service.js';
 
 const family: StrategyProfile = {
   age: 34,
@@ -23,6 +23,9 @@ const family: StrategyProfile = {
   existingPaCover: 0,
   employerBenefits: ['Group Term Life'],
   lifestyleRisks: [],
+  spouseAge: 0, healthConditions: [],
+  heightCm: 0,
+  weightKg: 0,
 };
 
 describe('ActuarialService Engine', () => {
@@ -262,5 +265,35 @@ describe('Critical illness and accident cover', () => {
     const groups = PlansService.optionsFor(p, ActuarialService.buildStrategy(p));
     expect(groups.find(g => g.type === 'critical_illness')!.cover).toBe(3000000);
     expect(groups.find(g => g.type === 'critical_illness')!.coverRationale).toMatch(/you hold ₹20\.0L/);
+  });
+});
+
+describe('health conditions and BMI', () => {
+  const none = { spouseAge: 0, healthConditions: [], heightCm: 0, weightKg: 0 };
+  it('loads term rates by condition and BMI, capped where insurers would decline instead', () => {
+    expect(medicalLoading(none)).toBe(1);
+    expect(bmiOf({ heightCm: 170, weightKg: 90 })).toBe(31.1);
+    expect(medicalLoading({ healthConditions: ['diabetes'], heightCm: 170, weightKg: 90 })).toBeCloseTo(1.875); // 1.5 x 1.25
+    expect(medicalLoading({ healthConditions: ['thyroid'], heightCm: 0, weightKg: 0 })).toBe(1);
+    expect(medicalLoading({ healthConditions: ['heart', 'cancer', 'diabetes'], heightCm: 0, weightKg: 0 })).toBe(3);
+  });
+
+  it('raises the term premium, the health cover need, and adds a disclosure finding', () => {
+    const healthy = ActuarialService.buildStrategy(family);
+    const diabetic = ActuarialService.buildStrategy({ ...family, healthConditions: ['diabetes'] });
+    expect(diabetic.life.estimatedAnnualPremiumForGap / healthy.life.estimatedAnnualPremiumForGap).toBeGreaterThan(1.3);
+    expect(diabetic.health.recommendedCover).toBeGreaterThan(healthy.health.recommendedCover);
+    expect(diabetic.health.notes.join(' ')).toMatch(/waiting period/);
+    expect(healthy.insights.some(i => i.code === 'medical')).toBe(false);
+    const finding = diabetic.insights.find(i => i.code === 'medical')!;
+    expect(finding.detail).toMatch(/diabetes/);
+    expect(finding.detail).toMatch(/50% above standard/);
+
+    const severe = ActuarialService.buildStrategy({ ...family, healthConditions: ['heart'] }).insights.find(i => i.code === 'medical')!;
+    expect(severe.detail).toMatch(/postpone or decline/);
+    // BMI alone: no waiting-period line, but the loading is explained.
+    const heavy = ActuarialService.buildStrategy({ ...family, heightCm: 165, weightKg: 100 }).insights.find(i => i.code === 'medical')!;
+    expect(heavy.detail).toMatch(/BMI of 36\.7/);
+    expect(heavy.detail).not.toMatch(/waiting period/);
   });
 });
