@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../app.js';
 import { closeDatabase } from '../db/database.js';
+import { reportError } from '../log.js';
 
 const env = { ...process.env };
 afterEach(() => {
@@ -53,5 +54,34 @@ describe('request ids and logs', () => {
     expect(lines[0]).toMatchObject({ level: 'info', message: 'request', method: 'GET', path: '/api/v1/policies', status: 200 });
     expect(typeof lines[0].ms).toBe('number');
     expect(JSON.stringify(lines)).not.toContain('supersecrettoken');
+  });
+});
+
+describe('error tracking', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('sends nothing without SENTRY_DSN', () => {
+    delete process.env.SENTRY_DSN;
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    reportError(new Error('boom'));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('posts an envelope to the DSN project with only method, path and request id', () => {
+    process.env.SENTRY_DSN = 'https://pubkey@o1.ingest.sentry.io/42';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    reportError(new TypeError('boom'), { requestId: 'req-1', method: 'POST', path: '/api/v1/plans' });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://o1.ingest.sentry.io/api/42/envelope/');
+    expect(init.headers['X-Sentry-Auth']).toContain('sentry_key=pubkey');
+    const [, item, event] = String(init.body).split('\n').map(l => JSON.parse(l));
+    expect(item).toEqual({ type: 'event' });
+    expect(event).toMatchObject({
+      exception: { values: [{ type: 'TypeError', value: 'boom' }] },
+      tags: { request_id: 'req-1' },
+      request: { method: 'POST', url: '/api/v1/plans' },
+    });
   });
 });

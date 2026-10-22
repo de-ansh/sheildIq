@@ -9,7 +9,7 @@ import { policyRouter } from './routes/policy.routes.js';
 import { apiRouter } from './routes/index.js';
 import { configuredProvider } from './services/ai.service.js';
 import { query } from './db/database.js';
-import { log } from './log.js';
+import { log, reportError } from './log.js';
 
 export const app: Express = express();
 
@@ -106,7 +106,9 @@ app.use((err: Error & { status?: number }, req: Request, res: Response, _next: N
     return;
   }
   const requestId = res.locals.requestId;
-  log('error', 'unhandled error', { requestId, method: req.method, path: req.originalUrl.split('?')[0], error: err.message, stack: err.stack });
+  const path = req.originalUrl.split('?')[0];
+  log('error', 'unhandled error', { requestId, method: req.method, path, error: err.message, stack: err.stack });
+  reportError(err, { requestId, method: req.method, path });
   // The id lets support find the log line; internals stay out of the response.
   res.status(500).json({ error: 'Internal Server Error', requestId });
 });

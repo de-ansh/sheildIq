@@ -68,6 +68,7 @@ Backend settings come from the environment or `backend/.env` (see `backend/.env.
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | unset | AI providers; Gemini is tried first. With neither, AI features are hidden. |
 | `AI_DAILY_CALL_LIMIT`, `AI_IP_HOURLY_LIMIT` | 500, 60 | Caps on paid AI calls (all users per day; per IP per hour). |
 | `AUTH_RATE_LIMIT_MAX` | 10 | Sign-in attempts per 15 minutes, per IP and per account. Raise only for automated tests. |
+| `SENTRY_DSN` | unset | Sends server errors (type, message, stack, method, path, request id) to Sentry. |
 | `FRONTEND_DIST` | `../frontend/dist` | Built frontend the API serves on the same origin. |
 
 ## Deploying
@@ -96,7 +97,8 @@ keeps the app and API on one origin. That matters: the session cookie is `SameSi
   and every server error with its stack. Health polls are not logged. Ship stdout to your log service.
 - **Request ids:** every response carries an `X-Request-Id` header (a proxy's own id is kept), and 500 responses include
   it as `requestId`, so a user's error report can be matched to the log line.
-- **Error tracking:** not wired to a service yet (e.g. Sentry needs an account); errors are in the logs.
+- **Error tracking:** set `SENTRY_DSN` and every 500 is also sent to Sentry, tagged with its request id. No request
+  bodies or cookies are sent. Browser-side errors are not reported.
 
 ### Backups
 
