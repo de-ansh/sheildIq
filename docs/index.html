@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShieldIQ — Insurance protection planning for Indian households</title>
+<meta name="description" content="ShieldIQ works out how much life, health, critical-illness and accident cover a family in India needs, what the gaps cost to close, and which insurers have the best IRDAI claim records.">
+<meta property="og:title" content="ShieldIQ">
+<meta property="og:description" content="Insurance protection planning for households in India.">
+<meta property="og:image" content="screens/dashboard.jpg">
+<style>
+  :root {
+    --bg: #0a0a0c; --panel: #121216; --line: #24242b; --text: #f4f4f5; --muted: #a1a1aa;
+    --accent: #2563eb; --accent-2: #60a5fa; --warn: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: var(--accent-2); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  header { border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .08em; color: var(--accent-2); text-decoration: none; }
+  .brand svg { background: var(--accent); border-radius: 10px; padding: 6px; }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 14px; }
+  nav a:hover { color: var(--text); }
+  .hero { padding: 80px 0 48px; text-align: center; }
+  .eyebrow { color: var(--accent-2); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; }
+  h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.08; margin: 14px auto 18px; max-width: 16ch; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 19px; max-width: 62ch; margin: 0 auto 32px; }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 12px 22px; border-radius: 10px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); color: var(--text); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(1.12); }
+  .shot { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 30px 80px -20px rgba(37, 99, 235, .35); }
+  .shot img { display: block; width: 100%; height: auto; }
+  section { padding: 64px 0; }
+  h2 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 8px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 32px; max-width: 65ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .tour { display: grid; gap: 56px; }
+  .tour figure { margin: 0; display: grid; grid-template-columns: 1fr 1.6fr; gap: 32px; align-items: center; }
+  .tour figure:nth-child(even) { grid-template-columns: 1.6fr 1fr; }
+  .tour figure:nth-child(even) figcaption { order: 2; }
+  figcaption h3 { margin: 0 0 8px; font-size: 22px; }
+  figcaption p { margin: 0; color: var(--muted); }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; overflow-x: auto; font-size: 14px; line-height: 1.5; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .stack span { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
+  .note { border-left: 3px solid var(--warn); padding: 12px 16px; background: var(--panel); border-radius: 0 10px 10px 0; color: var(--muted); font-size: 14px; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  @media (max-width: 760px) {
+    nav a:not(.gh) { display: none; }
+    .hero { padding: 56px 0 32px; }
+    .tour figure, .tour figure:nth-child(even) { grid-template-columns: 1fr; gap: 16px; }
+    .tour figure:nth-child(even) figcaption { order: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      SHIELDIQ
+    </a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#tour">Tour</a>
+      <a href="#run">Run it</a>
+      <a class="gh" href="https://github.com/de-ansh/sheildIq">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="eyebrow">Actuarial intelligence for families</div>
+    <h1>Know exactly how much insurance your family needs.</h1>
+    <p class="lede">ShieldIQ takes a household's income, loans, dependents and existing cover, and works out the life, health,
+      critical-illness and accident cover it needs, what the gaps cost to close, and which plan types fit. Insurers are
+      compared on official IRDAI claim and service records.</p>
+    <div class="btns">
+      <a class="btn primary" href="https://github.com/de-ansh/sheildIq">View on GitHub</a>
+      <a class="btn" href="#run">Run it locally</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="shot"><img src="screens/dashboard.jpg" alt="ShieldIQ dashboard showing life cover need, coverage gap, current cover, risk score and recommended plans" width="1800" height="1125"></div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>What it does</h2>
+      <p class="sub">One profile, every protection question answered with numbers you can check.</p>
+      <div class="grid">
+        <div class="card"><h3>Coverage gap analysis</h3><p>Life cover need from income replacement, loans and education goals, minus savings, against what you already hold.</p></div>
+        <div class="card"><h3>Plan options, priced</h3><p>Four ways to buy each type of cover, estimated for your age, city and lifestyle, with the best fit highlighted.</p></div>
+        <div class="card"><h3>Insurer ranking</h3><p>Three years of IRDAI claim settlement, speed, complaints and solvency, weighted for your household.</p></div>
+        <div class="card"><h3>Risk simulator</h3><p>Stress-test early death, critical illness and disability, and see when the money runs out.</p></div>
+        <div class="card"><h3>Family &amp; health planning</h3><p>Per-member cover for partners, children and parents, health conditions, and tax savings under both regimes.</p></div>
+        <div class="card"><h3>AI explanations</h3><p>Optional Gemini or OpenAI assistant that explains results, answers questions and reads policy PDFs.</p></div>
+        <div class="card"><h3>English &amp; हिंदी</h3><p>Full Hindi localisation, light and dark themes, and WCAG 2 AA accessibility from 320px to 2560px.</p></div>
+        <div class="card"><h3>Saved plans</h3><p>Save strategies, compare variants, print a summary or export to CSV.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tour">
+    <div class="wrap">
+      <h2>A quick tour</h2>
+      <p class="sub">Screens from the running app, signed in as the demo household.</p>
+      <div class="tour">
+        <figure>
+          <figcaption><h3>Compare plan options</h3><p>Term, health, critical illness and accident cover, each with four plan structures, priced and explained, sized to your gap.</p></figcaption>
+          <div class="shot"><img src="screens/compare.jpg" alt="Plan comparison screen with four term life options" loading="lazy" width="1800" height="1125"></div>
+        </figure>
+        <figure>
+          <figcaption><h3>Simulate the worst case</h3><p>Adjust treatment cost, recovery time and inflation, and see how long the payout lasts against your current and recommended plans.</p></figcaption>
+          <div class="shot"><img src="screens/risk.jpg" alt="Risk simulator showing a critical illness scenario" loading="lazy" width="1800" height="1125"></div>
+        </figure>
+        <figure>
+          <figcaption><h3>See the full analysis</h3><p>Where every rupee of the recommended cover comes from, and how it compares with what you hold today.</p></figcaption>
+          <div class="shot"><img src="screens/analysis.jpg" alt="Coverage analysis screen" loading="lazy" width="1800" height="1125"></div>
+        </figure>
+        <figure>
+          <figcaption><h3>Plan for the whole family</h3><p>Each member's need on its own card, with existing policies alongside.</p></figcaption>
+          <div class="shot"><img src="screens/family.jpg" alt="Family plan screen with a card per member" loading="lazy" width="1800" height="1125"></div>
+        </figure>
+        <figure>
+          <figcaption><h3>Health cover that fits your city</h3><p>Base and super top-up cover sized for family size, city tier and health conditions.</p></figcaption>
+          <div class="shot"><img src="screens/health.jpg" alt="Health coverage planner" loading="lazy" width="1800" height="1125"></div>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="run">
+    <div class="wrap">
+      <h2>Run it locally</h2>
+      <p class="sub">Needs Node 22, pnpm 10 (<code>corepack enable</code>). No database setup: an embedded Postgres is used when <code>DATABASE_URL</code> is unset.</p>
+<pre><code>git clone https://github.com/de-ansh/sheildIq.git && cd sheildIq
+cd backend && pnpm install && pnpm dev    # API on :5001
+cd ../frontend && pnpm install && pnpm dev # app on http://localhost:5173</code></pre>
+      <p class="sub">Sign in with the one-click demo button, or <code>alex.vance@shieldiq.internal</code> / <code>Password123!</code>.
+        Add <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> to <code>backend/.env</code> for AI features.
+        Docker, deployment and configuration are covered in the <a href="https://github.com/de-ansh/sheildIq#readme">README</a>.</p>
+      <div class="stack">
+        <span>React 19</span><span>Vite</span><span>Tailwind</span><span>Express</span><span>TypeScript</span><span>Postgres / PGlite</span><span>Playwright</span><span>Vitest</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="note">Figures are guidance, not regulated financial advice. Premiums are ShieldIQ estimates, not insurer quotes.
+        Insurer records come from the IRDAI Handbook on Indian Insurance Statistics and Annual Report, FY 2024-25.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>ShieldIQ</span>
+    <a href="https://github.com/de-ansh/sheildIq">github.com/de-ansh/sheildIq</a>
+  </div>
+</footer>
+</body>
+</html>
