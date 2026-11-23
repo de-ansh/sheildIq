@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { SavedPlansView } from '../SavedPlansView';
 import { AppContextProvider } from '@/lib/AppContext';
@@ -13,7 +13,7 @@ const plan = (id: string, name: string, status: SavedPlan['status'] = 'Adequate'
 const loggedIn = (plans: SavedPlan[]) =>
   mockApi({
     '/health': { status: 'UP' },
-    '/user/profile': { success: true, user: { name: 'Priya Sharma', email: 'p@example.com', onboardingCompleted: false } },
+    '/auth/session': { success: true, user: { name: 'Priya Sharma', email: 'p@example.com', onboardingCompleted: false } },
     '/policies': { success: true, data: [] },
     '/plans': { success: true, data: plans },
   });
@@ -26,9 +26,9 @@ describe('SavedPlansView Component', () => {
     render(<AppContextProvider><SavedPlansView /></AppContextProvider>);
 
     expect(screen.getByText(/Saved Plans & Reports/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Most Recent/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Family Term Plan/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/₹1.50 Cr/).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Family Term Plan')).toBeInTheDocument();
+    expect(screen.getByText('Gap Detected')).toBeInTheDocument();
+    expect(screen.getAllByText(/₹1.50 Cr/)).toHaveLength(2);
   });
 
   it('shows how the score and gaps changed between saved plans', async () => {
@@ -44,16 +44,6 @@ describe('SavedPlansView Component', () => {
     expect(rows[0].textContent).toContain('First plan');
     expect(rows[1].textContent).toContain('After buying term');
     expect(rows[1].textContent).toContain('▲ 32');
-  });
-
-  it('filters plans by search text', async () => {
-    loggedIn([plan('SIQ-1', 'Family Term Plan'), plan('SIQ-2', 'Disability Shield v2')]);
-    render(<AppContextProvider><SavedPlansView /></AppContextProvider>);
-    await screen.findByText(/Most Recent/i);
-
-    fireEvent.change(screen.getByPlaceholderText(/Search plans or IDs.../i), { target: { value: 'Disability' } });
-    expect(screen.getByText(/Disability Shield v2/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Family Term Plan/i)).toHaveLength(1); // only the "Most Recent" card, not the table row
   });
 
   it('exports CSV with quoting and formula-injection protection', () => {

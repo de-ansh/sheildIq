@@ -135,8 +135,12 @@ describe('Auth, profile and saved plans', () => {
 
     expect((await request(app).put('/api/v1/user/profile').set(auth).send({ age: 5 })).status).toBe(400);
 
+    expect((await request(app).get('/api/v1/auth/session').set(auth)).body.user.email).toBe(onboard.body.user.email);
     await request(app).post('/api/v1/auth/logout').set(auth);
     expect((await request(app).get('/api/v1/user/profile').set(auth)).status).toBe(401);
+    const signedOut = await request(app).get('/api/v1/auth/session').set(auth);
+    expect(signedOut.status).toBe(200);
+    expect(signedOut.body.user).toBeNull();
   });
 
   it('scopes saved plans to their owner', async () => {
@@ -147,7 +151,7 @@ describe('Auth, profile and saved plans', () => {
     const otherAuth = sessionCookie(other);
 
     const list = await request(app).get('/api/v1/plans').set(alex);
-    expect(list.body.data.length).toBe(5);
+    expect(list.body.data).toEqual([]); // the demo account starts with no saved plans
 
     const created = await request(app)
       .post('/api/v1/plans')
@@ -163,7 +167,6 @@ describe('Auth, profile and saved plans', () => {
     expect(strategy.score).toBeLessThan(100);
     const listed = (await request(app).get('/api/v1/plans').set(alex)).body.data;
     expect(listed[0]).toMatchObject({ id, snapshot: created.body.data.snapshot });
-    expect(listed.at(-1).snapshot).toBeNull(); // seeded plans predate snapshots
 
     expect((await request(app).get('/api/v1/plans').set(otherAuth)).body.data).toEqual([]);
     expect((await request(app).delete(`/api/v1/plans/${id}`).set(otherAuth)).status).toBe(404);

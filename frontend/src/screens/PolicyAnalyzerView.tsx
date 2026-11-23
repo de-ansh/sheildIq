@@ -8,16 +8,9 @@ import { FileSearch, Upload, Loader2, AlertTriangle, ShieldCheck, Clock, Ban, Ga
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, type PolicyAnalysis, type PolicyFit } from '@/lib/api';
 import { formatINR, providerLabel } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
 const MAX_BYTES = 4 * 1024 * 1024; // must match the server's MAX_PDF_BYTES
-const TYPE_LABEL: Record<PolicyAnalysis['policyType'], string> = {
-    term_life: 'Term Life',
-    health: 'Health',
-    critical_illness: 'Critical Illness',
-    personal_accident: 'Personal Accident',
-    savings_or_ulip: 'Savings / ULIP',
-    other: 'Other',
-};
 
 const readAsBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -29,6 +22,7 @@ const readAsBase64 = (file: File) =>
 
 export const PolicyAnalyzerView: React.FC = () => {
     const { aiProvider, user, updateUserProfile, setCurrentScreen } = useApp();
+    const { t, tServer } = useI18n();
     const fileRef = useRef<HTMLInputElement>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -44,11 +38,11 @@ export const PolicyAnalyzerView: React.FC = () => {
         setAddMessage(null);
         setConfirmNew(false);
         if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-            setError('Please choose a PDF file.');
+            setError(t('pa.notPdf'));
             return;
         }
         if (file.size > MAX_BYTES) {
-            setError('That PDF is larger than 4 MB. Upload the policy schedule pages only.');
+            setError(t('pa.tooBig'));
             return;
         }
         setFileName(file.name);
@@ -56,9 +50,9 @@ export const PolicyAnalyzerView: React.FC = () => {
         try {
             const res = await ShieldIQApi.analyzePolicy(file.name.toLowerCase().endsWith('.pdf') ? file.name : `${file.name}.pdf`, await readAsBase64(file));
             if (res && res.success) setResult({ analysis: res.analysis, fit: res.fit });
-            else setError(res?.error || 'Could not read this policy. Please try again.');
+            else setError(tServer(res?.error) ?? t('pa.readError'));
         } catch {
-            setError('Could not read that file from your device.');
+            setError(t('pa.fileError'));
         } finally {
             setIsLoading(false);
             if (fileRef.current) fileRef.current.value = '';
@@ -72,41 +66,40 @@ export const PolicyAnalyzerView: React.FC = () => {
             ? { existingLifeCover: user.existingLifeCover + amount }
             : { existingHealthCover: user.existingHealthCover + amount };
         const err = await updateUserProfile(update);
-        setAddMessage(err ?? `Added ${formatINR(amount)} to your ${result.fit.category} cover. Your strategy has been recalculated.`);
+        setAddMessage(tServer(err) ?? t('pa.added', { amount: formatINR(amount), category: t(`pa.cat.${result.fit.category}`) }));
     };
 
     const a = result?.analysis;
     const sections = a
         ? [
-            { title: 'Key Benefits', items: a.keyBenefits, icon: ShieldCheck, tone: 'text-emerald-700 dark:text-emerald-400' },
-            { title: 'Waiting Periods', items: a.waitingPeriods, icon: Clock, tone: 'text-blue-600' },
-            { title: 'Sub-limits & Co-pays', items: a.subLimits, icon: Gauge, tone: 'text-amber-700 dark:text-amber-400' },
-            { title: 'Exclusions', items: a.exclusions, icon: Ban, tone: 'text-slate-500' },
+            { title: t('pa.benefits'), items: a.keyBenefits, icon: ShieldCheck, tone: 'text-emerald-700 dark:text-emerald-400' },
+            { title: t('pa.waiting'), items: a.waitingPeriods, icon: Clock, tone: 'text-blue-600' },
+            { title: t('pa.subLimits'), items: a.subLimits, icon: Gauge, tone: 'text-amber-700 dark:text-amber-400' },
+            { title: t('pa.exclusions'), items: a.exclusions, icon: Ban, tone: 'text-slate-500' },
         ]
         : [];
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
             <header className="space-y-2">
-                <Badge variant="outline" className="text-[10px] font-mono border-blue-500/30 text-blue-600 bg-blue-50 dark:bg-blue-950/30">AI Policy Scan</Badge>
-                <h1 className="text-4xl font-black tracking-tight">Policy Analyzer</h1>
+                <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-600 bg-blue-50 dark:bg-blue-950/30">{t('pa.badge')}</Badge>
+                <h1 className="text-4xl font-black tracking-tight">{t('pa.title')}</h1>
                 <p className="text-muted-foreground text-lg max-w-2xl">
-                    Upload a policy document or schedule. ShieldIQ pulls out what it really covers, the fine print that causes claim rejections, and how it fits your gaps.
+                    {t('pa.subtitle')}
                 </p>
             </header>
 
             {!aiProvider ? (
-                <Card className="p-8 text-sm text-muted-foreground">AI features are not configured on this server.</Card>
+                <Card className="p-8 text-sm text-muted-foreground">{t('pa.noAi')}</Card>
             ) : (
                 <Card className="p-8 border-dashed border-2 border-border">
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex items-start gap-4">
                             <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600"><FileSearch className="w-6 h-6" /></div>
                             <div className="space-y-1">
-                                <p className="font-bold">{fileName ?? 'Choose a policy PDF (up to 4 MB)'}</p>
+                                <p className="font-bold">{fileName ?? t('pa.choose')}</p>
                                 <p className="text-xs text-muted-foreground max-w-xl">
-                                    The document, which may include your name and policy number, is sent to {providerLabel(aiProvider)} to be read, with provider storage turned off.
-                                    ShieldIQ does not keep the file.
+                                    {t('pa.privacy', { provider: providerLabel(aiProvider) })}
                                 </p>
                             </div>
                         </div>
@@ -121,7 +114,7 @@ export const PolicyAnalyzerView: React.FC = () => {
                         <Button asChild disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 font-bold shrink-0 text-white">
                             <label htmlFor="policy-file" className="cursor-pointer">
                                 {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                                {isLoading ? 'Reading policy…' : fileName ? 'Analyze Another' : 'Upload Policy'}
+                                {t(isLoading ? 'pa.reading' : fileName ? 'pa.another' : 'pa.upload')}
                             </label>
                         </Button>
                     </div>
@@ -131,7 +124,7 @@ export const PolicyAnalyzerView: React.FC = () => {
 
             {a && !a.isInsurancePolicy && (
                 <Card className="p-6 flex items-center gap-3 text-sm">
-                    <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400" /> This document doesn't look like an insurance policy. Try the policy schedule or wording PDF.
+                    <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400" /> {t('pa.notPolicy')}
                 </Card>
             )}
 
@@ -141,19 +134,19 @@ export const PolicyAnalyzerView: React.FC = () => {
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <Badge className="bg-blue-600 text-white border-none text-[10px]">{TYPE_LABEL[a.policyType]}</Badge>
+                                    <Badge className="bg-blue-600 text-white border-none text-xs">{t(`planType.${a.policyType}`)}</Badge>
                                     {a.insurer && <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{a.insurer}</span>}
                                 </div>
-                                <h2 className="text-2xl font-black tracking-tight">{a.policyName ?? 'Insurance Policy'}</h2>
+                                <h2 className="text-2xl font-black tracking-tight">{a.policyName ?? t('pa.policyFallback')}</h2>
                             </div>
                             <div className="grid grid-cols-3 gap-6 font-mono text-right">
                                 {[
-                                    { label: 'Sum Assured', value: a.sumAssured !== null ? formatINR(a.sumAssured) : '—' },
-                                    { label: 'Premium / yr', value: a.annualPremium !== null ? formatINR(a.annualPremium) : '—' },
-                                    { label: 'Term', value: a.policyTermYears !== null ? `${a.policyTermYears} yr` : '—' },
+                                    { label: t('pa.sumAssured'), value: a.sumAssured !== null ? formatINR(a.sumAssured) : '—' },
+                                    { label: t('pa.premium'), value: a.annualPremium !== null ? formatINR(a.annualPremium) : '—' },
+                                    { label: t('pa.term'), value: a.policyTermYears !== null ? t('pa.years', { years: a.policyTermYears }) : '—' },
                                 ].map(f => (
                                     <div key={f.label}>
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{f.label}</p>
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{f.label}</p>
                                         <p className="text-lg font-black">{f.value}</p>
                                     </div>
                                 ))}
@@ -164,7 +157,7 @@ export const PolicyAnalyzerView: React.FC = () => {
 
                     {result.fit && (
                         <Card className="p-8 space-y-4 border-blue-500/30">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-blue-600">Fit With Your Gaps</h3>
+                            <h3 className="text-sm font-black tracking-widest text-blue-600">{t('pa.fit')}</h3>
                             <p className="text-sm">{result.fit.summary}</p>
                             <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
                                 <div className="h-full bg-blue-600 rounded-full" style={{ width: `${result.fit.coversPct}%` }} />
@@ -174,18 +167,18 @@ export const PolicyAnalyzerView: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <Checkbox id="confirm-new-policy" checked={confirmNew} onCheckedChange={c => setConfirmNew(!!c)} />
                                         <Label htmlFor="confirm-new-policy" className="text-xs">
-                                            I hold this policy and it isn't already included in my declared {result.fit.category} cover ({formatINR(result.fit.category === 'life' ? user.existingLifeCover : user.existingHealthCover)}).
+                                            {t('pa.confirm', { category: t(`pa.cat.${result.fit.category}`), amount: formatINR(result.fit.category === 'life' ? user.existingLifeCover : user.existingHealthCover) })}
                                         </Label>
                                     </div>
                                     <Button onClick={addToCover} disabled={!confirmNew} variant="outline" className="font-bold shrink-0">
-                                        <Plus className="w-4 h-4 mr-2" /> Add {formatINR(a.sumAssured)} to My Cover
+                                        <Plus className="w-4 h-4 mr-2" /> {t('pa.add', { amount: formatINR(a.sumAssured) })}
                                     </Button>
                                 </div>
                             )}
                             {addMessage && (
                                 <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                                     <CheckCircle2 className="w-4 h-4" /> {addMessage}
-                                    <Button variant="link" size="sm" onClick={() => setCurrentScreen('dashboard')}>View dashboard</Button>
+                                    <Button variant="link" size="sm" onClick={() => setCurrentScreen('dashboard')}>{t('pa.viewDashboard')}</Button>
                                 </p>
                             )}
                         </Card>
@@ -193,8 +186,8 @@ export const PolicyAnalyzerView: React.FC = () => {
 
                     {a.redFlags.length > 0 && (
                         <Card className="p-8 space-y-3 border-red-500/30 bg-red-50/40 dark:bg-red-950/10">
-                            <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-red-600">
-                                <AlertTriangle className="w-4 h-4" /> Red Flags
+                            <h3 className="flex items-center gap-2 text-sm font-black tracking-widest text-red-600">
+                                <AlertTriangle className="w-4 h-4" /> {t('pa.redFlags')}
                             </h3>
                             <ul className="space-y-2">
                                 {a.redFlags.map(f => <li key={f} className="text-sm leading-relaxed">• {f}</li>)}
@@ -205,11 +198,11 @@ export const PolicyAnalyzerView: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sections.map(sec => (
                             <Card key={sec.title} className="p-6 space-y-3">
-                                <h3 className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest ${sec.tone}`}>
+                                <h3 className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${sec.tone}`}>
                                     <sec.icon className="w-4 h-4" /> {sec.title}
                                 </h3>
                                 {sec.items.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground">None found in this document.</p>
+                                    <p className="text-xs text-muted-foreground">{t('pa.none')}</p>
                                 ) : (
                                     <ul className="space-y-1.5">
                                         {sec.items.map(item => <li key={item} className="text-xs text-muted-foreground leading-relaxed">• {item}</li>)}
@@ -218,8 +211,8 @@ export const PolicyAnalyzerView: React.FC = () => {
                             </Card>
                         ))}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
-                        AI-extracted summary. Always confirm terms against the insurer's policy wording before relying on them.
+                    <p className="text-xs text-muted-foreground">
+                        {t('pa.footer')}
                     </p>
                 </div>
             )}

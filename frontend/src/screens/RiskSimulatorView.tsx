@@ -18,6 +18,7 @@ import { ShieldIQApi, RiskSimResult } from '@/lib/api';
 import { useApp } from '@/lib/AppContext';
 import { formatINR } from '@/lib/utils';
 import { ExplainResult } from '@/components/ExplainResult';
+import { useI18n } from '@/lib/i18n';
 
 type Scenario = "death" | "illness" | "disability";
 const LIFESTYLE_SCALES: Record<string, number> = {
@@ -28,6 +29,7 @@ const LIFESTYLE_SCALES: Record<string, number> = {
 
 export const RiskSimulatorView: React.FC = () => {
     const { user, setCurrentScreen } = useApp();
+    const { t, tServer } = useI18n();
 
     const [scenario, setScenario] = useState<Scenario>("illness");
     const [cost, setCost] = useState<number[]>([1500000]);
@@ -63,12 +65,12 @@ export const RiskSimulatorView: React.FC = () => {
                 setSimResult(res.data);
                 setSimError(null);
             } else {
-                setSimError(res?.error || 'Cannot reach the simulation engine. Check your connection and try again.');
+                setSimError(tServer(res?.error) ?? t('rs.engineError'));
             }
         } finally {
             setIsCalculating(false);
         }
-    }, [scenario, cost, years, inflation, existingCoverTotal, user.age, user.income, monthlyExpenses]);
+    }, [scenario, cost, years, inflation, existingCoverTotal, user.age, user.income, monthlyExpenses, t, tServer]);
 
     useEffect(() => {
         const timer = setTimeout(runSimulation, 200);
@@ -88,13 +90,7 @@ export const RiskSimulatorView: React.FC = () => {
     const recommendedPath = `M${pt(0, recommendedCorpus)} L${pt(recommendedYears, 0)}`;
     const ageTicks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(user.age + f * chartYears));
 
-    const scenarioLabels = {
-        death: "Early Death Event",
-        illness: "Critical Illness",
-        disability: "Total Disability",
-    };
 
-    const userInitials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
@@ -105,21 +101,21 @@ export const RiskSimulatorView: React.FC = () => {
                         <Activity className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-foreground text-lg font-black tracking-tight uppercase leading-none">Risk Simulator</h2>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Actuarial Stress-Testing Engine</span>
+                        <h1 className="text-foreground text-lg font-black tracking-tight leading-none">{t('rs.title')}</h1>
+                        <span className="text-xs text-muted-foreground font-medium">{t('rs.subtitle')}</span>
                     </div>
                 </div>
 
                 <nav className="flex flex-wrap items-center bg-muted p-1 rounded-xl">
                     {[
-                        { id: "death", label: "Early Death", icon: Skull },
-                        { id: "illness", label: "Critical Illness", icon: Stethoscope },
-                        { id: "disability", label: "Total Disability", icon: Accessibility }
+                        { id: "death", label: t('rs.tab.death'), icon: Skull },
+                        { id: "illness", label: t('rs.event.illness'), icon: Stethoscope },
+                        { id: "disability", label: t('rs.event.disability'), icon: Accessibility }
                     ].map(s => (
                         <button
                             key={s.id}
                             onClick={() => setScenario(s.id as Scenario)}
-                            className={`flex items-center gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs font-black transition-all uppercase tracking-widest ${scenario === s.id ? "bg-background shadow-sm text-blue-600" : "text-muted-foreground hover:bg-background/50"}`}
+                            className={`flex items-center gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-widest ${scenario === s.id ? "bg-background shadow-sm text-blue-600" : "text-muted-foreground hover:bg-background/50"}`}
                         >
                             <s.icon className="w-4 h-4" />
                             {s.label}
@@ -127,28 +123,23 @@ export const RiskSimulatorView: React.FC = () => {
                     ))}
                 </nav>
 
-                <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-600/30 overflow-hidden font-black text-blue-700 dark:text-blue-400 flex items-center justify-center text-xs">
-                        {userInitials}
-                    </div>
-                </div>
-            </header>
+</header>
 
             <main className="flex-1 flex flex-col lg:flex-row">
                 {/* Left Sidebar - Controls */}
                 <aside className="w-full lg:w-80 border-r border-border bg-card p-8 space-y-10 overflow-y-auto">
                     <div className="space-y-2">
-                        <h3 className="font-black text-foreground uppercase tracking-tight">Stress Test Controls</h3>
-                        <p className="text-xs text-muted-foreground font-medium tracking-tight">Adjust event severity parameters.</p>
+                        <h3 className="font-black text-foreground tracking-tight">{t('rs.controls')}</h3>
+                        <p className="text-xs text-muted-foreground font-medium tracking-tight">{t('rs.controlsSub')}</p>
                     </div>
 
                     <div className="space-y-10">
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                <Label>{scenario === 'death' ? 'Final Expenses (Immediate)' : 'Treatment Cost (Total)'}</Label>
+                            <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                <Label>{t(scenario === 'death' ? 'rs.finalExpenses' : 'rs.treatment')}</Label>
                                 <span className="text-blue-600 font-mono font-bold">{formatINR(cost[0])}</span>
                             </div>
-                            <Slider aria-label={scenario === 'death' ? 'Final expenses' : 'Treatment cost'}
+                            <Slider aria-label={t(scenario === 'death' ? 'rs.finalExpenses' : 'rs.treatment')}
                                 value={cost}
                                 onValueChange={setCost}
                                 max={5000000}
@@ -159,16 +150,16 @@ export const RiskSimulatorView: React.FC = () => {
 
                         {scenario !== 'death' && (
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                <Label>Recovery Window</Label>
-                                <span className="text-blue-600 font-mono font-bold">{years} Years</span>
+                            <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                <Label>{t('rs.recovery')}</Label>
+                                <span className="text-blue-600 font-mono font-bold">{t('rs.yearsValue', { years })}</span>
                             </div>
                             <div className="grid grid-cols-5 gap-2">
                                 {[1, 2, 5, 8, 10].map(yr => (
                                     <button
                                         key={yr}
                                         onClick={() => setYears(yr)}
-                                        className={`py-2 rounded-lg font-black text-[10px] border transition-all ${years === yr ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-muted/30 border-border text-muted-foreground hover:border-blue-200"}`}
+                                        className={`py-2 rounded-lg font-bold text-xs border transition-all ${years === yr ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-muted/30 border-border text-muted-foreground hover:border-blue-200"}`}
                                     >
                                         {yr}
                                     </button>
@@ -178,11 +169,11 @@ export const RiskSimulatorView: React.FC = () => {
                         )}
 
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                <Label>Medical Inflation</Label>
+                            <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                <Label>{t('rs.medInflation')}</Label>
                                 <span className="text-blue-600 font-mono font-bold">{inflation[0].toFixed(1)}%</span>
                             </div>
-                            <Slider aria-label="Medical inflation"
+                            <Slider aria-label={t('rs.medInflation')}
                                 value={inflation}
                                 onValueChange={setInflation}
                                 max={15}
@@ -192,26 +183,24 @@ export const RiskSimulatorView: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <Label htmlFor="lifestyle-scale-select" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Lifestyle Scaling</Label>
+                            <Label htmlFor="lifestyle-scale-select" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('rs.lifestyle')}</Label>
                             <select
                                 id="lifestyle-scale-select"
                                 value={lifestyleScale}
                                 onChange={(e) => setLifestyleScale(e.target.value)}
                                 className="w-full bg-muted/30 border border-input rounded-lg text-xs font-bold py-2.5 px-3"
                             >
-                                <option>Maintain Current Standard</option>
-                                <option>Optimized (-10%)</option>
-                                <option>Basic Survival (-25%)</option>
+                                {Object.keys(LIFESTYLE_SCALES).map(k => <option key={k} value={k}>{t(`rs.lifestyle.${k}` as Parameters<typeof t>[0])}</option>)}
                             </select>
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                                Household spend after the event: {formatINR(monthlyExpenses)}/month
-                                {user.monthlyExpenses === 0 && ' (add monthly expenses in onboarding for a runway estimate)'}
+                            <p className="text-xs text-muted-foreground font-medium">
+                                {t('rs.spend', { amount: formatINR(monthlyExpenses) })}
+                                {user.monthlyExpenses === 0 && t('rs.spendHint')}
                             </p>
                         </div>
 
-                        <div className="p-3 rounded-lg bg-muted/40 border border-border text-[10px] font-bold text-muted-foreground uppercase tracking-widest space-y-1">
-                            <p>Age {user.age} · Income {formatINR(user.income)}/yr</p>
-                            <p>Cover that pays out: <span className="text-foreground">{formatINR(existingCoverTotal)}</span></p>
+                        <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs font-bold text-muted-foreground uppercase tracking-widest space-y-1">
+                            <p>{t('rs.ageIncome', { age: user.age, income: formatINR(user.income) })}</p>
+                            <p>{t('rs.coverPays')} <span className="text-foreground">{formatINR(existingCoverTotal)}</span></p>
                         </div>
                     </div>
 
@@ -219,17 +208,17 @@ export const RiskSimulatorView: React.FC = () => {
                         <Button
                             onClick={runSimulation}
                             disabled={isCalculating}
-                            className="w-full bg-slate-900 border-none dark:bg-slate-700 py-6 font-black uppercase tracking-widest text-[10px] text-white"
+                            className="w-full bg-slate-900 border-none dark:bg-slate-700 py-6 font-bold uppercase tracking-widest text-xs text-white"
                         >
                             {isCalculating ? (
                                 <span className="flex items-center gap-2">
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Recalculating...
+                                    {t('rs.recalculating')}
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-2">
                                     <RefreshCw className="w-4 h-4" />
-                                    Recalculate Model
+                                    {t('rs.recalculate')}
                                 </span>
                             )}
                         </Button>
@@ -237,35 +226,38 @@ export const RiskSimulatorView: React.FC = () => {
                 </aside>
 
                 {/* Main Simulation View */}
-                <div className="flex-1 p-8 lg:p-12 overflow-y-auto space-y-8 pb-32">
+                <div className="flex-1 p-8 lg:p-12 overflow-y-auto space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <Card className="md:col-span-2 border-border shadow-sm overflow-hidden">
                             <CardContent className="p-8 flex flex-col md:flex-row justify-between items-center gap-8 group hover:border-blue-200 dark:hover:border-blue-800 transition-all">
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Payout Runs Out At</p>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('rs.lasts')}</p>
                                     <h3 className="text-6xl font-black text-red-600 dark:text-red-400 font-mono tracking-tighter">
-                                        {simResult ? simResult.depletionAge : '—'}
-                                        <span className="text-lg font-bold text-muted-foreground ml-2 uppercase tracking-widest">Years Old</span>
+                                        {simResult ? simResult.yearsFunded : '—'}
+                                        <span className="text-lg font-bold text-muted-foreground ml-2 uppercase tracking-widest">{t(simResult?.yearsFunded === 1 ? 'rs.year' : 'rs.years')}</span>
                                     </h3>
+                                    {simResult && simResult.yearsFunded > 0 && (
+                                        <p className="text-xs font-bold text-muted-foreground">{t('rs.runsOut', { age: simResult.depletionAge })}</p>
+                                    )}
                                     <p className="text-xs text-muted-foreground font-medium italic">
                                         {!simResult
-                                            ? 'Running simulation…'
+                                            ? t('rs.running')
                                             : scenario === 'illness'
-                                                ? 'Health insurance pays hospital bills only. Living costs during recovery must come from savings or critical illness cover.'
+                                                ? t('rs.illnessNote')
                                                 : simResult.yearsFunded > 0
-                                                    ? `Current cover funds the household for ${simResult.yearsFunded} years after the event.`
-                                                    : 'Current cover is used up by the event itself, leaving nothing for living costs.'}
+                                                    ? t('rs.funds', { years: simResult.yearsFunded })
+                                                    : t('rs.usedUp')}
                                     </p>
                                     {simError && <p role="alert" className="text-xs font-medium text-red-600">{simError}</p>}
                                 </div>
                                 <div className="h-20 w-px bg-muted hidden md:block" />
                                 <div className="space-y-2 text-right">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Est. Funding Gap</p>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('rs.fundingGap')}</p>
                                     <h3 className="text-3xl font-black text-foreground font-mono tracking-tighter">
                                         {simResult ? formatINR(simResult.shortfallAmount) : '—'}
                                     </h3>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        {simResult ? `of ${formatINR(simResult.totalFinancialImpact)} total impact is not covered.` : ''}
+                                        {simResult ? t('rs.ofImpact', { amount: formatINR(simResult.totalFinancialImpact) }) : ''}
                                     </p>
                                 </div>
                             </CardContent>
@@ -298,8 +290,7 @@ export const RiskSimulatorView: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="font-black text-xs text-foreground uppercase tracking-tighter">Scenario Adequacy</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Share of impact covered</p>
+                                    <p className="font-bold text-xs text-foreground uppercase tracking-tighter">{t('rs.shareCovered')}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -308,17 +299,17 @@ export const RiskSimulatorView: React.FC = () => {
                     <Card className="p-8 space-y-10 border-border">
                         <div className="flex justify-between items-center">
                             <div className="space-y-1">
-                                <h4 className="text-lg font-black text-foreground uppercase tracking-tight">Financial Impact Timeline</h4>
-                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Payout left after treatment, spent at {formatINR(annualExpenses)} a year.</p>
+                                <h4 className="text-lg font-black text-foreground tracking-tight">{t('rs.timeline')}</h4>
+                                <p className="text-xs text-muted-foreground font-medium">{t('rs.timelineSub', { amount: formatINR(annualExpenses) })}</p>
                             </div>
                             <div className="flex gap-6">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-red-500" />
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Current Plan</span>
+                                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('rs.currentPlan')}{simResult?.yearsFunded === 0 ? t('rs.usedAtOnce') : ''}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-blue-600" />
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Recommended</span>
+                                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('rs.recommended')}</span>
                                 </div>
                             </div>
                         </div>
@@ -329,14 +320,14 @@ export const RiskSimulatorView: React.FC = () => {
                             </div>
                             {simResult && (
                             <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300" role="img"
-                                aria-label={`Current cover lasts ${simResult.yearsFunded} years; with the recommended cover it lasts ${recommendedYears.toFixed(1)} years`}>
+                                aria-label={t('rs.chartAria', { current: simResult.yearsFunded, recommended: recommendedYears.toFixed(1) })}>
                                 <path d={recommendedPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-blue-600" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                                 <path d={currentPath} fill="none" stroke="currentColor" strokeWidth="4" className="text-red-600 dark:text-red-400" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
                                 <line x1={(simResult.yearsFunded / chartYears) * 1000} y1="0" x2={(simResult.yearsFunded / chartYears) * 1000} y2="300" stroke="#ef4444" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
                             </svg>
                             )}
-                            <div className="flex justify-between pt-4 text-[9px] font-black text-muted-foreground uppercase tracking-widest">
-                                {ageTicks.map((a, i) => <span key={i}>Age {a}</span>)}
+                            <div className="flex justify-between pt-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                {ageTicks.map((a, i) => <span key={i}>{t('rs.ageTick', { age: a })}</span>)}
                             </div>
                         </div>
                     </Card>
@@ -348,19 +339,24 @@ export const RiskSimulatorView: React.FC = () => {
                         <div className="relative z-10 space-y-8">
                             <div className="flex items-center gap-3">
                                 <Zap className="w-6 h-6 text-blue-400" />
-                                <h4 className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">Actuarial Risk Narrative</h4>
+                                <h4 className="text-sm font-bold uppercase tracking-wider text-blue-400">{t('rs.narrative')}</h4>
                             </div>
                             <div className="max-w-4xl space-y-6">
-                                <p className="text-lg font-medium text-slate-300 leading-relaxed italic">
+                                <p className="text-lg font-medium text-slate-200 leading-relaxed">
                                     {simResult ? (
-                                        <>A <span className="text-white font-bold">{scenarioLabels[scenario]}</span> at age {user.age} costs about <span className="text-white font-bold">{formatINR(simResult.totalFinancialImpact)}</span>: {formatINR(simResult.treatmentCostTotal)} in {scenario === 'death' ? 'final expenses' : 'treatment'} and {formatINR(simResult.earningCapacityLoss)} of lost earnings. Your {formatINR(existingCoverTotal)} of cover absorbs {simResult.adequacyIndex}% of it{simResult.shortfallAmount > 0 ? <>, leaving a <span className="text-white font-bold underline decoration-red-500 underline-offset-8">{formatINR(simResult.shortfallAmount)}</span> gap</> : ''}.</>
-                                    ) : 'Running simulation…'}
+                                        t(simResult.shortfallAmount > 0 ? 'rs.storyGap' : 'rs.story', {
+                                            event: t(`rs.event.${scenario}`), age: user.age, total: formatINR(simResult.totalFinancialImpact),
+                                            cost: formatINR(simResult.treatmentCostTotal), costKind: t(scenario === 'death' ? 'rs.costFinal' : 'rs.costTreatment'),
+                                            lost: formatINR(simResult.earningCapacityLoss), cover: formatINR(existingCoverTotal), pct: simResult.adequacyIndex,
+                                            gap: formatINR(simResult.shortfallAmount),
+                                        })
+                                    ) : t('rs.running')}
                                 </p>
                                 <div className="flex items-center gap-2 text-blue-400">
                                     <TrendingDown className="w-4 h-4" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest">Recommended Strategic Shift:</p>
+                                    <p className="text-xs font-bold uppercase tracking-widest">{t('rs.shift')}</p>
                                 </div>
-                                <p className="text-sm text-slate-400 font-mono uppercase tracking-wider leading-relaxed">
+                                <p className="text-sm text-slate-300 leading-relaxed">
                                     {simResult?.recommendation}
                                 </p>
                             </div>
@@ -378,44 +374,26 @@ export const RiskSimulatorView: React.FC = () => {
                             <div className="flex gap-4 pt-4">
                                 <Button
                                     onClick={() => setCurrentScreen('calculator')}
-                                    className="bg-blue-600 hover:bg-blue-700 font-black px-10 py-6 uppercase tracking-widest text-[10px] text-white"
+                                    className="bg-blue-600 hover:bg-blue-700 font-bold px-10 py-6 uppercase tracking-widest text-xs text-white"
                                 >
-                                    Adjust Target Cover
+                                    {t('rs.adjust')}
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => setCurrentScreen('comparison')}
-                                    className="border-white/20 hover:bg-white/10 text-white font-black px-10 py-6 uppercase tracking-widest text-[10px]"
+                                    className="border-white/20 hover:bg-white/10 text-white font-bold px-10 py-6 uppercase tracking-widest text-xs"
                                 >
-                                    Compare Plans
+                                    {t('rs.comparePlans')}
                                 </Button>
                             </div>
+                            <p className="text-xs text-slate-400">
+                                {t('rs.assumptions', { inflation: inflation[0].toFixed(1) })}
+                            </p>
                         </div>
                     </Card>
                 </div>
             </main>
 
-            {/* Sticky Footer */}
-            <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border px-4 md:px-10 py-4 flex justify-between items-center gap-3 z-50">
-                <p className="hidden md:block text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">
-                    Indicative estimate · {inflation[0].toFixed(1)}% inflation + 3% medical premium · 8% return on payouts
-                </p>
-                <div className="flex gap-3 w-full md:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={() => setCurrentScreen('comparison')}
-                        className="flex-1 md:flex-none font-black h-10 px-3 md:px-8 uppercase md:tracking-widest text-[10px]"
-                    >
-                        Compare Variants
-                    </Button>
-                    <Button
-                        onClick={() => setCurrentScreen('calculator')}
-                        className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 font-black h-10 px-3 md:px-8 uppercase md:tracking-widest text-[10px] text-white"
-                    >
-                        Recalibrate Policy Gap
-                    </Button>
-                </div>
-            </footer>
         </div>
     );
 };

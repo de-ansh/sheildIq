@@ -5,18 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import {
-    Activity,
     GraduationCap,
     Home,
     Users,
     CheckCircle2,
     Settings2,
-    Download,
     ArrowRight
 } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi } from '@/lib/api';
 import { FamilyPlan } from '@/components/FamilyPlan';
+import { useI18n } from '@/lib/i18n';
 import { formatINR } from '@/lib/utils';
 import { EDUCATION_PER_CHILD, householdOf, inEducation } from '@/lib/household';
 
@@ -30,6 +29,7 @@ type Status = 'critical' | 'moderate' | 'normal' | 'surplus';
 
 export const DependencyModelingView: React.FC = () => {
     const { user, setCurrentScreen } = useApp();
+    const { t } = useI18n();
 
     const [inflationRate, setInflationRate] = useState<number[]>([6]);
     const [interestRate, setInterestRate] = useState<number[]>([8.5]);
@@ -109,89 +109,64 @@ export const DependencyModelingView: React.FC = () => {
 
     const coveredBadge = (amount: number) =>
         amount === 0
-            ? { text: 'Not needed', cls: 'bg-muted text-muted-foreground' }
+            ? { text: t('dm.notNeeded'), cls: 'bg-muted text-muted-foreground' }
             : cover >= projections.totalLifetimeLiability
-                ? { text: 'Covered by existing life cover', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' }
-                : { text: `Part of ${formatINR(projections.totalLifetimeLiability - cover)} total gap`, cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' };
+                ? { text: t('dm.coveredExisting'), cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' }
+                : { text: t('dm.partOfGap', { amount: formatINR(projections.totalLifetimeLiability - cover) }), cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400' };
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
             <FamilyPlan />
 
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                        <Badge variant="outline" className="text-[10px] font-mono border-blue-500/30 text-blue-600 bg-blue-50 dark:bg-blue-950/30">
-                            Based on your profile
-                        </Badge>
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tight text-foreground pt-6">If You Weren't There: Dependency Modeling</h2>
-                    <p className="text-muted-foreground text-sm font-medium">
-                        How {user.name}'s family obligations change from age {user.age} to retirement, against {formatINR(cover)} of life cover and savings.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={() => window.print()}
-                        className="font-bold border-border"
-                    >
-                        <Download className="w-4 h-4 mr-2" />
-                        Print Report
-                    </Button>
-                    <Button
-                        onClick={() => setCurrentScreen('calculator')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                    >
-                        <Activity className="w-4 h-4 mr-2" />
-                        Calibrate Target Cover
-                    </Button>
-                </div>
-            </div>
+            {/* Second half of the Family screen: a section, not a second page. */}
+            <section aria-labelledby="dependency-heading" className="space-y-1 pt-8 border-t border-border">
+                <h2 id="dependency-heading" className="text-2xl font-black tracking-tight text-foreground">{t('dm.title')}</h2>
+                <p className="text-muted-foreground text-sm font-medium">
+                    {t('dm.subtitle', { name: user.name, age: user.age, cover: formatINR(cover) })}
+                </p>
+            </section>
 
             {/* Key Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <Card className="border-border shadow-sm p-6">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Total Lifetime Liability
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        {t('dm.obligations')}
                     </span>
                     <div className="text-3xl font-black font-mono tracking-tight text-foreground mt-2">
                         {incomeReplacement === null ? '—' : formatINR(projections.totalLifetimeLiability)}
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-medium mt-2">
-                        If you died today: income replacement + loans + education
+                    <p className="text-xs text-muted-foreground font-medium mt-2">
+                        {t('dm.obligationsSub')}
                     </p>
                 </Card>
 
                 <Card className="border-border shadow-sm p-6">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Peak Pressure Year
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        {t('dm.peak')}
                     </span>
                     <div className={`text-3xl font-black font-mono tracking-tight mt-2 flex items-baseline gap-2 ${projections.peak.gap > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                        {projections.peak.gap > 0 ? projections.peak.year : 'None'}
+                        {projections.peak.gap > 0 ? projections.peak.year : t('dm.none')}
                         {projections.peak.gap > 0 && (
-                            <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-none text-[9px] font-bold uppercase tracking-wider">
-                                Age {projections.peak.age}
+                            <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-none text-xs font-bold uppercase tracking-wider">
+                                {t('dm.age', { age: projections.peak.age })}
                             </Badge>
                         )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-medium mt-2">
+                    <p className="text-xs text-muted-foreground font-medium mt-2">
                         {projections.peak.gap > 0
-                            ? `Largest shortfall: ${formatINR(projections.peak.gap)} more than your current cover.`
-                            : 'Your existing life cover exceeds obligations in every year.'}
+                            ? t('dm.peakGap', { amount: formatINR(projections.peak.gap) })
+                            : t('dm.peakNone')}
                     </p>
                 </Card>
 
                 <Card className="border-border shadow-sm p-6">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        Projected Inflation Index
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        {t('dm.inflation')}
                     </span>
                     <div className="text-3xl font-black font-mono tracking-tight text-blue-600 mt-2">
-                        {inflationRate[0].toFixed(1)}% <span className="text-sm font-sans font-bold text-muted-foreground">AVG</span>
+                        {inflationRate[0].toFixed(1)}%
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-medium mt-2">Applied to salary growth and education costs</p>
+                    <p className="text-xs text-muted-foreground font-medium mt-2">{t('dm.inflationSub')}</p>
                 </Card>
             </div>
 
@@ -199,25 +174,25 @@ export const DependencyModelingView: React.FC = () => {
             <Card className="border-border shadow-sm p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
-                        <CardTitle className="text-lg font-black uppercase tracking-tight">Dependency Heatmap</CardTitle>
+                        <CardTitle className="text-lg font-black tracking-tight">{t('dm.heatmap')}</CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">
-                            Obligations your family would face each year vs your {formatINR(cover)} of life cover and savings.
+                            {t('dm.heatmapSub', { cover: formatINR(cover) })}
                         </CardDescription>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             <span className="flex items-center gap-1">
-                                <span className="w-2.5 h-2.5 rounded bg-red-500" /> Critical
+                                <span className="w-2.5 h-2.5 rounded bg-red-500" /> {t('dm.legend.critical')}
                             </span>
                             <span className="flex items-center gap-1">
-                                <span className="w-2.5 h-2.5 rounded bg-amber-500" /> Standard
+                                <span className="w-2.5 h-2.5 rounded bg-amber-500" /> {t('dm.legend.standard')}
                             </span>
                             <span className="flex items-center gap-1">
-                                <span className="w-2.5 h-2.5 rounded bg-blue-500" /> Minimal
+                                <span className="w-2.5 h-2.5 rounded bg-blue-500" /> {t('dm.legend.minimal')}
                             </span>
                             <span className="flex items-center gap-1">
-                                <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> Surplus
+                                <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> {t('dm.legend.surplus')}
                             </span>
                         </div>
                     </div>
@@ -241,13 +216,13 @@ export const DependencyModelingView: React.FC = () => {
                                 >
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-xs font-mono font-black">{ms.year}</span>
+                                            <span className="text-xs font-mono font-bold">{ms.year}</span>
                                             {isPeak && (
                                                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                                             )}
                                         </div>
-                                        <p className="text-[11px] font-bold leading-tight line-clamp-2">
-                                            Age {ms.age} · {formatINR(ms.obligation)}
+                                        <p className="text-xs font-bold leading-tight line-clamp-2">
+                                            {t('dm.cell', { age: ms.age, amount: formatINR(ms.obligation) })}
                                         </p>
                                     </div>
 
@@ -258,8 +233,8 @@ export const DependencyModelingView: React.FC = () => {
                                                 style={{ width: `${load}%` }}
                                             />
                                         </div>
-                                        <span className="text-[9px] font-mono font-bold block text-right">
-                                            {ms.gap > 0 ? `Gap ${formatINR(ms.gap)}` : 'Covered'}
+                                        <span className="text-xs font-mono font-bold block text-right">
+                                            {ms.gap > 0 ? t('dm.cellGap', { amount: formatINR(ms.gap) }) : t('dm.covered')}
                                         </span>
                                     </div>
                                 </div>
@@ -274,11 +249,11 @@ export const DependencyModelingView: React.FC = () => {
                 {/* Goal-Based Coverage Cards */}
                 <div className="lg:col-span-7 space-y-4">
                     <div className="space-y-1">
-                        <h3 className="text-lg font-black uppercase tracking-tight text-foreground">
-                            Goal-Based Coverage Requirements
+                        <h3 className="text-lg font-black tracking-tight text-foreground">
+                            {t('dm.goals')}
                         </h3>
                         <p className="text-xs text-muted-foreground font-medium">
-                            Segmented capital reserves needed to safeguard all dependent commitments without asset liquidation.
+                            {t('dm.goalsSub')}
                         </p>
                     </div>
 
@@ -289,12 +264,12 @@ export const DependencyModelingView: React.FC = () => {
                                     <GraduationCap className="w-6 h-6" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="font-bold text-base text-foreground">Higher Education Fund</h4>
+                                    <h4 className="font-bold text-base text-foreground">{t('dm.education')}</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        {children} {children === 1 ? 'dependent' : 'dependents'} in education • {formatINR(EDUCATION_PER_CHILD * educationMultiplier[0])} each at today's cost, over {EDUCATION_WINDOW_YEARS} years
+                                        {t('dm.educationSub', { count: children === 1 ? t('dm.dependent') : t('dm.dependents', { n: children }), each: formatINR(EDUCATION_PER_CHILD * educationMultiplier[0]), years: EDUCATION_WINDOW_YEARS })}
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className={`${coveredBadge(projections.baseEducation).cls} border-none text-[10px] font-bold`}>
+                                        <Badge className={`${coveredBadge(projections.baseEducation).cls} border-none text-xs font-bold`}>
                                             {coveredBadge(projections.baseEducation).text}
                                         </Badge>
                                     </div>
@@ -304,8 +279,8 @@ export const DependencyModelingView: React.FC = () => {
                                 <span className="text-2xl font-black text-foreground">
                                     {formatINR(projections.baseEducation)}
                                 </span>
-                                <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
-                                    Today's Cost
+                                <p className="text-xs text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
+                                    {t('dm.todayCost')}
                                 </p>
                             </div>
                         </div>
@@ -318,12 +293,12 @@ export const DependencyModelingView: React.FC = () => {
                                     <Users className="w-6 h-6" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="font-bold text-base text-foreground">Spouse Income Replacement</h4>
+                                    <h4 className="font-bold text-base text-foreground">{t('dm.income')}</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        {startYear}–{startYear + workingYears} ({workingYears} years) • 70% of income replaced
+                                        {t('dm.incomeSub', { from: startYear, to: startYear + workingYears, years: workingYears })}
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className={`${coveredBadge(projections.baseIncome).cls} border-none text-[10px] font-bold`}>
+                                        <Badge className={`${coveredBadge(projections.baseIncome).cls} border-none text-xs font-bold`}>
                                             {coveredBadge(projections.baseIncome).text}
                                         </Badge>
                                     </div>
@@ -333,8 +308,8 @@ export const DependencyModelingView: React.FC = () => {
                                 <span className="text-2xl font-black text-foreground">
                                     {incomeReplacement === null ? '—' : formatINR(projections.baseIncome)}
                                 </span>
-                                <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
-                                    Net Present Value
+                                <p className="text-xs text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
+                                    {t('dm.npv')}
                                 </p>
                             </div>
                         </div>
@@ -347,12 +322,12 @@ export const DependencyModelingView: React.FC = () => {
                                     <Home className="w-6 h-6" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="font-bold text-base text-foreground">Debt & Mortgage Clearance</h4>
+                                    <h4 className="font-bold text-base text-foreground">{t('dm.debt')}</h4>
                                     <p className="text-xs text-muted-foreground font-medium">
-                                        Home {formatINR(user.homeLoan)} + other {formatINR(user.otherLoans)} • amortised over {loanTenure} years at {interestRate[0].toFixed(1)}%
+                                        {t('dm.debtSub', { home: formatINR(user.homeLoan), other: formatINR(user.otherLoans), years: loanTenure, rate: interestRate[0].toFixed(1) })}
                                     </p>
                                     <div className="flex items-center gap-2 pt-2">
-                                        <Badge className={`${coveredBadge(projections.baseLoans).cls} border-none text-[10px] font-bold`}>
+                                        <Badge className={`${coveredBadge(projections.baseLoans).cls} border-none text-xs font-bold`}>
                                             {coveredBadge(projections.baseLoans).text}
                                         </Badge>
                                     </div>
@@ -362,8 +337,8 @@ export const DependencyModelingView: React.FC = () => {
                                 <span className="text-2xl font-black text-foreground">
                                     {formatINR(projections.baseLoans)}
                                 </span>
-                                <p className="text-[10px] text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
-                                    Principal Outstanding
+                                <p className="text-xs text-muted-foreground font-sans uppercase tracking-wider mt-0.5">
+                                    {t('dm.principal')}
                                 </p>
                             </div>
                         </div>
@@ -375,27 +350,24 @@ export const DependencyModelingView: React.FC = () => {
                     <div className="flex items-center justify-between pb-4 border-b border-border">
                         <div className="flex items-center gap-2">
                             <Settings2 className="w-5 h-5 text-blue-600" />
-                            <CardTitle className="text-lg font-black uppercase tracking-tight">Scenario Assumptions</CardTitle>
+                            <CardTitle className="text-lg font-black tracking-tight">{t('dm.assumptions')}</CardTitle>
                         </div>
-                        <Badge variant="outline" className="text-[10px] font-mono">
-                            Interactive Stress
-                        </Badge>
                     </div>
 
                     <div className="space-y-6">
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-xs font-bold">
-                                <Label>Projected General Inflation</Label>
+                                <Label>{t('dm.generalInflation')}</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{inflationRate[0].toFixed(1)}%</span>
                             </div>
-                            <Slider aria-label="Projected general inflation"
+                            <Slider aria-label={t('dm.generalInflation')}
                                 value={inflationRate}
                                 onValueChange={setInflationRate}
                                 max={10}
                                 min={1}
                                 step={0.1}
                             />
-                            <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                            <div className="flex justify-between text-xs text-muted-foreground font-mono">
                                 <span>1.0%</span>
                                 <span>5.0%</span>
                                 <span>10.0%</span>
@@ -404,17 +376,17 @@ export const DependencyModelingView: React.FC = () => {
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-xs font-bold">
-                                <Label>Loan Interest Rate</Label>
+                                <Label>{t('dm.loanRate')}</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{interestRate[0].toFixed(1)}%</span>
                             </div>
-                            <Slider aria-label="Loan interest rate"
+                            <Slider aria-label={t('dm.loanRate')}
                                 value={interestRate}
                                 onValueChange={setInterestRate}
                                 max={12}
                                 min={2}
                                 step={0.2}
                             />
-                            <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                            <div className="flex justify-between text-xs text-muted-foreground font-mono">
                                 <span>2.0%</span>
                                 <span>7.0%</span>
                                 <span>12.0%</span>
@@ -423,17 +395,17 @@ export const DependencyModelingView: React.FC = () => {
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-xs font-bold">
-                                <Label>Education Cost Multiplier</Label>
+                                <Label>{t('dm.eduMultiplier')}</Label>
                                 <span className="text-blue-600 font-mono font-bold text-sm">{educationMultiplier[0].toFixed(2)}x</span>
                             </div>
-                            <Slider aria-label="Education cost multiplier"
+                            <Slider aria-label={t('dm.eduMultiplier')}
                                 value={educationMultiplier}
                                 onValueChange={setEducationMultiplier}
                                 max={2.5}
                                 min={1.0}
                                 step={0.05}
                             />
-                            <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                            <div className="flex justify-between text-xs text-muted-foreground font-mono">
                                 <span>1.00x</span>
                                 <span>1.75x</span>
                                 <span>2.50x</span>
@@ -444,11 +416,11 @@ export const DependencyModelingView: React.FC = () => {
                     <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 space-y-2">
                         <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
                             <CheckCircle2 className="w-4 h-4" />
-                            Updates as you move the sliders
+                            {t('dm.live')}
                         </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            Inflation drives salary growth and education costs; the interest rate sets how fast loans pay down.
-                            Education is spread over {EDUCATION_WINDOW_YEARS} years; loans run down over {loanTenure} years{user.homeLoanYearsLeft ? '' : ' (add the years left on your home loan in your profile)'}.
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                            {t('dm.liveBody', { eduYears: EDUCATION_WINDOW_YEARS, loanYears: loanTenure })}
+                            {user.homeLoanYearsLeft ? '' : t('dm.loanHint')}
                         </p>
                     </div>
 
@@ -456,7 +428,7 @@ export const DependencyModelingView: React.FC = () => {
                         onClick={() => setCurrentScreen('calculator')}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 group"
                     >
-                        Open Life Insurance Calculator
+                        {t('dm.openCalc')}
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </Card>

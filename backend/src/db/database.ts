@@ -217,7 +217,8 @@ async function seedDemo(db: Driver) {
   const now = new Date().toISOString();
   const salt = generateSalt();
   // ON CONFLICT: several instances starting together must not race to create it.
-  const created = await db.query(
+  // No saved plans are seeded: the demo user saves real snapshots of their own strategy.
+  await db.query(
     `INSERT INTO users (
        id, email, name, password_hash, salt, age, income, dependents, marital_status, occupation, city, city_tier,
        home_loan, other_loans, monthly_expenses, existing_life_cover, existing_health_cover, liquid_savings,
@@ -227,20 +228,4 @@ async function seedDemo(db: Driver) {
      ON CONFLICT (email) DO NOTHING`,
     [DEMO_ID, 'alex.vance@shieldiq.internal', 'Alex Vance', hashPassword('Password123!', salt), salt, JSON.stringify(['Group Term Life', 'OPD Benefits']), now]
   );
-  if (created.affected === 0) return;
-
-  const plans: [string, string, string, number, number, string, string, string][] = [
-    ['SIQ-992-X', 'FY26 Core Comprehensive Portfolio', 'OmniShield Bundle', 2750000, 450, 'Adequate', 'Primary deployed portfolio combining pure term life, health floater, and critical illness indemnity.', '2026-10-14'],
-    ['SIQ-104-Y', 'Retirement Acceleration Strategy', 'Term Life Max', 3500000, 580, 'Incomplete', 'Exploratory setup testing increasing term riders with mortgage debt clearance.', '2026-09-28'],
-    ['SIQ-882-B', 'Disability & Trauma Shield v2', 'Critical Illness', 1200000, 165, 'Adequate', 'Standalone disability income continuity for tech lead occupational hazards.', '2026-08-15'],
-    ['SIQ-045-Z', 'Tier 1 Metro Health Floater', 'Health Floater', 1000000, 280, 'Gap Detected', 'Super top-up model with ₹25,000 deductible; identified 15% co-pay exposure.', '2026-07-02'],
-    ['SIQ-012-A', 'FY25 Archive - Baseline Term', 'Term Life', 1500000, 145, 'Archived', 'Legacy individual life policy prior to dependents addition.', '2025-12-20'],
-  ];
-  for (const [id, name, category, cover, premium, status, description, lastModified] of plans) {
-    await db.query(
-      `INSERT INTO saved_plans (id, user_id, name, category, coverage_amount, monthly_premium, status, description, last_modified)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO NOTHING`,
-      [id, DEMO_ID, name, category, cover, premium, status, description, lastModified]
-    );
-  }
 }

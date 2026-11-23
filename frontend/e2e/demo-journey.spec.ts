@@ -37,7 +37,7 @@ test('life calculator matches the engine and saves a plan', async ({ page }) => 
 
 test('risk simulator responds to scenario and lifestyle', async ({ page }) => {
   await nav(page, 'Risk Sim');
-  await expect(page.getByText('Payout Runs Out At')).toBeVisible();
+  await expect(page.getByText('Payout Lasts')).toBeVisible();
   await expect(page.getByText(/pays hospital bills only/).first()).toBeVisible(); // health cover is not cash for living costs
   await btn(page, 'Early Death', false).click();
   await expect(page.getByText('Final Expenses (Immediate)')).toBeVisible();
@@ -59,12 +59,12 @@ test('health planner recalculates when the family changes', async ({ page }) => 
 test('dependency modeling sliders change the projection', async ({ page }) => {
   await nav(page, 'Family');
   await expect(page.getByText(/If you died today/).first()).toBeVisible();
-  const metric = page.getByText('Total Lifetime Liability').locator('xpath=..').locator('div.font-mono').first();
+  const metric = page.getByText('Obligations Before Savings').locator('xpath=..').locator('div.font-mono').first();
   const before = await metric.textContent();
   await page.getByRole('slider', { name: 'Projected general inflation' }).focus();
   for (let i = 0; i < 20; i++) await page.keyboard.press('ArrowRight');
   await expect(metric).not.toHaveText(before!);
-  const loanText = page.getByText(/amortised over \d+ years at/).first();
+  const loanText = page.getByText(/paid down over \d+ years at/).first();
   const rateBefore = await loanText.textContent();
   await page.getByRole('slider', { name: 'Loan interest rate' }).focus();
   for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
@@ -97,6 +97,8 @@ test('compare shows 4 priced options per type and official insurer records', asy
   }
   await page.getByRole('tab', { name: /Term Life/ }).click();
   const life = page.getByRole('table', { name: /Life insurers' claim and service records/ });
+  await expect(life.getByRole('row')).toHaveCount(5 + 1); // top 5 until expanded
+  await btn(page, `Show all ${insurerRecords.life.length} insurers`).click();
   await expect(life.getByRole('row')).toHaveCount(insurerRecords.life.length + 1);
   await expect(life).toContainText('LIC');
   // The shortlist is the API's top three in rank order, and the table follows the same order.
@@ -137,7 +139,7 @@ test('saved plans: snapshot, progress over time, CSV export, delete', async ({ p
 test('settings change recalculates the strategy', async ({ page }) => {
   const before = (await api(page, '/strategy')).data.life.totalNeed;
   await btn(page, 'Account settings').click();
-  await btn(page, 'Regional & Baseline', false).click();
+  await btn(page, 'Household & City', false).click();
   await page.fill('#settings-age', '45');
   await btn(page, 'Save Changes', false).click();
   await expect(page.getByText('Profile saved. Your strategy has been recalculated.')).toBeVisible();

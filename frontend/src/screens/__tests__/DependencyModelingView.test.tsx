@@ -11,8 +11,8 @@ describe('DependencyModelingView Component', () => {
       </AppContextProvider>
     );
 
-    expect(screen.getByText(/Dependency Modeling/i)).toBeInTheDocument();
-    expect(screen.getByText(/Total Lifetime Liability/i)).toBeInTheDocument();
+    expect(screen.getByText(/If You Weren't There/i)).toBeInTheDocument();
+    expect(screen.getByText(/Obligations Before Savings/i)).toBeInTheDocument();
     expect(screen.getByText(/Peak Pressure Year/i)).toBeInTheDocument();
   });
 
@@ -23,9 +23,9 @@ describe('DependencyModelingView Component', () => {
       </AppContextProvider>
     );
 
-    expect(screen.getByText(/Dependency Heatmap/i)).toBeInTheDocument();
+    expect(screen.getByText(/Year by Year/i)).toBeInTheDocument();
     expect(screen.getByText(/Higher Education Fund/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spouse Income Replacement/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Income Replacement' })).toBeInTheDocument();
     expect(screen.getByText(/Scenario Assumptions/i)).toBeInTheDocument();
     expect(screen.getByText(/Projected General Inflation/i)).toBeInTheDocument();
   });

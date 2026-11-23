@@ -12,7 +12,6 @@ import {
   Activity,
   Calculator,
   HeartPulse,
-  FileText,
   DollarSign,
   Users,
   BookmarkCheck,
@@ -35,7 +34,6 @@ const navItems: { id: ScreenId; label: MessageKey; icon: React.ComponentType<{ c
   { id: 'dependencies', label: 'nav.dependencies', icon: Users },
   { id: 'healthplanner', label: 'nav.health', icon: HeartPulse },
   { id: 'savedplans', label: 'nav.savedPlans', icon: BookmarkCheck },
-  { id: 'deepdive', label: 'nav.deepDive', icon: FileText },
   { id: 'policyscan', label: 'nav.policyScan', icon: FileSearch },
 ];
 
@@ -57,7 +55,7 @@ const NavTabs: React.FC<{ compact?: boolean }> = ({ compact }) => {
         onClick={() => setCurrentScreen(item.id)}
         aria-current={isActive ? 'page' : undefined}
         className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full font-bold uppercase tracking-wider transition-all duration-200 ${
-          compact ? 'px-3 py-2 text-[11px]' : 'px-3 py-1.5 text-xs'
+          compact ? 'px-3 py-2 text-xs' : 'px-3 py-1.5 text-xs'
         } ${
           isActive
             ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
@@ -113,7 +111,7 @@ const MobileMenu: React.FC = () => {
           {t('nav.menu')}
         </span>
         <span className="flex items-center gap-1 text-sm text-muted-foreground">
-          {current && t(current.label)}
+          {current ? t(current.label) : currentScreen === 'deepdive' && t('nav.deepDive')}
           <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
         </span>
       </button>
@@ -182,7 +180,7 @@ export const Navbar: React.FC = () => {
             <span className="text-lg font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-500">
               ShieldIQ
             </span>
-            <span className="hidden min-[400px]:block text-[9px] font-bold tracking-[0.25em] text-muted-foreground uppercase">
+            <span className="hidden min-[400px]:block text-xs font-bold tracking-[0.25em] text-muted-foreground uppercase">
               {t('nav.tagline')}
             </span>
           </div>
@@ -230,7 +228,7 @@ export const Navbar: React.FC = () => {
                 className="hidden sm:flex flex-col text-right whitespace-nowrap rounded-lg px-2 py-1 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <span className="text-xs font-bold text-foreground">{user.name}</span>
-                <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                   {t(`tier.${user.cityTier}`)}
                 </span>
               </button>
@@ -259,7 +257,7 @@ export const Navbar: React.FC = () => {
           ) : (
             <Button
               onClick={() => setCurrentScreen('login')}
-              className="bg-blue-600 hover:bg-blue-700 font-bold uppercase text-[10px] tracking-widest px-4 py-2 rounded-full text-white"
+              className="bg-blue-600 hover:bg-blue-700 font-bold uppercase text-xs tracking-widest px-4 py-2 rounded-full text-white"
             >
               {t('nav.signIn')}
             </Button>

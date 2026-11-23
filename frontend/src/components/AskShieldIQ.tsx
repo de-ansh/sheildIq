@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageCircle, X, Send, Loader2, Sparkles, Trash2 } from "lucide-react";
-import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, visibleAnswer, type ChatMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 
 
 /** Floating "Ask ShieldIQ" chat, grounded in the signed-in user's profile and strategy. */
 export const AskShieldIQ: React.FC = () => {
-    const { currentScreen } = useApp();
     const { t, tServer } = useI18n();
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -68,20 +66,17 @@ export const AskShieldIQ: React.FC = () => {
         }
     };
 
-    // The Risk Simulator has a fixed action footer; lift the launcher above it.
-    const launcherOffset = currentScreen === 'simulator' ? 'bottom-24' : 'bottom-6';
-
     if (!open) {
         return (
             <button
                 type="button"
                 onClick={openChat}
                 aria-label={t('chat.open')}
-                className={`fixed ${launcherOffset} right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 p-3 sm:px-5 sm:py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
+                className={`fixed bottom-6 right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-blue-600 p-3 2xl:px-5 2xl:py-3 text-sm font-bold text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 print:hidden`}
             >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
-                {/* Icon only on phones, where the label would cover page content. */}
-                <span className="hidden sm:inline">{t('chat.open')}</span>
+                {/* Icon only until the screen is wide enough for the button to sit in the margin beside the content. */}
+                <span className="hidden 2xl:inline">{t('chat.open')}</span>
             </button>
         );
     }
@@ -98,7 +93,7 @@ export const AskShieldIQ: React.FC = () => {
                     <Sparkles className="h-5 w-5 text-blue-600" aria-hidden="true" />
                     <div>
                         <h2 className="text-sm font-black tracking-tight">{t('chat.open')}</h2>
-                        <p className="text-[10px] text-muted-foreground">{t('chat.subtitle')}</p>
+                        <p className="text-xs text-muted-foreground">{t('chat.subtitle')}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -158,7 +153,7 @@ export const AskShieldIQ: React.FC = () => {
                             key={s}
                             type="button"
                             onClick={() => send(s)}
-                            className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-left text-[11px] font-medium hover:border-blue-500/50 hover:text-blue-600"
+                            className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-left text-xs font-medium hover:border-blue-500/50 hover:text-blue-600"
                         >
                             {s}
                         </button>
@@ -194,7 +189,7 @@ export const AskShieldIQ: React.FC = () => {
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
-            <p className="px-5 pb-3 text-[9px] text-muted-foreground">
+            <p className="px-5 pb-3 text-xs text-muted-foreground">
                 {t('chat.footer')}
             </p>
         </div>

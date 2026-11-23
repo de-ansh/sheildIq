@@ -18,7 +18,7 @@ const user = {
 const signedIn = (extra: Record<string, unknown>, overrides: Partial<typeof user> = {}) =>
   mockApi({
     '/health': { status: 'UP', ai: 'gemini' },
-    '/user/profile': { success: true, user: { ...user, ...overrides } },
+    '/auth/session': { success: true, user: { ...user, ...overrides } },
     '/policies': { success: true, data: [] },
     '/strategy': { success: false, code: 'ONBOARDING_REQUIRED' },
     ...extra,

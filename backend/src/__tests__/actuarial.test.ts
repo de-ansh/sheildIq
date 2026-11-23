@@ -52,6 +52,16 @@ describe('ActuarialService Engine', () => {
     expect(s.life.gap).toBe(0);
   });
 
+  it('quotes the same health plan in the Health Planner as in the strategy', () => {
+    const s = ActuarialService.buildStrategy({ ...family, dependents: 1, dependentDetails: [{ relation: 'child', age: 4 }] } as StrategyProfile);
+    const planner = ActuarialService.planHealthCover({ adults: 2, children: 1, cityTier: family.cityTier, employerCover: 0, existingCover: family.existingHealthCover, risks: [] }, family.age);
+    // ₹5L already held, so the cheapest route is a top-up above it, not a new base policy.
+    expect(planner.gapPlan.id).toBe('HL-TOPUP-ONLY');
+    expect(s.picks.healthId).toBe(planner.gapPlan.id);
+    expect(s.picks.healthPremium).toBe(planner.gapPlan.annualPremium);
+    expect(planner.gapPlan.annualPremium).toBeLessThan(planner.estimatedAnnualPremium);
+  });
+
   it('sizes health cover by city tier and family, splitting base and super top-up', () => {
     const metro = ActuarialService.planHealthCover({ adults: 2, children: 2, cityTier: 'Tier 1 (Metro)', employerCover: 0, existingCover: 0, risks: [] });
     const tier3 = ActuarialService.planHealthCover({ adults: 2, children: 2, cityTier: 'Tier 3 (Urban Center)', employerCover: 0, existingCover: 0, risks: [] });

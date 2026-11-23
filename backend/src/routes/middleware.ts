@@ -30,7 +30,7 @@ export function setSessionCookie(res: Response, token: string) {
   });
 }
 
-function readSessionCookie(req: Request): string | undefined {
+export function readSessionCookie(req: Request): string | undefined {
   const match = req.headers.cookie?.split(';').map(c => c.trim()).find(c => c.startsWith(`${SESSION_COOKIE}=`));
   return match ? decodeURIComponent(match.slice(SESSION_COOKIE.length + 1)) : undefined;
 }

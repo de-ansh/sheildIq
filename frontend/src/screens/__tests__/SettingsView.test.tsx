@@ -3,42 +3,28 @@ import { describe, it, expect } from 'vitest';
 import { SettingsView } from '../SettingsView';
 import { AppContextProvider } from '@/lib/AppContext';
 
+const renderView = () => render(<AppContextProvider><SettingsView /></AppContextProvider>);
+
 describe('SettingsView Component', () => {
   it('renders settings tabs and identity form fields', () => {
-    render(
-      <AppContextProvider>
-        <SettingsView />
-      </AppContextProvider>
-    );
-
-    expect(screen.getByText(/Platform Settings/i)).toBeInTheDocument();
-    expect(screen.getByText(/Personal Details/i)).toBeInTheDocument();
-    expect(screen.getByText(/Regional & Baseline/i)).toBeInTheDocument();
-    expect(screen.getByText(/Security & Privacy/i)).toBeInTheDocument();
+    renderView();
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Personal Details/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Household & City/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Security & Privacy/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Annual Gross Income/i)).toBeInTheDocument();
   });
 
-  it('allows switching tabs and submitting updated preferences', () => {
-    render(
-      <AppContextProvider>
-        <SettingsView />
-      </AppContextProvider>
-    );
+  it('shows Save on the profile tabs and not on the security tab, where it would do nothing', () => {
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: /Household & City/i }));
+    expect(screen.getByLabelText('Age')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save Changes/i })).toBeInTheDocument();
 
-    // Switch to Regional tab
-    const regionalTab = screen.getByRole('button', { name: /Regional & Baseline/i });
-    fireEvent.click(regionalTab);
-    expect(screen.getByText(/Regional Settings & Currency/i)).toBeInTheDocument();
-
-    // Switch to Security tab
-    const securityTab = screen.getByRole('button', { name: /Security & Privacy/i });
-    fireEvent.click(securityTab);
-    expect(screen.getByText(/Two-Factor Authentication/i)).toBeInTheDocument();
-
-    // Submit form
-    const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
-    fireEvent.click(saveBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Security & Privacy/i }));
+    expect(screen.getByRole('button', { name: /Update Password/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Save Changes/i })).toBeNull();
   });
 });

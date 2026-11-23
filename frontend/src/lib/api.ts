@@ -91,6 +91,7 @@ export interface HealthPlanResult {
   estimatedAnnualPremium: number;
   employerDependencyShare: number;
   adequacyScore: number;
+  gapPlan: { id: 'HL-FLOATER' | 'HL-BASE-TOPUP' | 'HL-COMPREHENSIVE' | 'HL-TOPUP-ONLY' | null; cover: number; annualPremium: number };
   notes: string[];
 }
 
@@ -477,7 +478,7 @@ export const ShieldIQApi = {
 
   comparePolicies: (policyIds: string[]) => request('/policies/compare', 'POST', { policyIds }),
 
-  getUserProfile: () => request('/user/profile'),
+  getSession: () => request('/auth/session'),
   acknowledgeDisclaimer: () => request('/user/disclaimer', 'POST'),
 
   /** The user's stored data as a JSON file, or null on failure. */
