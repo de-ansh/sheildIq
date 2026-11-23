@@ -25,7 +25,7 @@ describe('ComplianceView Component', () => {
     const profile = { name: 'Priya Sharma', email: 'p@example.com', onboardingCompleted: false, disclaimerAcknowledgedAt: null };
     const fetchMock = mockApi({
       '/health': { status: 'UP' },
-      '/user/profile': { success: true, user: profile },
+      '/auth/session': { success: true, user: profile },
       '/policies': { success: true, data: [] },
       '/user/disclaimer': { success: true, user: { ...profile, disclaimerAcknowledgedAt: '2026-10-16T10:00:00.000Z' } },
     });

@@ -1,7 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
 import { test, expect, btn, nav, signInDemo } from './helpers';
 
 const SCREENS = ['Dashboard', 'Compare', 'Analysis', 'Risk Sim', 'Life Calc', 'Affordability', 'Family', 'Health', 'Saved Plans', 'Deep Dive', 'Policy Scan'];
+
+/** Deep Dive has no tab of its own: it opens from a plan's Fine Print in Compare. */
+async function goTo(page: Page, screen: string) {
+  if (screen !== 'Deep Dive') return nav(page, screen);
+  await nav(page, 'Compare');
+  await page.getByRole('button', { name: /Fine Print/ }).first().click();
+}
 
 for (const theme of ['dark', 'light'] as const) {
   test(`every screen meets WCAG 2 AA in ${theme} mode`, async ({ page }) => {
@@ -14,7 +22,7 @@ for (const theme of ['dark', 'light'] as const) {
     await scan('Login');
     await signInDemo(page);
     for (const s of SCREENS) {
-      await nav(page, s);
+      await goTo(page, s);
       await page.waitForLoadState('networkidle');
       await scan(s);
     }
@@ -31,7 +39,7 @@ test('no screen scrolls sideways and tab labels never wrap, from 320px to 2560px
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
     for (const s of SCREENS) {
-      await nav(page, s);
+      await goTo(page, s);
       await page.waitForLoadState('networkidle');
       const issues = await page.evaluate(() => {
         const out: string[] = [];
@@ -56,7 +64,7 @@ test('phone menu: large targets, keyboard friendly, shows where you are', async 
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await toggle.click();
   const menu = page.locator('#mobile-menu');
-  await expect(menu.getByRole('button')).toHaveCount(SCREENS.length + 1); // + the language switch
+  await expect(menu.getByRole('button')).toHaveCount(SCREENS.length); // every screen but Deep Dive, + the language switch
   for (const item of await menu.getByRole('button').all()) {
     expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(44); // comfortable touch target
   }
@@ -75,7 +83,7 @@ test('panels that stay dark keep dark buttons in light mode', async ({ page }) =
   await page.addInitScript(() => localStorage.setItem('shield-iq-theme', 'light'));
   await signInDemo(page);
   await nav(page, 'Risk Sim');
-  const panel = page.getByText('Actuarial Risk Narrative').locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " dark ")][1]');
+  const panel = page.getByText('What It Means').locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " dark ")][1]');
   // Relative luminance of a computed rgb() colour: 0 = black, 1 = white.
   const luminance = (rgb: string) => {
     const [r, g, b] = rgb.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(c => {

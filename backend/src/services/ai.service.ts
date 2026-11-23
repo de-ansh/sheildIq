@@ -461,7 +461,6 @@ const aiPolicySchema = z.object({
   subLimits: z.array(z.string().max(300)).max(8),
   redFlags: z.array(z.string().max(300)).max(6),
 });
-export type AiPolicyAnalysis = z.infer<typeof aiPolicySchema>;
 
 const policyJsonSchema = obj({
   isInsurancePolicy: { type: 'boolean', description: 'False if the document is not an insurance policy or schedule.' },

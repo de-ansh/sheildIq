@@ -1,32 +1,28 @@
 import React, { useState } from 'react';
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    User,
-    Shield,
-    Key,
-    CheckCircle2,
-    Globe,
-    Smartphone,
-    Save,
-    RotateCcw,
-    AlertTriangle
-} from "lucide-react";
+import { User, Shield, Key, CheckCircle2, Globe, Smartphone, Save, RotateCcw, AlertTriangle } from "lucide-react";
 import { useApp } from '@/lib/AppContext';
 import { ShieldIQApi, CITY_TIERS, type CityTier } from '@/lib/api';
 import { providerLabel } from '@/lib/utils';
 import { householdOf } from '@/lib/household';
+import { useI18n } from '@/lib/i18n';
+
+type Message = { ok: boolean; text: string } | null;
+
+const Status: React.FC<{ message: Message }> = ({ message }) => message && (
+    <p role="status" className={`text-xs font-medium ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>{message.text}</p>
+);
 
 export const SettingsView: React.FC = () => {
     const { user, updateUserProfile, setCurrentScreen, logout, aiProvider } = useApp();
+    const { t, tServer } = useI18n();
 
     const [activeTab, setActiveTab] = useState<'profile' | 'regional' | 'security'>('profile');
-    const [saveResult, setSaveResult] = useState<{ ok: boolean; text: string } | null>(null);
+    const [saveResult, setSaveResult] = useState<Message>(null);
 
-    // Form fields
     const [name, setName] = useState(user.name);
     const [income, setIncome] = useState(user.income);
     const [occupation, setOccupation] = useState(user.occupation);
@@ -36,33 +32,28 @@ export const SettingsView: React.FC = () => {
     const [cityTier, setCityTier] = useState<CityTier>(user.cityTier);
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState('');
-    const [dataMessage, setDataMessage] = useState<{ ok: boolean; text: string } | null>(null);
+    const [dataMessage, setDataMessage] = useState<Message>(null);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [passwordMessage, setPasswordMessage] = useState<{ ok: boolean; text: string } | null>(null);
+    const [passwordMessage, setPasswordMessage] = useState<Message>(null);
+
+    const unreachable = t('common.serverUnreachable');
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        const error = await updateUserProfile({
-            name,
-            income: Number(income),
-            occupation,
-            city,
-            age: Number(age),
-            maritalStatus,
-            cityTier,
-        });
-        setSaveResult(error ? { ok: false, text: error } : { ok: true, text: 'Profile saved. Your strategy has been recalculated.' });
+        const error = await updateUserProfile({ name, income: Number(income), occupation, city, age: Number(age), maritalStatus, cityTier });
+        setSaveResult(error ? { ok: false, text: tServer(error) ?? error } : { ok: true, text: t('set.saved') });
     };
 
     const household = householdOf(user);
+    const count = (n: number, one: Parameters<typeof t>[0], many: Parameters<typeof t>[0]) => n > 0 && (n === 1 ? t(one) : t(many, { count: n }));
     const dependentSummary = household.count === 0
-        ? 'None'
+        ? t('set.depNone')
         : [
-            household.count - household.children.length - household.parents.length - household.siblings.length > 0 && 'spouse',
-            household.children.length && `${household.children.length} ${household.children.length === 1 ? 'child' : 'children'}`,
-            household.parents.length && `${household.parents.length} ${household.parents.length === 1 ? 'parent' : 'parents'}`,
-            household.siblings.length && `${household.siblings.length} ${household.siblings.length === 1 ? 'sibling' : 'siblings'}`,
+            household.count - household.children.length - household.parents.length - household.siblings.length > 0 && t('set.depSpouse'),
+            count(household.children.length, 'set.depChild', 'set.depChildren'),
+            count(household.parents.length, 'set.depParent', 'set.depParents'),
+            count(household.siblings.length, 'set.depSibling', 'set.depSiblings'),
         ].filter(Boolean).join(', ');
 
     const resetForm = () => {
@@ -78,23 +69,23 @@ export const SettingsView: React.FC = () => {
 
     const handleChangePassword = async () => {
         if (newPassword.length < 8) {
-            setPasswordMessage({ ok: false, text: 'New password must be at least 8 characters.' });
+            setPasswordMessage({ ok: false, text: t('set.pwTooShort') });
             return;
         }
         const res = await ShieldIQApi.changePassword(currentPassword, newPassword);
         if (res && res.success) {
             setCurrentPassword('');
             setNewPassword('');
-            setPasswordMessage({ ok: true, text: 'Password updated. Other sessions have been signed out.' });
+            setPasswordMessage({ ok: true, text: t('set.pwUpdated') });
         } else {
-            setPasswordMessage({ ok: false, text: res?.error || 'Cannot reach the ShieldIQ server.' });
+            setPasswordMessage({ ok: false, text: tServer(res?.error) ?? unreachable });
         }
     };
 
     const handleExport = async () => {
         const blob = await ShieldIQApi.exportData();
         if (!blob) {
-            setDataMessage({ ok: false, text: 'Could not prepare your data. Please try again.' });
+            setDataMessage({ ok: false, text: t('set.downloadError') });
             return;
         }
         const url = URL.createObjectURL(blob);
@@ -103,7 +94,7 @@ export const SettingsView: React.FC = () => {
         link.download = `shieldiq-data-${new Date().toISOString().slice(0, 10)}.json`;
         link.click();
         URL.revokeObjectURL(url);
-        setDataMessage({ ok: true, text: 'Your data has been downloaded.' });
+        setDataMessage({ ok: true, text: t('set.downloaded') });
     };
 
     const handleDeleteAccount = async () => {
@@ -112,7 +103,7 @@ export const SettingsView: React.FC = () => {
             logout();
             return;
         }
-        setDataMessage({ ok: false, text: res?.error || 'Cannot reach the ShieldIQ server.' });
+        setDataMessage({ ok: false, text: tServer(res?.error) ?? unreachable });
     };
 
     const handleLogoutAll = async () => {
@@ -120,36 +111,16 @@ export const SettingsView: React.FC = () => {
         logout();
     };
 
+    const field = "bg-muted/30 border-border";
+    const select = "w-full h-10 rounded-md border border-border bg-muted/30 px-3 text-sm";
+
     return (
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                        <span>WORKSPACE PREFERENCES</span>
-                        <span>•</span>
-                        <Badge variant="outline" className="text-[10px] font-mono border-blue-500/30 text-blue-600 bg-blue-50 dark:bg-blue-950/30">
-                            Enterprise Config
-                        </Badge>
-                    </div>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Platform Settings</h1>
-                    <p className="text-muted-foreground text-sm font-medium">
-                        Manage your user identity, actuarial risk parameters, regional currency, and security posture.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={() => setCurrentScreen('dashboard')}
-                        className="font-bold border-border"
-                    >
-                        Back to Dashboard
-                    </Button>
-                </div>
+            <div className="space-y-1 pb-6 border-b border-border">
+                <h1 className="text-4xl font-black tracking-tight text-foreground">{t('set.title')}</h1>
+                <p className="text-muted-foreground text-sm font-medium">{t('set.subtitle')}</p>
             </div>
 
-            {/* Saved Banner */}
             {saveResult && (
                 <div role="status" className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in border ${saveResult.ok ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-700 dark:text-red-400'}`}>
                     {saveResult.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" /> : <AlertTriangle className="w-5 h-5" />}
@@ -157,25 +128,22 @@ export const SettingsView: React.FC = () => {
                 </div>
             )}
 
-            {/* Settings Main Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Navigation Sidebar */}
                 <div className="lg:col-span-3 space-y-2">
-                    {[
-                        { id: 'profile', label: 'Personal Details', icon: User },
-                        { id: 'regional', label: 'Regional & Baseline', icon: Globe },
-                        { id: 'security', label: 'Security & Privacy', icon: Shield },
-                    ].map(tab => {
+                    {([
+                        { id: 'profile', label: t('set.tabProfile'), icon: User },
+                        { id: 'regional', label: t('set.tabRegional'), icon: Globe },
+                        { id: 'security', label: t('set.tabSecurity'), icon: Shield },
+                    ] as const).map(tab => {
                         const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${isActive
+                                onClick={() => setActiveTab(tab.id)}
+                                aria-current={activeTab === tab.id ? 'page' : undefined}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left ${activeTab === tab.id
                                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                    }`}
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                             >
                                 <Icon className="w-4 h-4" />
                                 {tab.label}
@@ -183,265 +151,168 @@ export const SettingsView: React.FC = () => {
                         );
                     })}
 
-                    <div className="pt-6 border-t border-border mt-6 space-y-3">
+                    <div className="mt-6 pt-6 border-t border-border">
                         <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Signed In As</span>
+                            <p className="text-xs font-bold text-muted-foreground">{t('set.signedInAs')}</p>
                             <p className="text-xs font-bold text-foreground break-all">{user.email}</p>
-                            <p className="text-[11px] text-muted-foreground">{user.onboardingCompleted ? 'Financial profile complete' : 'Financial profile incomplete'}</p>
+                            <p className="text-xs text-muted-foreground">{t(user.onboardingCompleted ? 'set.profileComplete' : 'set.profileIncomplete')}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Form Panels */}
                 <div className="lg:col-span-9">
                     <form onSubmit={handleSave} className="space-y-8">
-                        {/* Tab 1: Personal Details */}
                         {activeTab === 'profile' && (
                             <Card className="border-border shadow-sm p-8 space-y-6">
                                 <div>
-                                    <CardTitle className="text-xl font-bold">Personal Profile & Identity</CardTitle>
-                                    <CardDescription className="text-xs text-muted-foreground">
-                                        These demographic variables govern baseline actuarial human life value projections.
-                                    </CardDescription>
+                                    <CardTitle className="text-xl font-bold">{t('set.profileTitle')}</CardTitle>
+                                    <CardDescription className="text-sm text-muted-foreground">{t('set.profileSub')}</CardDescription>
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-name" className="text-xs font-bold">Full Name</Label>
-                                        <Input
-                                            id="settings-name"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className="bg-muted/30 border-border"
-                                            required
-                                        />
+                                        <Label htmlFor="settings-name" className="text-xs font-bold">{t('set.name')}</Label>
+                                        <Input id="settings-name" value={name} onChange={(e) => setName(e.target.value)} className={field} required />
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-email" className="text-xs font-bold">Email Address</Label>
-                                        <Input
-                                            id="settings-email"
-                                            type="email"
-                                            value={user.email}
-                                            readOnly
-                                            aria-describedby="settings-email-note"
-                                            className="bg-muted/60 border-border text-muted-foreground"
-                                        />
-                                        <p id="settings-email-note" className="text-[10px] text-muted-foreground">Your sign-in ID; it can't be changed here.</p>
+                                        <Label htmlFor="settings-email" className="text-xs font-bold">{t('set.email')}</Label>
+                                        <Input id="settings-email" type="email" value={user.email} readOnly aria-describedby="settings-email-note" className="bg-muted/60 border-border text-muted-foreground" />
+                                        <p id="settings-email-note" className="text-xs text-muted-foreground">{t('set.emailNote')}</p>
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-income" className="text-xs font-bold">Annual Gross Income</Label>
-                                        <Input
-                                            id="settings-income"
-                                            type="number"
-                                            value={income}
-                                            onChange={(e) => setIncome(Number(e.target.value))}
-                                            className="bg-muted/30 border-border font-mono"
-                                            required
-                                        />
+                                        <Label htmlFor="settings-income" className="text-xs font-bold">{t('set.income')}</Label>
+                                        <Input id="settings-income" type="number" value={income} onChange={(e) => setIncome(Number(e.target.value))} className={`${field} font-mono`} required />
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-bold">Dependents</Label>
+                                        <Label className="text-xs font-bold">{t('set.dependents')}</Label>
                                         <p className="h-10 flex items-center justify-between gap-2 px-3 rounded-md border border-border bg-muted/60 text-sm">
                                             <span>{dependentSummary}</span>
-                                            <button type="button" onClick={() => setCurrentScreen('onboarding')} className="text-xs font-bold text-blue-600 hover:underline">Edit</button>
+                                            <button type="button" onClick={() => setCurrentScreen('onboarding')} className="text-xs font-bold text-blue-600 hover:underline">{t('set.edit')}</button>
                                         </p>
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-occupation" className="text-xs font-bold">Occupation / Title</Label>
-                                        <Input
-                                            id="settings-occupation"
-                                            value={occupation}
-                                            onChange={(e) => setOccupation(e.target.value)}
-                                            className="bg-muted/30 border-border"
-                                        />
+                                        <Label htmlFor="settings-occupation" className="text-xs font-bold">{t('set.occupation')}</Label>
+                                        <Input id="settings-occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={field} />
                                     </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-city" className="text-xs font-bold">Primary Resident City</Label>
-                                        <Input
-                                            id="settings-city"
-                                            value={city}
-                                            onChange={(e) => setCity(e.target.value)}
-                                            className="bg-muted/30 border-border"
-                                        />
+                                        <Label htmlFor="settings-city" className="text-xs font-bold">{t('set.city')}</Label>
+                                        <Input id="settings-city" value={city} onChange={(e) => setCity(e.target.value)} className={field} />
                                     </div>
                                 </div>
                             </Card>
                         )}
 
-                        {/* Tab 2: Regional & Baseline */}
                         {activeTab === 'regional' && (
                             <Card className="border-border shadow-sm p-8 space-y-6">
                                 <div>
-                                    <CardTitle className="text-xl font-bold">Regional Settings & Currency</CardTitle>
-                                    <CardDescription className="text-xs text-muted-foreground">
-                                        Age, family and city tier drive your cover and premium estimates.
-                                    </CardDescription>
+                                    <CardTitle className="text-xl font-bold">{t('set.regionalTitle')}</CardTitle>
+                                    <CardDescription className="text-sm text-muted-foreground">{t('set.regionalSub')}</CardDescription>
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-age" className="text-xs font-bold">Age</Label>
-                                        <Input id="settings-age" type="number" min={18} max={100} value={age} onChange={(e) => setAge(Number(e.target.value))} className="bg-muted/30 border-border" required />
+                                        <Label htmlFor="settings-age" className="text-xs font-bold">{t('set.age')}</Label>
+                                        <Input id="settings-age" type="number" min={18} max={100} value={age} onChange={(e) => setAge(Number(e.target.value))} className={field} required />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-marital" className="text-xs font-bold">Marital Status</Label>
-                                        <select id="settings-marital" value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value as 'Single' | 'Married')} className="w-full h-10 rounded-md border border-border bg-muted/30 px-3 text-sm">
-                                            <option value="Single">Single</option>
-                                            <option value="Married">Married</option>
+                                        <Label htmlFor="settings-marital" className="text-xs font-bold">{t('set.marital')}</Label>
+                                        <select id="settings-marital" value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value as 'Single' | 'Married')} className={select}>
+                                            <option value="Single">{t('marital.Single')}</option>
+                                            <option value="Married">{t('marital.Married')}</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="settings-tier" className="text-xs font-bold">City Tier</Label>
-                                        <select id="settings-tier" value={cityTier} onChange={(e) => setCityTier(e.target.value as CityTier)} className="w-full h-10 rounded-md border border-border bg-muted/30 px-3 text-sm">
-                                            {CITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+                                        <Label htmlFor="settings-tier" className="text-xs font-bold">{t('set.cityTier')}</Label>
+                                        <select id="settings-tier" value={cityTier} onChange={(e) => setCityTier(e.target.value as CityTier)} className={select}>
+                                            {CITY_TIERS.map(tier => <option key={tier} value={tier}>{t(`tier.${tier}`)}</option>)}
                                         </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold">Currency</Label>
-                                        <p className="h-10 flex items-center px-3 rounded-md border border-border bg-muted/60 text-sm text-muted-foreground">INR (₹) – all amounts</p>
                                     </div>
                                 </div>
-
-                                <div className="p-4 rounded-xl bg-muted/30 border border-border flex items-center justify-between gap-4">
+                                <div className="p-4 rounded-xl bg-muted/30 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                                            <Globe className="w-4 h-4 text-blue-600" />
-                                            Loans, expenses & existing cover
-                                        </div>
-                                        <p className="text-xs text-muted-foreground leading-relaxed">
-                                            City tier sets health-cost benchmarks. Update loans, expenses, existing cover and lifestyle risks in the financial profile.
-                                        </p>
+                                        <p className="text-sm font-bold text-foreground">{t('set.moreTitle')}</p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">{t('set.moreBody')}</p>
                                     </div>
                                     <Button type="button" variant="outline" size="sm" onClick={() => setCurrentScreen('onboarding')} className="font-bold shrink-0">
-                                        Edit Financial Profile
+                                        {t('set.editProfile')}
                                     </Button>
                                 </div>
                             </Card>
                         )}
 
-                        {/* Tab 3: Security & Privacy */}
                         {activeTab === 'security' && (
                             <Card className="border-border shadow-sm p-8 space-y-6">
                                 <div>
-                                    <CardTitle className="text-xl font-bold">Security & Data Privacy</CardTitle>
-                                    <CardDescription className="text-xs text-muted-foreground">
-                                        Manage your password, active sessions, and privacy preferences.
-                                    </CardDescription>
+                                    <CardTitle className="text-xl font-bold">{t('set.securityTitle')}</CardTitle>
+                                    <CardDescription className="text-sm text-muted-foreground">{t('set.securitySub')}</CardDescription>
                                 </div>
-
                                 <div className="space-y-4">
                                     <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-4">
                                         <div className="flex items-center gap-3">
                                             <Key className="w-5 h-5 text-blue-600" />
                                             <div>
-                                                <h4 className="text-sm font-bold text-foreground">Change Password</h4>
-                                                <p className="text-xs text-muted-foreground">Changing your password signs out all other sessions.</p>
+                                                <h2 className="text-sm font-bold text-foreground">{t('set.pwTitle')}</h2>
+                                                <p className="text-xs text-muted-foreground">{t('set.pwSub')}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="current-password" className="text-xs font-bold">Current Password</Label>
-                                                <Input
-                                                    id="current-password"
-                                                    type="password"
-                                                    autoComplete="current-password"
-                                                    value={currentPassword}
-                                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                                />
+                                                <Label htmlFor="current-password" className="text-xs font-bold">{t('set.pwCurrent')}</Label>
+                                                <Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="new-password" className="text-xs font-bold">New Password</Label>
-                                                <Input
-                                                    id="new-password"
-                                                    type="password"
-                                                    autoComplete="new-password"
-                                                    value={newPassword}
-                                                    onChange={(e) => setNewPassword(e.target.value)}
-                                                />
+                                                <Label htmlFor="new-password" className="text-xs font-bold">{t('set.pwNew')}</Label>
+                                                <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                                             </div>
                                         </div>
-                                        {passwordMessage && (
-                                            <p role="status" className={`text-xs font-medium ${passwordMessage.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>
-                                                {passwordMessage.text}
-                                            </p>
-                                        )}
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            onClick={handleChangePassword}
-                                            disabled={!currentPassword || !newPassword}
-                                            className="text-xs font-bold"
-                                        >
-                                            Update Password
+                                        <Status message={passwordMessage} />
+                                        <Button type="button" size="sm" onClick={handleChangePassword} disabled={!currentPassword || !newPassword} className="text-xs font-bold">
+                                            {t('set.pwButton')}
                                         </Button>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/20">
                                         <div className="flex items-center gap-3">
                                             <Smartphone className="w-5 h-5 text-indigo-600" />
                                             <div>
-                                                <h4 className="text-sm font-bold text-foreground">Active Sessions</h4>
-                                                <p className="text-xs text-muted-foreground">Sign out of ShieldIQ on every device, including this one.</p>
+                                                <h2 className="text-sm font-bold text-foreground">{t('set.sessionsTitle')}</h2>
+                                                <p className="text-xs text-muted-foreground">{t('set.sessionsSub')}</p>
                                             </div>
                                         </div>
-                                        <Button variant="outline" size="sm" type="button" onClick={handleLogoutAll} className="text-xs font-bold">
-                                            Sign Out Everywhere
+                                        <Button variant="outline" size="sm" type="button" onClick={handleLogoutAll} className="text-xs font-bold shrink-0">
+                                            {t('set.signOutAll')}
                                         </Button>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
-                                        <div>
-                                            <h4 className="text-sm font-bold text-foreground">Two-Factor Authentication (MFA)</h4>
-                                            <p className="text-xs text-muted-foreground">Authenticator app support is not available yet.</p>
-                                        </div>
-                                        <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-none font-bold text-xs">
-                                            Not Enabled
-                                        </Badge>
-                                    </div>
-
                                     <div className="p-4 rounded-xl border border-border space-y-3">
-                                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">What We Store</h4>
+                                        <h2 className="text-sm font-bold text-foreground">{t('set.storeTitle')}</h2>
                                         <ul className="text-xs text-muted-foreground leading-relaxed space-y-1.5 list-disc pl-4">
-                                            <li>Your account, financial profile and saved plans.</li>
-                                            <li>A security log of sign-ins, failed sign-ins, password and profile changes, used to protect your account.</li>
-                                            <li>
-                                                {aiProvider
-                                                    ? `When you generate an AI strategy, only anonymised figures (no name, email or city) are sent to ${providerLabel(aiProvider)}, with provider-side storage disabled.`
-                                                    : 'AI strategy generation is not enabled on this server.'}
-                                            </li>
+                                            <li>{t('set.store1')}</li>
+                                            <li>{t('set.store2')}</li>
+                                            <li>{aiProvider ? t('set.storeAi', { provider: providerLabel(aiProvider) }) : t('set.storeNoAi')}</li>
                                         </ul>
                                     </div>
 
                                     <div className="p-4 rounded-xl border border-border space-y-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
-                                                <h4 className="text-sm font-bold text-foreground">Your Data</h4>
-                                                <p className="text-xs text-muted-foreground">Download a copy of everything ShieldIQ stores about you.</p>
+                                                <h2 className="text-sm font-bold text-foreground">{t('set.dataTitle')}</h2>
+                                                <p className="text-xs text-muted-foreground">{t('set.dataSub')}</p>
                                             </div>
                                             <Button type="button" variant="outline" size="sm" onClick={handleExport} className="text-xs font-bold shrink-0">
-                                                Download My Data
+                                                {t('set.download')}
                                             </Button>
                                         </div>
-
                                         <div className="pt-4 border-t border-border space-y-3">
                                             <div>
-                                                <h4 className="text-sm font-bold text-red-600">Delete My Account</h4>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Permanently erases your profile, saved plans and AI history. This cannot be undone.
-                                                </p>
+                                                <h2 className="text-sm font-bold text-red-600">{t('set.deleteTitle')}</h2>
+                                                <p className="text-xs text-muted-foreground">{t('set.deleteSub')}</p>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="delete-password" className="text-xs font-bold">Your Password</Label>
+                                                    <Label htmlFor="delete-password" className="text-xs font-bold">{t('set.deletePassword')}</Label>
                                                     <Input id="delete-password" type="password" autoComplete="current-password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="delete-confirm" className="text-xs font-bold">Type DELETE to confirm</Label>
+                                                    <Label htmlFor="delete-confirm" className="text-xs font-bold">{t('set.deleteConfirm')}</Label>
                                                     <Input id="delete-confirm" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} autoComplete="off" />
                                                 </div>
                                             </div>
@@ -452,36 +323,26 @@ export const SettingsView: React.FC = () => {
                                                 disabled={!deletePassword || deleteConfirm !== 'DELETE'}
                                                 className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
                                             >
-                                                Delete My Account Permanently
+                                                {t('set.deleteButton')}
                                             </Button>
                                         </div>
-                                        {dataMessage && (
-                                            <p role="status" className={`text-xs font-medium ${dataMessage.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>{dataMessage.text}</p>
-                                        )}
+                                        <Status message={dataMessage} />
                                     </div>
                                 </div>
                             </Card>
                         )}
 
-                        {/* Submit Button */}
-                        <div className="flex items-center justify-end gap-4 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={resetForm}
-                                className="font-bold border-border"
-                            >
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Reset
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8"
-                            >
-                                <Save className="w-4 h-4 mr-2" />
-                                Save Changes
-                            </Button>
-                        </div>
+                        {/* Save applies to the profile fields only, so the security tab has no Save button. */}
+                        {activeTab !== 'security' && (
+                            <div className="flex items-center justify-end gap-4 pt-4">
+                                <Button type="button" variant="outline" onClick={resetForm} className="font-bold border-border">
+                                    <RotateCcw className="w-4 h-4 mr-2" /> {t('set.reset')}
+                                </Button>
+                                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+                                    <Save className="w-4 h-4 mr-2" /> {t('set.save')}
+                                </Button>
+                            </div>
+                        )}
                     </form>
                 </div>
             </div>

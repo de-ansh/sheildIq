@@ -30,9 +30,9 @@ describe('PolicyDeepDiveView Component', () => {
     render(<AppContextProvider><PolicyDeepDiveView /></AppContextProvider>);
     expect(await screen.findByRole('heading', { name: 'Pure Level Term' })).toBeInTheDocument();
     expect(screen.getAllByText(/Sum Assured/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Benefit Structural Analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/What It Covers/i)).toBeInTheDocument();
     expect(screen.getByText('Pure Level Term exclusion')).toBeInTheDocument();
-    expect(screen.getByText(/Compliance Score/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Clarity Score' })).toBeInTheDocument();
   });
 
   it('switches by cover type, then by plan within the type', async () => {

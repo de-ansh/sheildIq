@@ -32,7 +32,7 @@ const MAX_DEPENDENTS = 12;
 
 export const OnboardingView: React.FC = () => {
     const { user, submitOnboarding, setCurrentScreen } = useApp();
-    const { t, tServer } = useI18n();
+    const { t, tServer, lang, setLang } = useI18n();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const totalSteps = 3;
@@ -199,6 +199,16 @@ export const OnboardingView: React.FC = () => {
                     </div>
                     <span className="font-bold text-xl tracking-tight text-foreground">ShieldIQ</span>
                 </div>
+                <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+                    title={t('language.switchAria')}
+                    lang={lang === 'en' ? 'hi' : 'en'}
+                    className="h-9 rounded-full border border-border bg-card px-4 text-sm font-bold hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                    {t('language.switch')}
+                </button>
                 <Button
                     variant="ghost"
                     onClick={handleSaveAndExit}
@@ -207,6 +217,7 @@ export const OnboardingView: React.FC = () => {
                 >
                     {t('onb.saveExit')}
                 </Button>
+                </div>
             </header>
 
             <main className="flex-grow flex flex-col items-center py-12 px-4 max-w-4xl mx-auto w-full">
@@ -214,7 +225,7 @@ export const OnboardingView: React.FC = () => {
                 <div className="w-full max-w-[600px] mb-12 space-y-4">
                     <div className="flex justify-between items-end">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{t('onb.stepOf', { step })}</p>
+                            <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">{t('onb.stepOf', { step })}</p>
                             <h2 className="text-lg font-bold text-foreground">
                                 {step === 1 && t('onb.step1')}
                                 {step === 2 && t('onb.step2')}
@@ -414,7 +425,7 @@ export const OnboardingView: React.FC = () => {
                                         <Label className="font-bold text-foreground">{t('onb.liabilities')}</Label>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="home-loan-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('onb.homeLoan')}</Label>
+                                                <Label htmlFor="home-loan-input" className="text-xs text-muted-foreground uppercase tracking-widest font-bold">{t('onb.homeLoan')}</Label>
                                                 <Input
                                                     id="home-loan-input"
                                                     type="number"
@@ -425,7 +436,7 @@ export const OnboardingView: React.FC = () => {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="other-loans-input" className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('onb.otherLoans')}</Label>
+                                                <Label htmlFor="other-loans-input" className="text-xs text-muted-foreground uppercase tracking-widest font-bold">{t('onb.otherLoans')}</Label>
                                                 <Input
                                                     id="other-loans-input"
                                                     type="number"
@@ -703,18 +714,12 @@ export const OnboardingView: React.FC = () => {
                             </div>
                             <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                 <Lock className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">{t('onb.privacyNote')}</span>
+                                <span className="text-xs font-bold uppercase tracking-widest">{t('onb.privacyNote')}</span>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Footer info */}
-                <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                    <a href="#" className="hover:text-blue-600">{t('onb.privacyPolicy')}</a>
-                    <a href="#" className="hover:text-blue-600">{t('onb.disclosures')}</a>
-                    <a href="#" className="hover:text-blue-600">{t('onb.complianceAudit')}</a>
-                </div>
             </main>
         </div>
     );

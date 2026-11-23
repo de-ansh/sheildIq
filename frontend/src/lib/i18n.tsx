@@ -3,12 +3,6 @@ import { en, type MessageKey } from '@/locales/en';
 import { hi } from '@/locales/hi';
 
 export type Lang = 'en' | 'hi';
-// eslint-disable-next-line react-refresh/only-export-components
-export const LANGS: { id: Lang; label: string }[] = [
-  { id: 'en', label: 'English' },
-  { id: 'hi', label: 'हिंदी' },
-];
-
 const DICTIONARIES: Record<Lang, Record<MessageKey, string>> = { en, hi };
 const STORAGE_KEY = 'shieldiq-lang';
 

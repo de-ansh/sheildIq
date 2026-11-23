@@ -111,6 +111,8 @@ export interface HealthPlanResult {
   estimatedAnnualPremium: number;
   employerDependencyShare: number;
   adequacyScore: number;
+  /** The cheapest way to buy the cover still needed; Plan Options and the Health Planner both quote this. */
+  gapPlan: { id: HealthPlanId | null; cover: number; annualPremium: number };
   notes: string[];
 }
 
@@ -267,28 +269,7 @@ export function pickPlans(
   otherPremiums = 0
 ): PlanPicks {
   // Health first: the term choice depends on what is left of the budget.
-  const healthRate = healthRatePerLakh(p.age, p.cityTier);
-  const healthGap = health.personalCoverNeeded;
-  let healthId: HealthPlanId | null = null;
-  let healthCover = 0;
-  let healthPremium = 0;
-  if (healthGap > 0) {
-    if (p.existingHealthCover >= 300000) {
-      healthId = 'HL-TOPUP-ONLY';
-      healthCover = Math.max(500000, roundUpTo(healthGap, 500000));
-      healthPremium = (healthCover / 100000) * healthRate * STRUCTURE.superTopUpShare;
-    } else if (health.recommendedCover > health.basePolicy) {
-      healthId = 'HL-BASE-TOPUP';
-      healthCover = health.recommendedCover;
-      healthPremium = (health.basePolicy / 100000) * healthRate + (health.superTopUp / 100000) * healthRate * STRUCTURE.superTopUpShare;
-    } else {
-      const metro = p.cityTier === 'Tier 1 (Metro)';
-      healthId = metro ? 'HL-COMPREHENSIVE' : 'HL-FLOATER';
-      healthCover = health.recommendedCover;
-      healthPremium = (healthCover / 100000) * healthRate * (metro ? STRUCTURE.healthComprehensive : 1);
-    }
-  }
-  healthPremium = round(healthPremium, 100);
+  const { id: healthId, cover: healthCover, annualPremium: healthPremium } = health.gapPlan;
 
   let termId: TermPlanId | null = null;
   let termCover = 0;
@@ -497,9 +478,30 @@ export class ActuarialService {
     if (isTobacco(risks)) notes.push('Tobacco use raises both the cover needed and premiums; declare it to avoid claim rejection.');
     if (chronic) notes.push('Pre-existing conditions usually carry a 2–4 year waiting period; look for plans with a shorter PED wait or a day-one rider.');
     if (maternity) notes.push('Maternity benefits typically have a 2–4 year waiting period, so buy well before planning a pregnancy.');
-    if (superTopUp > 0) notes.push(`A super top-up with a ${formatINR(basePolicy)} deductible is the cheapest way to add the remaining cover.`);
 
-    return { recommendedCover, basePolicy, superTopUp, personalCoverNeeded, estimatedAnnualPremium, employerDependencyShare, adequacyScore, notes };
+    const healthRate = healthRatePerLakh(eldestAge, cityTier);
+    let gapPlan: HealthPlanResult['gapPlan'] = { id: null, cover: 0, annualPremium: 0 };
+    if (personalCoverNeeded > 0) {
+      if (existingCover >= 300000) {
+        // A policy already held acts as the deductible: only a super top-up is needed.
+        const cover = Math.max(500000, roundUpTo(personalCoverNeeded, 500000));
+        gapPlan = { id: 'HL-TOPUP-ONLY', cover, annualPremium: (cover / 100000) * healthRate * STRUCTURE.superTopUpShare };
+      } else if (superTopUp > 0) {
+        gapPlan = { id: 'HL-BASE-TOPUP', cover: recommendedCover, annualPremium: estimatedAnnualPremium };
+      } else {
+        const metro = cityTier === 'Tier 1 (Metro)';
+        gapPlan = {
+          id: metro ? 'HL-COMPREHENSIVE' : 'HL-FLOATER',
+          cover: recommendedCover,
+          annualPremium: (recommendedCover / 100000) * healthRate * (metro ? STRUCTURE.healthComprehensive : 1),
+        };
+      }
+      gapPlan.annualPremium = round(gapPlan.annualPremium, 100);
+    }
+    if (gapPlan.id === 'HL-TOPUP-ONLY') notes.push(`Keep your ${formatINR(existingCover)} policy and add a ${formatINR(gapPlan.cover)} super top-up above it: the cheapest way to close the gap.`);
+    else if (gapPlan.id === 'HL-BASE-TOPUP') notes.push(`A super top-up with a ${formatINR(basePolicy)} deductible is the cheapest way to add the remaining cover.`);
+
+    return { recommendedCover, basePolicy, superTopUp, personalCoverNeeded, estimatedAnnualPremium, employerDependencyShare, adequacyScore, gapPlan, notes };
   }
 
   /** Full protection strategy from the user's profile. Single source of truth for every screen. */

@@ -32,9 +32,11 @@ function MainContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-blue-500 selection:text-white">
-      {currentScreen !== "login" && <Navbar />}
+      {/* Login and onboarding have their own headers. */}
+      {currentScreen !== "login" && currentScreen !== "onboarding" && <Navbar />}
 
-      <main className="flex-1">
+      {/* Bottom padding lets the last content scroll clear of the floating Ask button. */}
+      <main className="flex-1 pb-20">
         <ScreenErrorBoundary key={currentScreen} onHome={() => setCurrentScreen(user.isLoggedIn ? "dashboard" : "login")}>
         <Suspense fallback={<p role="status" className="px-6 py-24 text-center text-sm text-muted-foreground">{t("screen.loading")}</p>}>
         {currentScreen === "login" && <LoginView />}

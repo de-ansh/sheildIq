@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { UserService } from '../services/user.service.js';
 import { isDevelopment } from '../config.js';
 import {
-  AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS, SESSION_COOKIE, asyncHandler, rateLimitAuth, requireAuth, setSessionCookie, type AuthedRequest,
+  AUTH_MAX_ATTEMPTS, AUTH_WINDOW_MS, SESSION_COOKIE, asyncHandler, rateLimitAuth, readSessionCookie, requireAuth, setSessionCookie, type AuthedRequest,
 } from './middleware.js';
 
 const router = Router();
@@ -68,6 +68,14 @@ router.post('/auth/login', rateLimitAuth, asyncHandler(async (req: Request, res:
 }));
 
 // POST /api/v1/auth/logout
+// GET /api/v1/auth/session — who is signed in, if anyone. Always 200, so restoring a session on page load
+// doesn't log a failed request in the browser console for signed-out visitors.
+router.get('/auth/session', asyncHandler(async (req: Request, res: Response) => {
+  const token = readSessionCookie(req);
+  const userId = token ? await UserService.resolveSession(token) : null;
+  res.json({ success: true, user: userId ? await UserService.getUserProfile(userId) : null });
+}));
+
 router.post('/auth/logout', requireAuth, asyncHandler(async (req: AuthedRequest, res: Response) => {
   await UserService.logout(req.token!);
   res.clearCookie(SESSION_COOKIE, { path: '/api' });

@@ -213,8 +213,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (res && res.status === 'UP') {
         setIsBackendConnected(true);
         setAiProvider(res.ai ?? null);
-        // Restores the session if the httpOnly cookie is still valid; a 401 just leaves us on login.
-        ShieldIQApi.getUserProfile().then(userRes => {
+        // Restores the session if the httpOnly cookie is still valid; no user just leaves us on login.
+        ShieldIQApi.getSession().then(userRes => {
           if (userRes && userRes.success && userRes.user) {
             setUser({ ...userRes.user, isLoggedIn: true });
             setCurrentScreen(screen => (screen === 'login' ? homeScreen(userRes.user) : screen));

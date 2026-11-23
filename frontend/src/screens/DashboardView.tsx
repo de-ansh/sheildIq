@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ArrowRight, Activity, TrendingUp, AlertTriangle, ChevronRight } from "lucide-react";
-import { useApp, ScreenId } from '@/lib/AppContext';
+import { FileText, ArrowRight, Activity, TrendingUp, AlertTriangle } from "lucide-react";
+import { useApp } from '@/lib/AppContext';
 import { formatINR, reviewOverdueMonths } from '@/lib/utils';
 import { ShieldIQApi, type PlanTypeOptions } from '@/lib/api';
 import { AiStrategyPanel } from '@/components/AiStrategyPanel';
@@ -28,7 +28,7 @@ export const DashboardView: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 text-foreground font-sans">
                 <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">{t('dash.title')}</h2>
+                        <h2 className="text-3xl font-black text-foreground tracking-tight">{t('dash.title')}</h2>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
                             {t('dash.subtitle', { name: user.name })}{user.city ? ` • ${user.city}` : ''} • {t(`tier.${user.cityTier}`)}
                         </p>
@@ -66,14 +66,14 @@ export const DashboardView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{t('dash.lifeNeed')}</span>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">{t('dash.lifeNeed')}</span>
                             <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
                                 {strategy ? formatINR(strategy.life.totalNeed) : '—'}
                             </div>
-                            <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
+                            <CardDescription className="text-xs text-muted-foreground font-bold uppercase mt-2">
                                 {strategy && strategy.life.savings > 0 ? t('dash.lifeNeedWithSavings') : t('dash.lifeNeedPlain')}
                             </CardDescription>
                         </CardContent>
@@ -81,14 +81,14 @@ export const DashboardView: React.FC = () => {
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.gap')}</span>
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('dash.gap')}</span>
                             <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
                                 {strategy ? formatINR(strategy.life.gap + strategy.health.gap + (strategy.parentsHealth?.gap ?? 0)) : '—'}
                             </div>
-                            <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
+                            <CardDescription className="text-xs text-muted-foreground font-bold uppercase mt-2">
                                 {strategy
                                     ? t('dash.gapSplit', { life: formatINR(strategy.life.gap), health: formatINR(strategy.health.gap) })
                                         + (strategy.parentsHealth ? t('dash.gapParents', { parents: formatINR(strategy.parentsHealth.gap) }) : '')
@@ -99,8 +99,8 @@ export const DashboardView: React.FC = () => {
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.currentCover')}</span>
-                            <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-none font-black text-[9px] uppercase tracking-widest">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('dash.currentCover')}</span>
+                            <Badge className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-none font-bold text-xs uppercase tracking-widest">
                                 {t('dash.declared')}
                             </Badge>
                         </CardHeader>
@@ -108,7 +108,7 @@ export const DashboardView: React.FC = () => {
                             <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
                                 {formatINR(declaredCover)}
                             </div>
-                            <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
+                            <CardDescription className="text-xs text-muted-foreground font-bold uppercase mt-2">
                                 {t('dash.coverSplit', { life: formatINR(user.existingLifeCover), health: formatINR(user.existingHealthCover) })}
                             </CardDescription>
                         </CardContent>
@@ -116,14 +116,14 @@ export const DashboardView: React.FC = () => {
 
                     <Card className="border-border shadow-sm">
                         <CardHeader className="p-6 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.adequacy')}</span>
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('dash.adequacy')}</span>
                             <span className={`${scoreColor} font-black font-mono`}>{strategy ? `${strategy.score}/100` : '—'}</span>
                         </CardHeader>
                         <CardContent className="p-6 pt-2">
                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div className={`h-full ${scoreBar} transition-all`} style={{ width: `${strategy?.score ?? 0}%` }} />
                             </div>
-                            <CardDescription className="text-[10px] text-muted-foreground font-bold uppercase mt-2">
+                            <CardDescription className="text-xs text-muted-foreground font-bold uppercase mt-2">
                                 {strategy ? t('dash.optimalHint', { rating: t(`rating.${strategy.rating}`) }) : t('dash.completeToScore')}
                             </CardDescription>
                         </CardContent>
@@ -132,19 +132,19 @@ export const DashboardView: React.FC = () => {
 
                 {/* Main Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <Card className="lg:col-span-2 border-border shadow-xl min-h-[460px] flex flex-col">
+                    <Card className="lg:col-span-2 self-start border-border shadow-xl flex flex-col">
                         <CardHeader className="p-6 sm:p-8 pb-0 sm:pb-0 flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-                            <CardTitle className="text-lg font-black text-foreground uppercase tracking-tight">{t('dash.overview')}</CardTitle>
+                            <CardTitle className="text-lg font-black text-foreground tracking-tight">{t('dash.overview')}</CardTitle>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setCurrentScreen('analysis')}
-                                className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700"
+                                className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700"
                             >
                                 {t('dash.fullAnalysis')} <ArrowRight className="w-3 h-3 ml-2" />
                             </Button>
                         </CardHeader>
-                        <CardContent className="flex-1 p-8 pt-4 flex flex-col justify-between">
+                        <CardContent className="p-8 pt-4">
                             <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground font-medium">
                                     {t('dash.overviewSub')}
@@ -163,7 +163,7 @@ export const DashboardView: React.FC = () => {
                                                 className="text-left p-4 rounded-xl border border-border bg-card/60 hover:bg-muted/40 transition-all hover:border-blue-500/40 group"
                                             >
                                                 <div className="flex justify-between items-start mb-2 gap-2">
-                                                    <Badge variant="outline" className="text-[10px] font-mono">{t(`planType.${pt.type}`)}</Badge>
+                                                    <Badge variant="outline" className="text-xs font-mono">{t(`planType.${pt.type}`)}</Badge>
                                                     {pick && <span className="text-xs font-bold text-blue-600 font-mono">{formatINR(pick.annualPremium)}{t('common.perYear')}</span>}
                                                 </div>
                                                 <h4 className="font-bold text-foreground text-sm group-hover:text-blue-600 transition-colors">
@@ -183,7 +183,7 @@ export const DashboardView: React.FC = () => {
                                     <Activity className="w-5 h-5 text-blue-600" />
                                     <div>
                                         <p className="text-xs font-bold text-foreground">{t('dash.simReady')}</p>
-                                        <p className="text-[11px] text-muted-foreground">{t('dash.simSub')}</p>
+                                        <p className="text-xs text-muted-foreground">{t('dash.simSub')}</p>
                                     </div>
                                 </div>
                                 <Button
@@ -197,35 +197,11 @@ export const DashboardView: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    <div className="space-y-6">
-                        <AiStrategyPanel maxInsights={3} />
-
-                        <Card className="p-8 border-border shadow-sm space-y-6">
-                            <h5 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('dash.urgent')}</h5>
-                            <div className="space-y-2">
-                                {[
-                                    { label: t('dash.nodeHlv'), screen: 'calculator' as ScreenId },
-                                    { label: t('dash.nodeHealth'), screen: 'healthplanner' as ScreenId },
-                                    { label: t('dash.nodeFinePrint'), screen: 'deepdive' as ScreenId }
-                                ].map((node, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setCurrentScreen(node.screen)}
-                                        className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:bg-accent transition-all text-left group"
-                                    >
-                                        <span className="text-[11px] font-bold text-foreground/80 group-hover:text-blue-600 transition-colors">
-                                            {node.label}
-                                        </span>
-                                        <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
-                                    </button>
-                                ))}
-                            </div>
-                        </Card>
-                    </div>
+                    <AiStrategyPanel maxInsights={3} compact />
                 </div>
 
-                <footer className="pt-12 text-center space-y-3">
-                    <div className="flex justify-center gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                <footer className="pt-12 text-center">
+                    <div className="flex justify-center gap-6 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                         <button
                             type="button"
                             onClick={() => setCurrentScreen('compliance')}
@@ -250,9 +226,6 @@ export const DashboardView: React.FC = () => {
                             {t('dash.status')}
                         </button>
                     </div>
-                    <p className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto italic">
-                        {t('dash.footer')}
-                    </p>
                 </footer>
         </div>
     );

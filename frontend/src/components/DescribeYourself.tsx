@@ -49,7 +49,7 @@ export const DescribeYourself: React.FC<{ onDraft: (draft: AiProfileDraft) => vo
                 className="w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             />
             <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] text-muted-foreground">{t('describe.note')}</p>
+                <p className="text-xs text-muted-foreground">{t('describe.note')}</p>
                 <Button type="button" size="sm" onClick={fill} disabled={text.trim().length < 20 || isLoading} className="bg-blue-600 hover:bg-blue-700 shrink-0">
                     {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                     {t('describe.fill')}
@@ -60,7 +60,7 @@ export const DescribeYourself: React.FC<{ onDraft: (draft: AiProfileDraft) => vo
                 <div role="status" className="rounded-xl bg-background/70 border border-border p-3 space-y-1.5">
                     <p className="text-xs font-bold text-foreground">{t('describe.filled')}</p>
                     {notes.map(n => (
-                        <p key={n} className="flex gap-2 text-[11px] text-muted-foreground"><Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />{n}</p>
+                        <p key={n} className="flex gap-2 text-xs text-muted-foreground"><Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />{n}</p>
                     ))}
                 </div>
             )}

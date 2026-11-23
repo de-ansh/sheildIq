@@ -14,7 +14,7 @@ describe('DashboardView Component', () => {
     expect(screen.getByText(/Analytical Dashboard/i)).toBeInTheDocument();
     expect(screen.getByText(/Life Cover Need/i)).toBeInTheDocument();
     expect(screen.getByText(/Coverage Gap/i)).toBeInTheDocument();
-    expect(screen.getByText(/Risk Adequacy/i)).toBeInTheDocument();
+    expect(screen.getByText(/Protection Score/i)).toBeInTheDocument();
     expect(screen.getByText(/Protection Strategy Overview/i)).toBeInTheDocument();
   });
 

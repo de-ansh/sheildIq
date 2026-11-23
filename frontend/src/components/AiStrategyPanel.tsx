@@ -11,8 +11,11 @@ const severityIcon = { critical: ShieldAlert, warning: AlertTriangle, info: Info
 const severityColor = { critical: 'text-red-400', warning: 'text-amber-400', info: 'text-blue-400' };
 const urgencyColor = { high: 'bg-red-500/15 text-red-300', medium: 'bg-amber-500/15 text-amber-300', low: 'bg-blue-500/15 text-blue-300' };
 
-/** AI-written strategy when available, otherwise the deterministic insights the backend computed. */
-export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsights = 4 }) => {
+/**
+ * AI-written strategy when available, otherwise the deterministic insights the backend computed.
+ * `compact` shows headlines only (the Dashboard); the Analysis screen shows the full explanations.
+ */
+export const AiStrategyPanel: React.FC<{ maxInsights?: number; compact?: boolean }> = ({ maxInsights = 4, compact = false }) => {
     const { strategy, aiStrategy, aiProvider, isGeneratingAi, aiError, generateAiStrategy } = useApp();
     const { t, tServer, lang } = useI18n();
 
@@ -23,11 +26,11 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
             </div>
             <div className="relative z-10 space-y-6">
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">
+                    <h3 className="text-xs font-bold text-blue-400 tracking-wider">
                         {aiStrategy ? t('ai.strategyTitle') : t('ai.findingsTitle')}
                     </h3>
                     {aiStrategy && (
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
                             {providerLabel(aiStrategy.provider)} · {new Date(aiStrategy.createdAt).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN')}
                         </span>
                     )}
@@ -41,19 +44,19 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                                 <li key={i} className="space-y-1.5 border-l-2 border-blue-500/30 pl-4">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-bold">{i + 1}. {p.title}</span>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${urgencyColor[p.urgency]}`}>{t(`urgency.${p.urgency}`)}</span>
+                                        <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${urgencyColor[p.urgency]}`}>{t(`urgency.${p.urgency}`)}</span>
                                     </div>
                                     <p className="text-xs text-slate-300 leading-relaxed">{p.action}</p>
-                                    <p className="text-[11px] text-slate-400 leading-relaxed">{p.rationale}</p>
+                                    <p className="text-xs text-slate-400 leading-relaxed">{p.rationale}</p>
                                 </li>
                             ))}
                         </ol>
                         {aiStrategy.strategy.watchouts.length > 0 && (
                             <div className="space-y-2">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">{t('ai.watchOut')}</p>
+                                <p className="text-xs font-bold uppercase tracking-widest text-amber-400">{t('ai.watchOut')}</p>
                                 <ul className="space-y-1.5">
                                     {aiStrategy.strategy.watchouts.map((w, i) => (
-                                        <li key={i} className="text-[11px] text-slate-400 leading-relaxed">• {w}</li>
+                                        <li key={i} className="text-xs text-slate-400 leading-relaxed">• {w}</li>
                                     ))}
                                 </ul>
                             </div>
@@ -70,7 +73,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                                         <p className="text-sm font-bold">{title}</p>
                                         <Icon className={`w-5 h-5 shrink-0 ${severityColor[insight.severity]}`} />
                                     </div>
-                                    <p className="text-[11px] text-slate-400 leading-relaxed pl-1">{detail}</p>
+                                    {!compact && <p className="text-xs text-slate-400 leading-relaxed pl-1">{detail}</p>}
                                 </div>
                             );
                         })}
@@ -85,7 +88,7 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                     <Button
                         onClick={() => generateAiStrategy(Boolean(aiStrategy))}
                         disabled={isGeneratingAi || !strategy}
-                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-black uppercase tracking-widest text-[10px] text-white"
+                        className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-bold uppercase tracking-widest text-xs text-white"
                     >
                         {isGeneratingAi ? (
                             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> {t('ai.writing')}</span>
@@ -96,9 +99,9 @@ export const AiStrategyPanel: React.FC<{ maxInsights?: number }> = ({ maxInsight
                         )}
                     </Button>
                 ) : (
-                    strategy && <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('ai.notConfigured')}</p>
+                    strategy && <p className="text-xs text-slate-400 uppercase tracking-widest">{t('ai.notConfigured')}</p>
                 )}
-                <p className="text-[9px] text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                     {t('ai.disclaimer')}
                 </p>
             </div>

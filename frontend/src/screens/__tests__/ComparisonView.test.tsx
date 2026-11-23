@@ -20,7 +20,7 @@ describe('ComparisonView plan options', () => {
   it('shows four options per insurance type with the recommendation highlighted', async () => {
     mockApi({
       '/health': { status: 'UP' },
-      '/user/profile': { success: true, user: { name: 'A', email: 'a@x.com', onboardingCompleted: true, maritalStatus: 'Married', age: 34, cityTier: 'Tier 1 (Metro)' } },
+      '/auth/session': { success: true, user: { name: 'A', email: 'a@x.com', onboardingCompleted: true, maritalStatus: 'Married', age: 34, cityTier: 'Tier 1 (Metro)' } },
       '/policies': { success: true, data: [] },
       '/strategy': { success: false },
       '/plan-options': {
