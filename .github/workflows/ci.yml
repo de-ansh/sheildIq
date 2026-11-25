@@ -1,9 +1,16 @@
 name: CI
 
+# Pull requests that change code only: Markdown and docs never trigger it, and there is no run on push to main,
+# which re-ran what the PR had just tested (Run workflow re-runs by hand).
 on:
-  push:
-    branches: [main]
   pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose.yml"
+      - ".github/workflows/ci.yml"
+      - "!**/*.md"
+  workflow_dispatch:
 
 # A newer push to the same branch cancels the run in progress.
 concurrency:
